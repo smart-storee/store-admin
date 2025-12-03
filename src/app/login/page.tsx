@@ -50,9 +50,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Use the login function from AuthContext which handles storing the tokens
       await login(email, password);
-      // The login function in AuthContext already handles the redirect to dashboard
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {

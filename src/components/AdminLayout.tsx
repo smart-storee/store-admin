@@ -4,6 +4,7 @@ import { useState, ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import DarkModeToggle from '@/components/DarkModeToggle';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -38,7 +39,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
 
       {/* Mobile sidebar */}
       <div className="md:hidden">
@@ -151,7 +152,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             </nav>
           </div>
           <div className="flex-shrink-0 flex border-t border-indigo-800 p-4">
-            <div className="flex items-center">
+            <div className="flex items-center justify-between w-full">
               <div>
                 <div className="text-base font-medium text-white">
                   {user?.user_name}
@@ -160,7 +161,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                   {user?.email}
                 </div>
               </div>
-              <div className="ml-auto">
+              <div className="flex items-center space-x-3">
+                <DarkModeToggle />
                 <button
                   onClick={logout}
                   className="text-sm text-indigo-200 hover:text-white"

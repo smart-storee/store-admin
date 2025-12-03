@@ -56,10 +56,15 @@ const fetchProducts = async () => {
       ...(searchTerm && { search: searchTerm }),
     });
 
-    // Add store_id and branch_id based on user role
+    // Add store_id and branch_id based on user context
     if (user?.store_id) {
-      // For non-super admins, use their store_id from user context
+      // For all users, use their store_id from user context
       params.append('store_id', user.store_id.toString());
+    }
+
+    // Add branch_id if selected
+    if (selectedBranch) {
+      params.append('branch_id', selectedBranch.toString());
     }
     
     console.log('Fetching products with params:', params.toString());
@@ -148,28 +153,45 @@ const fetchProducts = async () => {
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Products Management</h1>
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+          <button
+            onClick={() => window.location.href = '/products/new'}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+          >
             Add New Product
           </button>
         </div>
-        
-        <form onSubmit={handleSearch} className="mb-6 space-y-4">
 
-          {/* Search bar */}
-          <div className="flex">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 border border-gray-300 rounded-l-md px-4 py-2"
-            />
-            <button 
-              type="submit"
-              className="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700"
+        <form onSubmit={handleSearch} className="mb-6 space-y-4">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+            <select
+              value={selectedBranch || ''}
+              onChange={handleBranchChange}
+              className="border border-gray-300 rounded-md px-3 py-2"
             >
-              Search
-            </button>
+              <option value="">All Branches</option>
+              {branches.map((branch) => (
+                <option key={branch.branch_id} value={branch.branch_id}>
+                  {branch.branch_name}
+                </option>
+              ))}
+            </select>
+
+            <div className="flex">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 border border-gray-300 rounded-l-md px-4 py-2"
+              />
+              <button
+                type="submit"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700"
+              >
+                Search
+              </button>
+            </div>
           </div>
         </form>
         
@@ -216,10 +238,19 @@ const fetchProducts = async () => {
                             <p className="text-sm text-gray-500">{product.total_stock} in stock</p>
                           </div>
                           <div className="flex space-x-2">
-                            <button className="text-indigo-600 hover:text-indigo-900">
+                            <button
+                              onClick={() => window.location.href = `/products/${product.product_id}`}
+                              className="text-indigo-600 hover:text-indigo-900"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => window.location.href = `/products/${product.product_id}/edit`}
+                              className="text-indigo-600 hover:text-indigo-900"
+                            >
                               Edit
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleDeleteProduct(product.product_id)}
                               className="text-red-600 hover:text-red-900"
                             >

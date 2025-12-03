@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleGuard } from '@/components/RoleGuard';
+import { ApiResponse, Branch } from '@/types';
 
 // Predefined notification templates
 const PREDEFINED_TEMPLATES = [

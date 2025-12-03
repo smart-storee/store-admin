@@ -8,11 +8,15 @@ export type NextPageWithLayout<P = {}, IP = P> = React.FC<P> & {
 // User types
 export interface AdminUser {
   user_id: number;
-  user_name: string;
+  name: string;
   email: string;
   store_id: number;
   role: string;
   permissions: string[];
+  status: string;
+  phone: string;
+  created_at: string;
+  store_name: string;
 }
 
 export interface LoginCredentials {
@@ -65,6 +69,9 @@ export interface Branch {
   total_revenue: number;
   is_active: number;
   created_at: string;
+  store_id: number;
+  surge_fee: number;
+  delivery_charge: number;
 }
 
 export interface CreateBranchRequest {
@@ -223,6 +230,19 @@ export interface AppSettings {
   is_online_payment_enabled: number;
   maintenance_mode: number;
   created_at: string;
+}
+
+export interface StoreSettings {
+  store_id: number;
+  store_name: string;
+  tagline: string;
+  primary_color: string;
+  secondary_color: string;
+  min_order_amount: number;
+  cod_enabled: boolean;
+  online_payment_enabled: boolean;
+  maintenance_mode: boolean;
+  maintenance_message: string;
 }
 
 // Pagination types

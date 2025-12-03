@@ -74,16 +74,16 @@ const logToConsole = (entry: LogEntry) => {
   
   switch (entry.level) {
     case 'debug':
-      console.debug(`%c${formattedMessage}`, 'color: #888');
+      console.debug(`${formattedMessage}`);
       break;
     case 'info':
-      console.info(`%c${formattedMessage}`, 'color: #00f');
+      console.info(`${formattedMessage}`);
       break;
     case 'warn':
-      console.warn(`${formattedMessage}`, 'color: #ff0');
+      console.warn(`${formattedMessage}`);
       break;
     case 'error':
-      console.error(`${formattedMessage}`, 'color: #f00');
+      console.error(`${formattedMessage}`);
       break;
   }
   

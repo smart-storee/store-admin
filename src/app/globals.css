@@ -3,24 +3,130 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --card-bg: #ffffff;
+  --border: #e5e7eb;
+  --indigo-500: #6366f1;
+  --indigo-600: #4f46e5;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --red-100: #fee2e2;
+  --red-500: #ef4444;
+  --green-100: #dcfce7;
+  --green-500: #22c55e;
+  --yellow-100: #fef9c3;
+  --yellow-500: #eab308;
+  --blue-100: #dbeafe;
+  --blue-500: #3b82f6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card-bg: var(--card-bg);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0f172a; /* Dark blue-gray background */
+    --foreground: #f8fafc; /* Light text */
+    --card-bg: #1e293b; /* Darker card background */
+    --border: #334155; /* Matching border */
+    --gray-50: #1e293b;
+    --gray-100: #334155;
+    --gray-200: #475569;
+    --gray-300: #64748b;
+    --gray-400: #94a3b8;
+    --gray-500: #cbd5e1;
+    --gray-600: #e2e8f0;
+    --gray-700: #f1f5f9;
+    --gray-800: #f8fafc;
+    --gray-900: #f9fafb;
   }
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* Ensure text has good contrast in dark mode */
+.text-gray-900 {
+  color: #111827; /* Dark text for light mode */
+}
+.dark .text-gray-900 {
+  color: #f8fafc; /* Light text for dark mode */
+}
+
+.text-gray-700 {
+  color: #374151; /* Medium dark text */
+}
+.dark .text-gray-700 {
+  color: #e2e8f0; /* Medium light text for dark mode */
+}
+
+.text-gray-500 {
+  color: #6b7280; /* Light gray text */
+}
+.dark .text-gray-500 {
+  color: #cbd5e1; /* Lighter gray text for dark mode */
+}
+
+.bg-white {
+  background-color: #ffffff; /* White background */
+}
+.dark .bg-white {
+  background-color: #1e293b; /* Dark card background */
+}
+
+.bg-gray-50 {
+  background-color: #f9fafb; /* Light gray background */
+}
+.dark .bg-gray-50 {
+  background-color: #1e293b; /* Dark gray background */
+}
+
+.border-gray-300 {
+  border-color: #d1d5db; /* Gray border */
+}
+.dark .border-gray-300 {
+  border-color: #334155; /* Darker gray border */
+}
+
+/* Specific color overrides for better dark mode visibility */
+.dark .text-indigo-600 {
+  color: #818cf8; /* Lighter indigo for dark mode */
+}
+
+.dark .text-red-600 {
+  color: #f87171; /* Lighter red for dark mode */
+}
+
+.dark .text-green-600 {
+  color: #4ade80; /* Lighter green for dark mode */
+}
+
+.dark .text-yellow-600 {
+  color: #facc15; /* Lighter yellow for dark mode */
+}
+
+/* Ensure placeholder text is visible in dark mode */
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #9ca3af;
 }

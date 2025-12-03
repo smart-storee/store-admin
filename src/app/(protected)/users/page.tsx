@@ -5,6 +5,7 @@ import { makeAuthenticatedRequest } from '@/utils/api';
 import { AdminUser, ApiResponse, Pagination } from '@/types';
 import { RoleGuard } from '@/components/RoleGuard';
 import { useAuth } from '@/contexts/AuthContext';
+import { Plus, Search, Edit3, Trash2, Eye, Moon, Sun, ChevronLeft, ChevronRight, AlertCircle, Users, Mail, Phone, Calendar, ShieldCheck, Zap } from 'lucide-react';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -12,93 +13,92 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [hoveredUser, setHoveredUser] = useState<number | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, searchTerm, user]);
+  }, [currentPage, searchTerm, user, roleFilter, statusFilter]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      setError(null); // Clear previous errors
-      
+      setError(null);
+
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '10',
       });
-      
-      if(user?.store_id){
+
+      if (user?.store_id) {
         params.append('store_id', user.store_id.toString());
       }
-
 
       if (searchTerm) {
         params.append('search', searchTerm);
       }
-      
-      console.log('Fetching users with params:', params.toString()); // Debug log
-      
-      const response: ApiResponse<{ users: AdminUser[], pagination: Pagination }> = 
+
+      if (roleFilter !== 'all') {
+        params.append('role', roleFilter);
+      }
+
+      if (statusFilter !== 'all') {
+        params.append('status', statusFilter);
+      }
+
+      const response: ApiResponse<{ users: AdminUser[]; pagination: Pagination }> =
         await makeAuthenticatedRequest(`/users?${params.toString()}`);
-      
-      console.log('Users API response:', response); // Debug log
-      
+
       if (response.success) {
-        setUsers(response.data.users || response.data);
-        setTotalPages(response.pagination ? Math.ceil(response.pagination.total / response.pagination.limit) : 1);
+        const usersData = response.data.users || response.data;
+        setUsers(usersData);
+        
+        if (response.pagination) {
+          setTotalPages(Math.ceil(response.pagination.total / response.pagination.limit));
+          setTotalCount(response.pagination.total);
+        } else {
+          setTotalCount(usersData.length);
+        }
       } else {
         throw new Error(response.message || 'Failed to fetch users');
       }
     } catch (err) {
-      console.error('Users fetch error details:', err);
-      
-      // Provide more specific error messages
       if (err instanceof Error) {
         if (err.message.includes('connect to the server')) {
           setError('Cannot connect to the server. Please make sure the backend API is running.');
-        } else if (err.message.includes('403') || err.message.includes('Access forbidden')) {
+        } else if (err.message.includes('403')) {
           setError('Access denied. You do not have permission to view users.');
-        } else if (err.message.includes('401') || err.message.includes('Authentication failed')) {
+        } else if (err.message.includes('401')) {
           setError('Authentication expired. Please log in again.');
         } else {
           setError(err.message || 'Failed to fetch users. Please try again later.');
         }
-      } else {
-        setError('Failed to fetch users. Please try again later.');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1); // Reset to first page when searching
-  };
-
   const handleDeleteUser = async (userId: number) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-    
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+
     try {
-      const response: ApiResponse<null> = await makeAuthenticatedRequest(
-        `/users/${userId}`,
-        { method: 'DELETE' }
-      );
-      
+      const response: ApiResponse<null> = await makeAuthenticatedRequest(`/users/${userId}`, {
+        method: 'DELETE'
+      });
+
       if (response.success) {
-        fetchUsers(); // Refresh the list
+        fetchUsers();
       } else {
         alert(response.message || 'Failed to delete user');
       }
     } catch (err) {
-      console.error('Delete user error:', err);
-      if (err instanceof Error) {
-        alert(err.message || 'Failed to delete user');
-      } else {
-        alert('Failed to delete user');
-      }
+      alert(err instanceof Error ? err.message : 'Failed to delete user');
     }
   };
 
@@ -108,198 +108,307 @@ export default function UsersPage() {
     }
   };
 
+  const getRoleColor = (role: string) => {
+    const colors: Record<string, { light: string; dark: string }> = {
+      admin: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900/40 text-purple-300' },
+      manager: { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900/40 text-blue-300' },
+      staff: { light: 'bg-green-100 text-green-800', dark: 'bg-green-900/40 text-green-300' },
+      user: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-900/40 text-gray-300' },
+    };
+    return colors[role] || colors.user;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, { light: string; dark: string }> = {
+      active: { light: 'bg-green-100 text-green-800', dark: 'bg-green-900/40 text-green-300' },
+      inactive: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-900/40 text-gray-300' },
+      suspended: { light: 'bg-red-100 text-red-800', dark: 'bg-red-900/40 text-red-300' },
+    };
+    return colors[status] || colors.inactive;
+  };
+
+  const theme = {
+    dark: {
+      bg: 'bg-slate-900',
+      headerBg: 'bg-slate-800/50',
+      cardBg: 'bg-slate-800/50',
+      cardBorder: 'border-slate-700/50',
+      text: 'text-white',
+      textSecondary: 'text-slate-300',
+      textTertiary: 'text-slate-400',
+      input: 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500 focus:ring-blue-500',
+      button: {
+        primary: 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white',
+        secondary: 'bg-slate-700/50 hover:bg-slate-700 text-slate-300',
+      },
+      userCard: 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-700/50',
+      statCard: 'bg-slate-700/50 border-slate-600/50',
+    },
+    light: {
+      bg: 'bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50',
+      headerBg: 'bg-white',
+      cardBg: 'bg-white',
+      cardBorder: 'border-slate-200',
+      text: 'text-slate-900',
+      textSecondary: 'text-slate-600',
+      textTertiary: 'text-slate-500',
+      input: 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:ring-blue-500',
+      button: {
+        primary: 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white',
+        secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-700',
+      },
+      userCard: 'bg-white border-slate-200 hover:bg-slate-50',
+      statCard: 'bg-blue-50 border-blue-200',
+    }
+  };
+
+  const t = isDarkMode ? theme.dark : theme.light;
+
   return (
-    <RoleGuard 
+    <RoleGuard
       requiredPermissions={['manage_users']}
       fallback={
-        <div className="p-6 text-center">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            Access denied. You do not have permission to manage users.
+        <div className={`p-6 text-center ${isDarkMode ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50'}`}>
+          <div className={`${isDarkMode ? 'bg-red-900/30 border-red-700/50' : 'bg-red-50 border-red-200'} border rounded-lg px-4 py-3 mb-4`}>
+            <p className={isDarkMode ? 'text-red-300' : 'text-red-700'}>Access denied. You do not have permission to manage users.</p>
           </div>
         </div>
       }
     >
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Users Management</h1>
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
-            Add New User
-          </button>
+      <div className={`min-h-screen ${isDarkMode ? 'bg-slate-900' : theme.light.bg} transition-colors duration-300`}>
+        {/* Header */}
+        <div className={`${t.headerBg} border-b ${t.cardBorder} sticky top-0 z-40 backdrop-blur-xl transition-all duration-300`}>
+          <div className="max-w-7xl mx-auto px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Users Management
+                </h1>
+                <p className={`${t.textSecondary} text-sm mt-1`}>Manage team members and user access</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-slate-700/50 text-yellow-400 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'} transition-all duration-300`}
+                >
+                  {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
+                <button
+                  onClick={() => window.location.href = '/users/new'}
+                  className={`${t.button.primary} px-6 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
+                >
+                  <Plus size={20} />
+                  Add New User
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <form onSubmit={handleSearch} className="mb-6">
-          <div className="flex">
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 border border-gray-300 rounded-l-md px-4 py-2"
-            />
-            <button 
-              type="submit"
-              className="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700"
-            >
-              Search
-            </button>
+
+        <div className="max-w-7xl mx-auto px-8 py-8">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[
+              { label: 'Total Users', value: totalCount, icon: Users },
+              { label: 'Active', value: users.filter(u => u.status === 'active').length, icon: Zap },
+              { label: 'Admins', value: users.filter(u => u.role === 'admin').length, icon: ShieldCheck },
+              { label: 'Staff', value: users.filter(u => u.role === 'staff').length, icon: Users },
+            ].map((stat, i) => {
+              const Icon = stat.icon;
+              return (
+                <div key={i} className={`${t.statCard} border rounded-xl p-6 hover:shadow-lg transition-all duration-300`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <Icon size={24} className="text-blue-500" />
+                  </div>
+                  <p className={`${t.textTertiary} text-sm font-medium mb-1`}>{stat.label}</p>
+                  <p className={`text-2xl font-bold ${t.text}`}>{stat.value}</p>
+                </div>
+              );
+            })}
           </div>
-        </form>
-        
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
+
+          {/* Search and Filters */}
+          <div className={`${t.cardBg} rounded-xl border ${t.cardBorder} p-6 mb-8 shadow-sm`}>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className={`block text-sm font-medium ${t.text} mb-2`}>Search Users</label>
+                <div className="relative">
+                  <Search size={18} className={`absolute left-3 top-3.5 ${t.textTertiary}`} />
+                  <input
+                    type="text"
+                    placeholder="Name, email, phone..."
+                    value={searchTerm}
+                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                    className={`w-full pl-10 pr-4 py-2.5 border ${t.input} rounded-lg focus:outline-none focus:ring-2 transition-all duration-300`}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={`block text-sm font-medium ${t.text} mb-2`}>Role</label>
+                <select
+                  value={roleFilter}
+                  onChange={(e) => { setRoleFilter(e.target.value); setCurrentPage(1); }}
+                  className={`w-full px-4 py-2.5 border ${t.input} rounded-lg focus:outline-none focus:ring-2 transition-all duration-300`}
+                >
+                  <option value="all">All Roles</option>
+                  <option value="admin">Admin</option>
+                  <option value="manager">Manager</option>
+                  <option value="staff">Staff</option>
+                  <option value="user">User</option>
+                </select>
+              </div>
+              <div>
+                <label className={`block text-sm font-medium ${t.text} mb-2`}>Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                  className={`w-full px-4 py-2.5 border ${t.input} rounded-lg focus:outline-none focus:ring-2 transition-all duration-300`}
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+            </div>
           </div>
-        )}
-        
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+
+          {/* Error Message */}
+          {error && (
+            <div className={`${isDarkMode ? 'bg-red-900/30 border-red-700/50' : 'bg-red-50 border-red-200'} border rounded-xl p-4 mb-8 flex items-center gap-3`}>
+              <AlertCircle size={20} className={isDarkMode ? 'text-red-400' : 'text-red-600'} />
+              <p className={`text-sm font-medium ${isDarkMode ? 'text-red-300' : 'text-red-800'}`}>{error}</p>
+            </div>
+          )}
+
+          {/* Loading State */}
           {loading ? (
-            <div className="p-6 text-center">Loading users...</div>
+            <div className={`${t.cardBg} rounded-xl border ${t.cardBorder} shadow-sm p-12`}>
+              <div className="flex flex-col items-center justify-center gap-4">
+                <div className={`w-12 h-12 border-4 ${isDarkMode ? 'border-slate-700 border-t-blue-500' : 'border-blue-200 border-t-blue-600'} rounded-full animate-spin`}></div>
+                <p className={`${t.textSecondary} font-medium`}>Loading users...</p>
+              </div>
+            </div>
+          ) : users.length === 0 ? (
+            <div className={`${t.cardBg} rounded-xl border ${t.cardBorder} shadow-sm p-12 text-center`}>
+              <Users size={48} className={`mx-auto ${isDarkMode ? 'text-slate-600' : 'text-slate-300'} mb-3`} />
+              <p className={`${t.textSecondary} font-medium`}>No users found</p>
+              <p className={`${t.textTertiary} text-sm mt-1`}>Try adjusting your search or filters</p>
+            </div>
           ) : (
-            <>
-              <ul className="divide-y divide-gray-200">
-                {users.map((user) => (
-                  <li key={user.user_id}>
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white mr-4">
-                            {user.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-indigo-600 truncate">{user.user_name}</p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            user.status === 'active' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {user.status}
-                          </span>
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                            {user.role}
-                          </span>
-                          <div className="flex space-x-2">
-                            <button className="text-indigo-600 hover:text-indigo-900">
-                              Edit
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteUser(user.user_id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
+            <div className="space-y-3">
+              {users.map((u) => (
+                <div
+                  key={u.user_id}
+                  onMouseEnter={() => setHoveredUser(u.user_id)}
+                  onMouseLeave={() => setHoveredUser(null)}
+                  className={`${t.userCard} border rounded-xl p-5 transition-all duration-300 hover:shadow-lg`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    {/* User Info */}
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                      <div className={`w-12 h-12 rounded-full ${isDarkMode ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-gradient-to-br from-blue-400 to-indigo-500'} flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
+                        {u.name.charAt(0).toUpperCase()}
                       </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex">
-                          <div className="mr-6 flex items-center text-sm text-gray-500">
-                            <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                              <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                            </svg>
-                            {user.phone}
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`text-lg font-semibold ${t.text} truncate`}>{u.name}</h3>
+                        <div className="flex flex-wrap gap-3 mt-2">
+                          <div className={`flex items-center gap-1 ${t.textSecondary} text-sm`}>
+                            <Mail size={14} />
+                            <span className="truncate">{u.email}</span>
                           </div>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          Joined: {new Date(user.created_at).toLocaleDateString()}
+                          <div className={`flex items-center gap-1 ${t.textSecondary} text-sm`}>
+                            <Phone size={14} />
+                            {u.phone}
+                          </div>
+                          <div className={`flex items-center gap-1 ${t.textSecondary} text-sm`}>
+                            <Calendar size={14} />
+                            {new Date(u.created_at).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </li>
+
+                    {/* Badges and Actions */}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleColor(u.role)[isDarkMode ? 'dark' : 'light']}`}>
+                          {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(u.status)[isDarkMode ? 'dark' : 'light']}`}>
+                          {u.status.charAt(0).toUpperCase() + u.status.slice(1)}
+                        </span>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className={`flex items-center gap-2 transition-all duration-300 ${hoveredUser === u.user_id ? 'opacity-100' : 'opacity-60'}`}>
+                        <button
+                          onClick={() => window.location.href = `/users/${u.user_id}`}
+                          className={`p-2 rounded-lg transition-colors duration-200 ${isDarkMode ? 'hover:bg-blue-900/40 text-blue-400' : 'hover:bg-blue-100 text-blue-600'}`}
+                          title="View"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={() => window.location.href = `/users/${u.user_id}/edit`}
+                          className={`p-2 rounded-lg transition-colors duration-200 ${isDarkMode ? 'hover:bg-indigo-900/40 text-indigo-400' : 'hover:bg-indigo-100 text-indigo-600'}`}
+                          title="Edit"
+                        >
+                          <Edit3 size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(u.user_id)}
+                          className={`p-2 rounded-lg transition-colors duration-200 ${isDarkMode ? 'hover:bg-red-900/40 text-red-400' : 'hover:bg-red-100 text-red-600'}`}
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className={`${t.cardBg} border ${t.cardBorder} rounded-xl mt-8 px-6 py-4 flex items-center justify-between`}>
+              <div className={`text-sm ${t.textSecondary}`}>
+                Showing <span className={`font-semibold ${t.text}`}>{(currentPage - 1) * 10 + 1}</span> to{' '}
+                <span className={`font-semibold ${t.text}`}>{Math.min(currentPage * 10, totalCount)}</span> of{' '}
+                <span className={`font-semibold ${t.text}`}>{totalCount}</span> users
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`p-2 rounded-lg border ${t.cardBorder} ${t.button.secondary} disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300`}
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all duration-300 ${
+                      currentPage === page
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : t.button.secondary
+                    }`}
+                  >
+                    {page}
+                  </button>
                 ))}
-              </ul>
-              
-              {users.length === 0 && !loading && (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No users found</p>
-                </div>
-              )}
-              
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                  <div className="flex-1 flex justify-between sm:hidden">
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                        currentPage === 1 
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                        currentPage === totalPages 
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      Next
-                    </button>
-                  </div>
-                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm text-gray-700">
-                        Showing page <span className="font-medium">{currentPage}</span> of{' '}
-                        <span className="font-medium">{totalPages}</span>
-                      </p>
-                    </div>
-                    <div>
-                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                        <button
-                          onClick={() => handlePageChange(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 text-sm font-medium ${
-                            currentPage === 1
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'bg-white text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          <span className="sr-only">Previous</span>
-                          &larr;
-                        </button>
-                        
-                        {/* Page numbers */}
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                          <button
-                            key={page}
-                            onClick={() => handlePageChange(page)}
-                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                              currentPage === page
-                                ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        ))}
-                        
-                        <button
-                          onClick={() => handlePageChange(currentPage + 1)}
-                          disabled={currentPage === totalPages}
-                          className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 text-sm font-medium ${
-                            currentPage === totalPages
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'bg-white text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          <span className="sr-only">Next</span>
-                          &rarr;
-                        </button>
-                      </nav>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`p-2 rounded-lg border ${t.cardBorder} ${t.button.secondary} disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300`}
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>

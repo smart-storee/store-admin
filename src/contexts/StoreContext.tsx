@@ -10,9 +10,10 @@ type Store = {
 };
 
 type Branch = {
-  id: number;
-  name: string;
+  id: number; // Using id to match what the context expects
+  name: string; // Using name to match what the context expects
   store_id: number;
+  [key: string]: any; // Allow additional fields
 };
 
 type StoreContextType = {
@@ -35,34 +36,55 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  // Fetch stores on component mount
+  // Set the user's assigned store on component mount
   useEffect(() => {
-    const fetchStores = async () => {
-      try {
-        const response = await makeAuthenticatedRequest(
-          '/stores',
-          {},
-          true,
-          null,
-          null
-        );
-        if (response?.data) {
-          setStores(response.data);
-          // If user is not a super admin, set their store as selected
-          if (user?.store_id && !user.is_superadmin) {
-            setSelectedStore(user.store_id);
-          } else if (response.data.length > 0) {
-            setSelectedStore(response.data[0].id);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching stores:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (user?.store_id) {
+      // Fetch store details for the user's assigned store
+      const fetchStoreDetails = async () => {
+        try {
+          const response = await makeAuthenticatedRequest(
+            `/stores/${user.store_id}`,
+            {},
+            true,
+            user.store_id,
+            user.branch_id || undefined
+          );
+          if (response?.success && response?.data) {
+            // Handle both array and object response formats
+            const storeData = Array.isArray(response.data) ? response.data[0] : response.data?.data || response.data;
 
-    fetchStores();
+            // Format the store data to match the Store type
+            setStores([{
+              id: storeData.store_id || user.store_id,
+              name: storeData.store_name || 'User Store'
+            }]);
+
+            setSelectedStore(user.store_id);
+          } else {
+            // If we can't fetch store details, just use the store_id from user
+            setStores([{
+              id: user.store_id,
+              name: user.store_name || 'User Store'
+            }]);
+            setSelectedStore(user.store_id);
+          }
+        } catch (error) {
+          console.error('Error fetching store details:', error);
+          // If we can't fetch store details, just use the store_id from user
+          setStores([{
+            id: user.store_id,
+            name: 'User Store'
+          }]);
+          setSelectedStore(user.store_id);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchStoreDetails();
+    } else {
+      setLoading(false);
+    }
   }, [user]);
 
   // Fetch branches when selectedStore changes
@@ -76,20 +98,36 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
       try {
         const response = await makeAuthenticatedRequest(
-          `/stores/${selectedStore}/branches`,
+          `/branches?store_id=${selectedStore}`,
           {},
           true,
-          null,
-          null
+          selectedStore,
+          user?.branch_id || undefined
         );
-        if (response?.data) {
-          setBranches(response.data);
-          // If user is not a super admin, set their branch as selected if available
-          if (response.data.length > 0) {
-            setSelectedBranch(response.data[0].id);
+        if (response?.success && response?.data) {
+          const branchesData = Array.isArray(response.data) ? response.data : response.data?.data || [];
+
+          // Transform API response to match expected format
+          const transformedBranches = branchesData.map((branch: any) => ({
+            id: branch.branch_id || branch.id,
+            name: branch.branch_name || branch.name,
+            store_id: branch.store_id
+          }));
+
+          setBranches(transformedBranches);
+
+          // If user has a specific branch assigned, set that as selected
+          if (user?.branch_id) {
+            setSelectedBranch(user.branch_id);
+          } else if (transformedBranches.length > 0) {
+            // Otherwise, set the first branch as selected
+            setSelectedBranch(transformedBranches[0].id);
           } else {
             setSelectedBranch(null);
           }
+        } else {
+          setBranches([]);
+          setSelectedBranch(null);
         }
       } catch (error) {
         console.error('Error fetching branches:', error);

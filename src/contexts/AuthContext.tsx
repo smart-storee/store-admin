@@ -23,6 +23,7 @@ interface AuthContextType {
   refreshAuthToken: () => Promise<boolean>;
   isLoading: boolean;
   isAuthenticated: boolean;
+  store_name: string | null;
 }
 
 interface AuthProviderProps {

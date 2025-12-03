@@ -227,14 +227,14 @@ export const makeAuthenticatedRequest = async (
   } catch (error: any) {
     const duration = Date.now() - startTime;
 
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      // Network error - backend server might be down
-      const errorMessage = 'Unable to connect to the server. Please make sure the backend API is running.';
+    if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
+      // Network error - backend server might be down or unreachable
+      const errorMessage = 'Unable to connect to the server. Please ensure:\n1. The backend API server is running\n2. The server is accessible at http://localhost:3000\n3. Your internet/network connection is working properly';
       logApiCall({
         level: 'error',
         method: options.method || 'GET',
         url: sanitizedEndpoint,
-        error: errorMessage,
+        error: 'Network error - unable to connect to server',
         duration,
       });
       throw new Error(errorMessage);
@@ -341,10 +341,29 @@ export const refreshAuthToken = async (): Promise<boolean> => {
       localStorage.removeItem('refreshToken');
       return false;
     }
-  } catch (error) {
+  } catch (error: any) {
     const duration = Date.now() - startTime;
 
     console.error('Token refresh error:', error);
+
+    if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
+      // Network error - backend server might be down or unreachable
+      const errorMessage = 'Unable to connect to the server for token refresh. Please ensure:\n1. The backend API server is running\n2. The server is accessible at http://localhost:3000\n3. Your internet/network connection is working properly';
+
+      logApiCall({
+        level: 'error',
+        method: 'POST',
+        url: '/auth/refresh-token',
+        error: 'Network error - unable to connect for token refresh',
+        duration,
+      });
+
+      // If refresh fails due to network issues, clear stored tokens to force re-login
+      localStorage.removeItem('adminUser');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('refreshToken');
+      return false;
+    }
 
     logApiCall({
       level: 'error',
@@ -478,14 +497,14 @@ export const loginRequest = async (email: string, password: string): Promise<any
   } catch (error: any) {
     const duration = Date.now() - startTime;
 
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      // Network error - backend server might be down
-      const errorMessage = 'Unable to connect to the server. Please make sure the backend API is running.';
+    if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
+      // Network error - backend server might be down or unreachable
+      const errorMessage = 'Unable to connect to the server. Please ensure:\n1. The backend API server is running\n2. The server is accessible at http://localhost:3000\n3. Your internet/network connection is working properly';
       logApiCall({
         level: 'error',
         method: 'POST',
         url: '/auth/login',
-        error: errorMessage,
+        error: 'Network error - unable to connect to server',
         duration,
       });
       throw new Error(errorMessage);
