@@ -6,9 +6,8 @@ import { Product, ApiResponse, Pagination, Store, Branch } from '@/types';
 import { RoleGuard } from '@/components/RoleGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { NextPage } from 'next';
 
-const ProductsPage: NextPage = () => {
+const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);

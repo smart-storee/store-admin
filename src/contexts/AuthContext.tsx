@@ -3,16 +3,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Define types
-interface AdminUser {
-  user_id: number;
-  user_name: string;
-  email: string;
-  store_id: number;
-  branch_id?: number;
-  role: string;
-  permissions: string[];
-}
+// Import types from shared types file
+import { AdminUser } from '@/types';
 
 interface AuthContextType {
   user: AdminUser | null;

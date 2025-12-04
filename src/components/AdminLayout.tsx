@@ -195,9 +195,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 {/* Store/Branch selector */}
                 {/* <StoreBranchSelector /> */}
                 <div className="flex items-center">
-                <span className="mr-4">Welcome, {user?.user_name}</span>
+                <span className="mr-4">Welcome, {user?.name}</span>
                 <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center text-white">
-                  {user?.user_name.charAt(0).toUpperCase()}
+                  {user?.name.charAt(0).toUpperCase()}
                 </div>
               </div>
               </div>
