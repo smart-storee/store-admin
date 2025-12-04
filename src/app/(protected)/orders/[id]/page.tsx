@@ -77,16 +77,16 @@ export default function OrderDetailPage() {
   }
 
   return (
-    // <RoleGuard
-    //   requiredPermissions={['view_orders']}
-    //   fallback={
-    //     <div className="p-6 text-center">
-    //       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-    //         Access denied. You do not have permission to view orders.
-    //       </div>
-    //     </div>
-    //   }
-    // >
+    <RoleGuard
+      requiredPermissions={['view_orders']}
+      fallback={
+        <div className="p-6 text-center">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            Access denied. You do not have permission to view orders.
+          </div>
+        </div>
+      }
+    >
       <div className="p-6">
         {order && (
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -280,6 +280,6 @@ export default function OrderDetailPage() {
           </div>
         )}
       </div>
-    // </RoleGuard>
+    </RoleGuard>
   );
 }

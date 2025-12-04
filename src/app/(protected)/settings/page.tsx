@@ -184,8 +184,8 @@ export default function SettingsPage() {
         </div>
       }
     >
-      <div className={`min-h-screen ${bgClass} p-4 sm:p-6 lg:p-8 transition-colors duration-300`}>
-        <div className="max-w-4xl mx-auto">
+      <div>
+        <div className="mx-auto">
           {/* Header */}
           <div className="mb-8">
             <h1 className={`text-3xl font-bold ${textPrimary}`}>App Settings</h1>
@@ -230,8 +230,8 @@ export default function SettingsPage() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`flex-1 py-3 px-4 text-sm font-medium transition-all whitespace-nowrap ${activeTab === tab.id
-                      ? `text-indigo-600 border-b-2 border-indigo-600 ${tabActiveBg}`
-                      : `${textSecondary} ${hoverClass}`
+                    ? `text-indigo-600 border-b-2 border-indigo-600 ${tabActiveBg}`
+                    : `${textSecondary} ${hoverClass}`
                     }`}
                 >
                   <span className="flex items-center justify-center gap-2">
@@ -530,8 +530,8 @@ export default function SettingsPage() {
                       <p className={`text-xs ${textTertiary} mt-1`}>Allow customers to pay when they receive their order</p>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-semibold ${settings.is_cod_enabled === 1
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
-                        : 'bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300'
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
+                      : 'bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300'
                       }`}>
                       {settings.is_cod_enabled === 1 ? 'Enabled' : 'Disabled'}
                     </div>
@@ -554,8 +554,8 @@ export default function SettingsPage() {
                       <p className={`text-xs ${textTertiary} mt-1`}>Enable credit/debit card and digital wallet payments</p>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-semibold ${settings.is_online_payment_enabled === 1
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
-                        : 'bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300'
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
+                      : 'bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300'
                       }`}>
                       {settings.is_online_payment_enabled === 1 ? 'Enabled' : 'Disabled'}
                     </div>
@@ -590,8 +590,8 @@ export default function SettingsPage() {
                     <p className={`text-xs ${textTertiary} mt-1`}>The app will be temporarily unavailable to customers</p>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-xs font-semibold ${settings.maintenance_mode === 1
-                      ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200'
-                      : 'bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300'
+                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200'
+                    : 'bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300'
                     }`}>
                     {settings.maintenance_mode === 1 ? 'Active' : 'Inactive'}
                   </div>

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleGuard } from '@/components/RoleGuard';
-import { ApiResponse, Product, Category, Branch } from '@/types';
+import { ApiResponse, Product, Category, Branch, ProductVariant } from '@/types';
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function EditProductPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +27,36 @@ export default function EditProductPage() {
     is_active: 1,
     product_image: '',
   });
+
+  // Fetch product variants when product loads
+  useEffect(() => {
+    const fetchVariants = async () => {
+      if (params.id && user?.store_id) {
+        try {
+          const response: ApiResponse<{ data: ProductVariant[] }> =
+            await makeAuthenticatedRequest(
+              `/products/${params.id}/variants?store_id=${user?.store_id}`,
+              {},
+              true, // auto-refresh token
+              user?.store_id,
+              user?.branch_id || undefined
+            );
+
+          if (response.success) {
+            setVariants(response.data.data || response.data);
+          } else {
+            console.error('Failed to fetch variants:', response.message);
+          }
+        } catch (err) {
+          console.error('Variants fetch error:', err);
+        }
+      }
+    };
+
+    if (params.id && user?.store_id) {
+      fetchVariants();
+    }
+  }, [params.id, user?.store_id, user?.branch_id]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -219,8 +250,7 @@ export default function EditProductPage() {
                   onChange={handleChange}
                   rows={3}
                   className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                />
-              </textarea>
+                ></textarea>
               </div>
               
               <div className="col-span-6 sm:col-span-3">
@@ -318,7 +348,96 @@ export default function EditProductPage() {
               </div>
             </div>
           </div>
-          
+
+          {/* Product Variants Section */}
+          <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Product Variants</h3>
+            <div className="mb-4">
+              <button
+                onClick={() => router.push(`/product-variants/new?product_id=${params.id}`)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+              >
+                Add New Variant
+              </button>
+            </div>
+
+            {/* Variants List */}
+            <div id="variants-list" className="space-y-3">
+              {variants.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Variant Name
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Price
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Stock
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {variants.map((variant) => (
+                        <tr key={variant.variant_id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{variant.variant_name}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">₹{variant.variant_price}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{variant.stock} units</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              variant.is_active === 1
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {variant.is_active === 1 ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => router.push(`/product-variants/${variant.variant_id}/edit`)}
+                              className="text-indigo-600 hover:text-indigo-900 mr-3"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => router.push(`/product-variants/${variant.variant_id}`)}
+                              className="text-gray-600 hover:text-gray-900"
+                            >
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500">
+                  No variants found for this product. <button
+                    onClick={() => router.push(`/product-variants/new?product_id=${params.id}`)}
+                    className="text-indigo-600 hover:text-indigo-800 font-medium"
+                  >
+                    Add a new variant
+                  </button>.
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="px-4 py-3 bg-gray-50 sm:px-6 flex justify-end">
             <button
               type="button"

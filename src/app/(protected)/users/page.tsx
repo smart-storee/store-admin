@@ -58,12 +58,13 @@ export default function UsersPage() {
         const usersData = response.data.users || response.data;
         setUsers(usersData);
         
-        if (response.pagination) {
-          setTotalPages(Math.ceil(response.pagination.total / response.pagination.limit));
-          setTotalCount(response.pagination.total);
-        } else {
+        // if (response.pagination) {
+        //   setTotalPages(Math.ceil(response.pagination.total / response.pagination.limit));
+        //   setTotalCount(response.pagination.total);
+        // } else {
+          console.log(usersData.length);
           setTotalCount(usersData.length);
-        }
+        // }
       } else {
         throw new Error(response.message || 'Failed to fetch users');
       }
@@ -187,12 +188,12 @@ export default function UsersPage() {
                 <p className={`${t.textSecondary} text-sm mt-1`}>Manage team members and user access</p>
               </div>
               <div className="flex items-center gap-4">
-                <button
+                {/* <button
                   onClick={() => setIsDarkMode(!isDarkMode)}
                   className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-slate-700/50 text-yellow-400 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'} transition-all duration-300`}
                 >
                   {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-                </button>
+                </button> */}
                 <button
                   onClick={() => window.location.href = '/users/new'}
                   className={`${t.button.primary} px-6 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
@@ -308,7 +309,7 @@ export default function UsersPage() {
                     {/* User Info */}
                     <div className="flex items-start gap-4 flex-1 min-w-0">
                       <div className={`w-12 h-12 rounded-full ${isDarkMode ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-gradient-to-br from-blue-400 to-indigo-500'} flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
-                        {u.name.charAt(0).toUpperCase()}
+                        {u.name?.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className={`text-lg font-semibold ${t.text} truncate`}>{u.name}</h3>

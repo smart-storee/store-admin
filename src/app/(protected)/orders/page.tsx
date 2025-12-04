@@ -5,6 +5,7 @@ import { makeAuthenticatedRequest } from '@/utils/api';
 import { Order, ApiResponse, Pagination, Branch } from '@/types';
 import { RoleGuard } from '@/components/RoleGuard';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ChevronLeft, ChevronRight, Search, MapPin, Phone, Calendar, Package, TrendingUp, Clock, CheckCircle, XCircle, Eye, Edit, Moon, Sun, MoreVertical, Filter, Download } from 'lucide-react';
 
 interface OrderStats {
@@ -28,7 +29,6 @@ export default function OrdersPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const [orderStats, setOrderStats] = useState<OrderStats>({
     total: 0,
     pending: 0,
@@ -40,6 +40,8 @@ export default function OrdersPage() {
   });
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
 
   useEffect(() => {
     const fetchBranches = async () => {
@@ -169,7 +171,7 @@ export default function OrdersPage() {
     return configs[status] || configs.pending;
   };
 
-  const theme = {
+  const themeStyles = {
     dark: {
       bg: 'bg-slate-900',
       headerBg: 'bg-slate-800/50',
@@ -204,20 +206,20 @@ export default function OrdersPage() {
     }
   };
 
-  const t = isDarkMode ? theme.dark : theme.light;
+  const t = theme === 'dark' ? themeStyles.dark : themeStyles.light;
 
   return (
     <RoleGuard
       requiredPermissions={['manage_orders']}
       fallback={
-        <div className={`p-6 text-center ${isDarkMode ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50'}`}>
-          <div className={`${isDarkMode ? 'bg-red-900/30 border-red-700/50' : 'bg-red-50 border-red-200'} border rounded-lg px-4 py-3 mb-4`}>
-            <p className={isDarkMode ? 'text-red-300' : 'text-red-700'}>Access denied. You do not have permission to view orders.</p>
+        <div className="p-6 text-center">
+          <div className="border rounded-lg px-4 py-3 mb-4">
+            <p className="text-red-700 dark:text-red-300">Access denied. You do not have permission to view orders.</p>
           </div>
         </div>
       }
     >
-      <div className={`min-h-screen ${isDarkMode ? 'bg-slate-900' : theme.light.bg} transition-colors duration-300`}>
+      <div className="min-h-screen transition-colors duration-300">
         {/* Header */}
         <div className={`${t.headerBg} border-b ${t.cardBorder} sticky top-0 z-40 backdrop-blur-xl transition-all duration-300`}>
           <div className="max-w-7xl mx-auto px-8 py-6">
@@ -228,12 +230,6 @@ export default function OrdersPage() {
                 </h1>
                 <p className={`${t.textSecondary} text-sm mt-1`}>Track and manage all customer orders</p>
               </div>
-              <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-slate-700/50 text-yellow-400 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'} transition-all duration-300`}
-              >
-                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
             </div>
           </div>
         </div>
@@ -320,9 +316,9 @@ export default function OrdersPage() {
 
           {/* Error Message */}
           {error && (
-            <div className={`${isDarkMode ? 'bg-red-900/30 border-red-700/50' : 'bg-red-50 border-red-200'} border rounded-xl p-4 mb-8 flex items-center gap-3`}>
-              <XCircle size={20} className={isDarkMode ? 'text-red-400' : 'text-red-600'} />
-              <p className={`text-sm font-medium ${isDarkMode ? 'text-red-300' : 'text-red-800'}`}>{error}</p>
+            <div className={`border rounded-xl p-4 mb-8 flex items-center gap-3 ${theme === 'dark' ? 'bg-red-900/30 border-red-700/50' : 'bg-red-50 border-red-200'}`}>
+              <XCircle size={20} className={theme === 'dark' ? 'text-red-400' : 'text-red-600'} />
+              <p className={`text-sm font-medium ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{error}</p>
             </div>
           )}
 
@@ -330,13 +326,13 @@ export default function OrdersPage() {
           {loading ? (
             <div className={`${t.cardBg} rounded-xl border ${t.cardBorder} shadow-sm p-12`}>
               <div className="flex flex-col items-center justify-center gap-4">
-                <div className={`w-12 h-12 border-4 ${isDarkMode ? 'border-slate-700 border-t-blue-500' : 'border-blue-200 border-t-blue-600'} rounded-full animate-spin`}></div>
+                <div className={`w-12 h-12 border-4 ${theme === 'dark' ? 'border-slate-700 border-t-blue-500' : 'border-blue-200 border-t-blue-600'} rounded-full animate-spin`}></div>
                 <p className={`${t.textSecondary} font-medium`}>Loading orders...</p>
               </div>
             </div>
           ) : orders.length === 0 ? (
             <div className={`${t.cardBg} rounded-xl border ${t.cardBorder} shadow-sm p-12 text-center`}>
-              <Package size={48} className={`mx-auto ${isDarkMode ? 'text-slate-600' : 'text-slate-300'} mb-3`} />
+              <Package size={48} className={`mx-auto ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'} mb-3`} />
               <p className={`${t.textSecondary} font-medium`}>No orders found</p>
             </div>
           ) : (

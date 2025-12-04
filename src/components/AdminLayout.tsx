@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import DarkModeToggle from '@/components/DarkModeToggle';
+import StoreBranchSelector from '@/components/StoreBranchSelector';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -25,8 +26,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navigation: NavigationItem[] = [
     { name: 'Dashboard', href: '/dashboard', permission: 'view_dashboard' },
     { name: 'Branches', href: '/branches', permission: 'manage_branches' },
-    { name: 'Products', href: '/products', permission: 'manage_products' },
-    { name: 'Categories', href: '/categories', permission: 'manage_categories' },
+    { name: 'Setup Flow', href: '/setup-flow', permission: 'manage_categories' },
+    // { name: 'Products', href: '/products', permission: 'manage_products' },
+    // { name: 'Categories', href: '/categories', permission: 'manage_categories' },
     { name: 'Orders', href: '/orders', permission: 'manage_orders' },
     { name: 'Customers', href: '/customers', permission: 'manage_customers' },
     { name: 'Users', href: '/users', permission: 'manage_users' },
@@ -153,14 +155,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </div>
           <div className="flex-shrink-0 flex border-t border-indigo-800 p-4">
             <div className="flex items-center justify-between w-full">
-              <div>
-                <div className="text-base font-medium text-white">
-                  {user?.user_name}
-                </div>
-                <div className="text-sm font-medium text-indigo-300">
-                  {user?.email}
-                </div>
-              </div>
               <div className="flex items-center space-x-3">
                 <DarkModeToggle />
                 <button
@@ -177,6 +171,40 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
       {/* Main content */}
       <div className="md:pl-64 flex flex-col flex-1">
+        <div className="md:pr-4">
+          {/* Top header with branch selector */}
+          <div className="bg-white dark:bg-gray-800 shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-16">
+                <div className="flex items-center">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {pathname === '/dashboard' && 'Dashboard'}
+                    {pathname === '/branches' && 'Branches Management'}
+                    {/* {pathname === '/products' && 'Products Management'} */}
+                    {/* {pathname === '/categories' && 'Categories Management'} */}
+                    {pathname === '/orders' && 'Orders Management'}
+                    {pathname === '/customers' && 'Customers Management'}
+                    {pathname === '/users' && 'Users Management'}
+                    {pathname === '/notifications' && 'Notifications'}
+                    {pathname === '/reports' && 'Reports & Analytics'}
+                    {pathname === '/api-logs' && 'API Logs'}
+                    {pathname === '/settings' && 'App Settings'}
+                  </h2>
+                </div>
+
+                {/* Store/Branch selector */}
+                {/* <StoreBranchSelector /> */}
+                <div className="flex items-center">
+                <span className="mr-4">Welcome, {user?.user_name}</span>
+                <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center text-white">
+                  {user?.user_name.charAt(0).toUpperCase()}
+                </div>
+              </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <main className="flex-1">
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">

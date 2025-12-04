@@ -158,7 +158,7 @@ export default function EditCategoryPage() {
                   onChange={handleChange}
                   rows={3}
                   className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full max-w-lg sm:text-sm border-gray-300 rounded-md p-2 border"
-                />
+                ></textarea>
               </div>
               
               <div className="col-span-6">

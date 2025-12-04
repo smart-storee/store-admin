@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { Branch, ApiResponse, Pagination } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { MapPin, Plus, Search, Edit3, Trash2, Eye, ChevronLeft, ChevronRight, AlertCircle, Package, Users, Building2, TrendingUp, Moon, Sun } from 'lucide-react';
 
 export default function BranchesPage() {
@@ -16,8 +17,8 @@ export default function BranchesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const { user } = useAuth();
+  const { theme } = useTheme();
 
   useEffect(() => {
     fetchBranches();
@@ -111,7 +112,7 @@ export default function BranchesPage() {
   const totalOrders = branches.reduce((sum, b) => sum + (b.total_orders || 0), 0);
   // const totalEmployees = branches.reduce((sum, b) => sum + (b.employees || 0), 0);
 
-  const theme = {
+  const themeStyles = {
     dark: {
       bg: 'bg-slate-900',
       bgGradient: 'from-slate-900 via-slate-800 to-slate-900',
@@ -172,10 +173,11 @@ export default function BranchesPage() {
     }
   };
 
-  const t = isDarkMode ? theme.dark : theme.light;
+  const t = theme === 'dark' ? themeStyles.dark : themeStyles.light;
+  const isDarkMode = theme === 'dark';
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? theme.dark.bgGradient : theme.light.bgGradient} ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'} transition-colors duration-300`}>
+    <div className="min-h-screen transition-colors duration-300">
       {/* Header */}
       <div className={`${t.headerBg} border-b ${t.headerBorder} sticky top-0 z-40 backdrop-blur-xl transition-all duration-300`}>
         <div className="max-w-7xl mx-auto px-8 py-6">
@@ -186,22 +188,13 @@ export default function BranchesPage() {
               </h1>
               <p className={`${t.textSecondary} text-sm mt-1`}>Manage and monitor all your business locations efficiently</p>
             </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-slate-700/50 text-yellow-400 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'} transition-all duration-300`}
-                title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              >
-                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
-              <button
-                onClick={() => window.location.href = '/branches/new'}
-                className={`${t.button.primary} px-6 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
-              >
-                <Plus size={20} />
-                Add New Branch
-              </button>
-            </div>
+            <button
+              onClick={() => window.location.href = '/branches/new'}
+              className={`${t.button.primary} px-6 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
+            >
+              <Plus size={20} />
+              Add New Branch
+            </button>
           </div>
         </div>
       </div>
@@ -274,9 +267,9 @@ export default function BranchesPage() {
 
         {/* Error Message */}
         {error && (
-          <div className={`${isDarkMode ? 'bg-red-900/30 border-red-700/50' : 'bg-red-50 border-red-200'} border rounded-xl p-4 mb-8 flex items-center gap-3`}>
-            <AlertCircle size={20} className={isDarkMode ? 'text-red-400' : 'text-red-600'} />
-            <p className={`text-sm font-medium ${isDarkMode ? 'text-red-300' : 'text-red-800'}`}>{error}</p>
+          <div className={`border rounded-xl p-4 mb-8 flex items-center gap-3 ${theme === 'dark' ? 'bg-red-900/30 border-red-700/50' : 'bg-red-50 border-red-200'}`}>
+            <AlertCircle size={20} className={theme === 'dark' ? 'text-red-400' : 'text-red-600'} />
+            <p className={`text-sm font-medium ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{error}</p>
           </div>
         )}
 
@@ -284,7 +277,7 @@ export default function BranchesPage() {
         {loading ? (
           <div className={`${t.cardBg} rounded-xl border ${t.cardBorder} shadow-sm p-12`}>
             <div className="flex flex-col items-center justify-center gap-4">
-              <div className={`w-12 h-12 border-4 ${isDarkMode ? 'border-slate-700 border-t-blue-500' : 'border-blue-200 border-t-blue-600'} rounded-full animate-spin`}></div>
+              <div className={`w-12 h-12 border-4 ${theme === 'dark' ? 'border-slate-700 border-t-blue-500' : 'border-blue-200 border-t-blue-600'} rounded-full animate-spin`}></div>
               <p className={`${t.textSecondary} font-medium`}>Loading branches...</p>
             </div>
           </div>
@@ -323,7 +316,7 @@ export default function BranchesPage() {
                         </td>
                         <td className={`px-6 py-4 ${t.textSecondary} text-sm`}>{branch.address}</td>
                         <td className="px-6 py-4 text-center">
-                          <div className={`inline-flex items-center gap-2 ${isDarkMode ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-50 text-blue-900'} px-3 py-1.5 rounded-lg`}>
+                          <div className={`inline-flex items-center gap-2 ${theme === 'dark' ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-50 text-blue-900'} px-3 py-1.5 rounded-lg`}>
                             <Package size={16} />
                             <span className="font-semibold">{(branch.total_orders || 0).toLocaleString()}</span>
                           </div>
@@ -331,8 +324,8 @@ export default function BranchesPage() {
                         <td className="px-6 py-4 text-center">
                           <span className={`inline-flex px-3 py-1.5 rounded-full text-xs font-semibold ${
                             branch.is_active === 1
-                              ? isDarkMode ? 'bg-green-900/40 text-green-300' : 'bg-green-100 text-green-700'
-                              : isDarkMode ? 'bg-slate-700/50 text-slate-300' : 'bg-slate-100 text-slate-700'
+                              ? theme === 'dark' ? 'bg-green-900/40 text-green-300' : 'bg-green-100 text-green-700'
+                              : theme === 'dark' ? 'bg-slate-700/50 text-slate-300' : 'bg-slate-100 text-slate-700'
                           }`}>
                             {branch.is_active === 1 ? '● Active' : '● Inactive'}
                           </span>
@@ -343,21 +336,21 @@ export default function BranchesPage() {
                           }`}>
                             <button
                               onClick={() => window.location.href = `/branches/${branch.branch_id}`}
-                              className={`p-2 rounded-lg transition-colors duration-200 ${isDarkMode ? 'hover:bg-blue-900/40 text-blue-400' : 'hover:bg-blue-100 text-blue-600'}`}
+                              className={`p-2 rounded-lg transition-colors duration-200 ${theme === 'dark' ? 'hover:bg-blue-900/40 text-blue-400' : 'hover:bg-blue-100 text-blue-600'}`}
                               title="View"
                             >
                               <Eye size={18} />
                             </button>
                             <button
                               onClick={() => window.location.href = `/branches/${branch.branch_id}/edit`}
-                              className={`p-2 rounded-lg transition-colors duration-200 ${isDarkMode ? 'hover:bg-indigo-900/40 text-indigo-400' : 'hover:bg-indigo-100 text-indigo-600'}`}
+                              className={`p-2 rounded-lg transition-colors duration-200 ${theme === 'dark' ? 'hover:bg-indigo-900/40 text-indigo-400' : 'hover:bg-indigo-100 text-indigo-600'}`}
                               title="Edit"
                             >
                               <Edit3 size={18} />
                             </button>
                             <button
                               onClick={() => handleDeleteBranch(branch.branch_id)}
-                              className={`p-2 rounded-lg transition-colors duration-200 ${isDarkMode ? 'hover:bg-red-900/40 text-red-400' : 'hover:bg-red-100 text-red-600'}`}
+                              className={`p-2 rounded-lg transition-colors duration-200 ${theme === 'dark' ? 'hover:bg-red-900/40 text-red-400' : 'hover:bg-red-100 text-red-600'}`}
                               title="Delete"
                             >
                               <Trash2 size={18} />

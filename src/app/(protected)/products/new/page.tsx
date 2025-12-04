@@ -119,7 +119,7 @@ export default function NewProductPage() {
         );
 
       if (response.success) {
-        router.push('/products'); // Redirect to products list
+        router.push('/setup-flow'); // Redirect to products list
       } else {
         throw new Error(response.message || 'Failed to create product');
       }
@@ -292,7 +292,7 @@ export default function NewProductPage() {
           <div className="px-4 py-3 bg-gray-50 sm:px-6 flex justify-end">
             <button
               type="button"
-              onClick={() => router.push('/products')}
+              onClick={() => router.push('/setup-flow')}
               className="bg-white py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3"
             >
               Cancel
