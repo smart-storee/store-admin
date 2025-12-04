@@ -29,6 +29,7 @@ export default function NewProductVariantPage() {
     is_active: 1,
     variant_image: '',
     attribute_values: '{}', // JSON string for attributes like size, color, etc.
+    branch_id: user?.branch_id || 1,
   });
 
   // Fetch products and branches on initial load

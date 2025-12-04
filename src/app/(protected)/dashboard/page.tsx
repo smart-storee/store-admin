@@ -84,6 +84,11 @@ export default function DashboardPage() {
         setLoading(true);
         setError(null);
 
+        // Add null check for user
+        if (!user || !user.store_id) {
+          throw new Error('User information is not available');
+        }
+
         const params = new URLSearchParams({
           store_id: user.store_id.toString(),
         });

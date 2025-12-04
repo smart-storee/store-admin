@@ -113,11 +113,11 @@ export default function CustomerDetailPage() {
             <div className={`px-4 py-5 sm:px-6 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="flex items-center">
                 <div className="flex-shrink-0 h-16 w-16 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xl">
-                  {customer.customer_name.charAt(0).toUpperCase()}
+                  {(customer.customer_name || customer.name || 'U').charAt(0).toUpperCase()}
                 </div>
                 <div className="ml-4">
                   <h3 className={`text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                    {customer.customer_name}
+                    {customer.customer_name || customer.name || 'Unknown Customer'}
                   </h3>
                   <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                     Member since {new Date(customer.created_at).toLocaleDateString('en-IN', {

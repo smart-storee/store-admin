@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -278,7 +278,7 @@ export default function SetupFlowPage() {
             currentStep={currentStep}
             counts={{ categories: categories.length, products: products.length, variants: variants.length }}
             onStepClick={setCurrentStep}
-            theme={isDark}
+            theme={isDark ? 'dark' : 'light'}
           />
 
           {/* Main Content */}
@@ -290,11 +290,11 @@ export default function SetupFlowPage() {
                 items={categories}
                 isEmpty={categories.length === 0}
                 onAdd={() => router.push('/categories/new')}
-                onView={(item) => router.push(`/categories/${item.category_id}`)}
-                renderItem={(category) => (
+                onView={(item: Category) => router.push(`/categories/${item.category_id}`)}
+                renderItem={(category: Category) => (
                   <CategoryCard category={category} theme={isDark} onView={() => router.push(`/categories/${category.category_id}`)} />
                 )}
-                theme={isDark}
+                theme={isDark ? 'dark' : 'light'}
               />
             )}
 
@@ -305,7 +305,7 @@ export default function SetupFlowPage() {
                 items={products}
                 isEmpty={products.length === 0}
                 onAdd={() => router.push('/products/new')}
-                renderItem={(product) => (
+                renderItem={(product: Product) => (
                   <ProductCard
                     product={product}
                     theme={isDark}
@@ -313,7 +313,7 @@ export default function SetupFlowPage() {
                     onEdit={() => router.push(`/products/${product.product_id}/edit`)}
                   />
                 )}
-                theme={isDark}
+                theme={isDark ? 'dark' : 'light'}
               />
             )}
 
@@ -324,11 +324,11 @@ export default function SetupFlowPage() {
                 items={variants}
                 isEmpty={variants.length === 0}
                 onAdd={() => products.length > 0 ? router.push('/product-variants/new') : null}
-                renderItem={(variant) => (
-                  <VariantRow variant={variant} theme={isDark} onView={() => router.push(`/products/${variant.product_id}`)} />
+                renderItem={(variant: ProductVariant) => (
+                  <VariantRow variant={variant} theme={isDark ? 'dark' : 'light'} onView={() => router.push(`/products/${variant.product_id}`)} />
                 )}
                 isTable={true}
-                theme={isDark}
+                theme={isDark ? 'dark' : 'light'}
               />
             )}
           </div>
@@ -376,11 +376,23 @@ export default function SetupFlowPage() {
 
 // Sub-components
 
-function ProgressSteps({ steps, currentStep, counts, onStepClick, theme }: any) {
-  const isDark = theme;
+interface ProgressCounts {
+  categories: number;
+  products: number;
+  variants: number;
+}
+
+function ProgressSteps({ steps, currentStep, counts, onStepClick, theme }: {
+  steps: StepConfig[];
+  currentStep: number;
+  counts: ProgressCounts;
+  onStepClick: (stepId: number) => void;
+  theme: string
+}) {
+  const isDark = theme === 'dark';
   return (
     <div className={`grid grid-cols-3 gap-4`}>
-      {steps.map((step) => (
+      {steps.map((step: StepConfig) => (
         <button
           key={step.id}
           onClick={() => onStepClick(step.id)}
@@ -412,8 +424,9 @@ function ProgressSteps({ steps, currentStep, counts, onStepClick, theme }: any) 
               ? 'text-gray-400'
               : 'text-gray-500'
           }`}>
-            {counts[`${'categories' + (step.id - 1)}`] !== undefined ? 
-              Object.values(counts)[step.id - 1] : 0}
+            {step.id === 1 ? counts.categories :
+             step.id === 2 ? counts.products :
+             step.id === 3 ? counts.variants : 0}
           </div>
         </button>
       ))}
@@ -421,8 +434,18 @@ function ProgressSteps({ steps, currentStep, counts, onStepClick, theme }: any) 
   );
 }
 
-function StepContent({ title, description, items, isEmpty, onAdd, renderItem, isTable, theme }: any) {
-  const isDark = theme;
+function StepContent<T extends Category | Product | ProductVariant, K = T>({ title, description, items, isEmpty, onAdd, onView, renderItem, isTable, theme }: {
+  title: string;
+  description: string;
+  items: T[];
+  isEmpty: boolean;
+  onAdd: () => void;
+  onView?: (item: K) => void;
+  renderItem: (item: T) => ReactNode;
+  isTable?: boolean;
+  theme: string;
+}) {
+  const isDark = theme === 'dark';
   return (
     <>
       <div className="flex justify-between items-start mb-6">
@@ -446,14 +469,18 @@ function StepContent({ title, description, items, isEmpty, onAdd, renderItem, is
       {isEmpty ? (
         <EmptyState theme={isDark} onAdd={onAdd} />
       ) : isTable ? (
-        <VariantsTable items={items} theme={isDark} />
+        <VariantsTable items={items as ProductVariant[]} theme={isDark ? 'dark' : 'light'} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((item) => (
-            <div key={item.category_id || item.product_id || item.variant_id}>
-              {renderItem(item)}
-            </div>
-          ))}
+          {items.map((item: T) => {
+            // Use type assertion to access the appropriate ID property
+            const key = (item as any).category_id || (item as any).product_id || (item as any).variant_id || 0;
+            return (
+              <div key={key}>
+                {renderItem(item)}
+              </div>
+            );
+          })}
         </div>
       )}
     </>
@@ -546,8 +573,11 @@ function ProductCard({ product, theme, onView, onEdit }: any) {
   );
 }
 
-function VariantsTable({ items, theme }: any) {
-  const isDark = theme;
+function VariantsTable({ items, theme }: {
+  items: ProductVariant[];
+  theme: string;
+}) {
+  const isDark = theme === 'dark';
   return (
     <div className="overflow-x-auto">
       <table className={`w-full text-sm`}>
@@ -571,8 +601,8 @@ function VariantsTable({ items, theme }: any) {
           </tr>
         </thead>
         <tbody>
-          {items.map((variant) => (
-            <VariantRow key={variant.variant_id} variant={variant} theme={isDark} />
+          {items.map((variant: ProductVariant) => (
+            <VariantRow key={variant.variant_id} variant={variant} theme={isDark ? 'dark' : 'light'} />
           ))}
         </tbody>
       </table>
@@ -580,8 +610,12 @@ function VariantsTable({ items, theme }: any) {
   );
 }
 
-function VariantRow({ variant, theme, onView }: any) {
-  const isDark = theme;
+function VariantRow({ variant, theme, onView }: {
+  variant: ProductVariant;
+  theme: string;
+  onView?: () => void;
+}) {
+  const isDark = theme === 'dark';
   return (
     <tr className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
       <td className={`px-4 py-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>

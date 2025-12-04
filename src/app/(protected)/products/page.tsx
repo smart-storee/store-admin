@@ -6,8 +6,9 @@ import { Product, ApiResponse, Pagination, Store, Branch } from '@/types';
 import { RoleGuard } from '@/components/RoleGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { NextPage } from 'next';
 
-export default function ProductsPage() {
+const ProductsPage: NextPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
@@ -47,7 +48,7 @@ export default function ProductsPage() {
     fetchProducts();
   }, [currentPage, searchTerm, selectedBranch, user]);
 
-const fetchProducts = async () => {
+  const fetchProducts = async () => {
   try {
     setLoading(true);
     setError(null);
@@ -369,4 +370,6 @@ const fetchProducts = async () => {
       </div>
     </RoleGuard>
   );
-}
+};
+
+export default ProductsPage;

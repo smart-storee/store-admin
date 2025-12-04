@@ -82,7 +82,7 @@ export default function EditProductPage() {
             product_description: prod.product_description || '',
             base_price: prod.base_price,
             category_id: prod.category_id,
-            branch_id: prod.branch_id,
+            branch_id: prod.branch_id || 0,
             is_active: prod.is_active,
             product_image: prod.product_image || '',
           });

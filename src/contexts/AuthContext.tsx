@@ -38,6 +38,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const [store_name, setStoreName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -48,9 +49,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const storedRefreshToken = localStorage.getItem('refreshToken');
 
     if (storedUser && storedToken && storedRefreshToken) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
       setToken(storedToken);
       setRefreshToken(storedRefreshToken);
+      setStoreName(parsedUser.store_name || null);
     }
 
     setIsLoading(false);
@@ -75,6 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(admin);
         setToken(auth_token);
         setRefreshToken(refresh_token);
+        setStoreName(admin.store_name || null);
 
         localStorage.setItem('adminUser', JSON.stringify(admin));
         localStorage.setItem('authToken', auth_token);
@@ -95,11 +99,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     setToken(null);
     setRefreshToken(null);
-    
+    setStoreName(null);
+
     localStorage.removeItem('adminUser');
     localStorage.removeItem('authToken');
     localStorage.removeItem('refreshToken');
-    
+
     router.push('/login');
   };
 
@@ -150,6 +155,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         refreshAuthToken,
         isLoading,
         isAuthenticated,
+        store_name,
       }}
     >
       {children}

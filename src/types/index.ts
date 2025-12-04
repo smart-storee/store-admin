@@ -6,6 +6,19 @@ export type NextPageWithLayout<P = {}, IP = P> = React.FC<P> & {
 };
 
 // User types
+export interface User {
+  user_id: number;
+  user_name: string;
+  email: string;
+  phone: string;
+  role: string;
+  status: string;
+  branch_name?: string;
+  created_at: string;
+  last_login_at?: string;
+  permissions: string[];
+}
+
 export interface AdminUser {
   user_id: number;
   name: string;
@@ -17,6 +30,7 @@ export interface AdminUser {
   phone: string;
   created_at: string;
   store_name: string;
+  branch_id?: number;
 }
 
 export interface LoginCredentials {
@@ -59,8 +73,14 @@ export interface CreateStoreRequest {
 export interface Branch {
   branch_id: number;
   branch_name: string;
+  branch_code?: string;
+  branch_email?: string;
   address: string;
+  address_line1?: string;
+  address_line2?: string;
   city: string;
+  state?: string;
+  country?: string;
   pincode: string;
   phone: string;
   latitude: number;
@@ -72,6 +92,14 @@ export interface Branch {
   store_id: number;
   surge_fee: number;
   delivery_charge: number;
+  
+  // Manager information
+  manager_name?: string;
+  manager_phone?: string;
+  manager_email?: string;
+  
+  // Additional properties that might be used in the form
+  [key: string]: any; // This allows for any additional properties that might be needed
 }
 
 export interface CreateBranchRequest {
@@ -97,6 +125,15 @@ export interface Category {
   is_active: number;
   sort_order: number;
   created_at: string;
+  
+  // Additional properties for display
+  store_id?: number;
+  store_name?: string;
+  branch_id?: number;
+  branch_name?: string;
+  
+  // Allow for any additional properties that might come from the API
+  [key: string]: any;
 }
 
 export interface CreateCategoryRequest {
@@ -120,6 +157,8 @@ export interface Product {
   total_stock: number;
   total_sold: number;
   is_active: number;
+  branch_id?: number;
+  branch_name?: string;
   created_at: string;
 }
 
@@ -137,11 +176,18 @@ export interface CreateProductRequest {
 export interface ProductVariant {
   variant_id: number;
   product_id: number;
+  product_name?: string;
   variant_name: string;
   variant_price: number;
+  variant_description?: string;
+  sku?: string;
+  barcode?: string;
   stock: number;
   is_active: number;
+  variant_image?: string;
+  attribute_values?: any;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface CreateProductVariantRequest {
@@ -151,21 +197,44 @@ export interface CreateProductVariantRequest {
 }
 
 // Order types
+export interface OrderItem {
+  item_id: number;
+  order_id: number;
+  product_id: number;
+  product_name: string;
+  variant_id?: number;
+  variant_name?: string;
+  quantity: number;
+  price: number;
+  total: number;
+  total_price?: number; // Alias for total
+  unit_price?: number;  // Alias for price
+  notes?: string;
+  created_at: string;
+}
+
 export interface Order {
   order_id: number;
   order_number: string;
   customer_name: string;
+  branch_address?: string;
+  branch_phone?: string;
   customer_phone: string;
+  customer_email?: string;
   branch_id: number;
   branch_name: string;
   order_status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled';
   payment_method: string;
   payment_status: 'pending' | 'completed' | 'failed';
+  delivery_address: string;
+  delivery_landmark?: string;
+  delivery_notes?: string;
   subtotal: number;
   delivery_charge: number;
   platform_fee: number;
   total_amount: number;
   items_count: number;
+  items?: OrderItem[];
   created_at: string;
 }
 
@@ -207,12 +276,22 @@ export interface OrderDetail {
 export interface Customer {
   cust_id: number;
   name: string;
+  customer_name?: string; // Alias for name, used in some places
   phone: string;
   email: string;
   total_orders: number;
   total_spent: number;
   profile_picture: string | null;
   created_at: string;
+  
+  // Additional contact information
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  
+  // Allow for any additional properties that might come from the API
+  [key: string]: any;
 }
 
 // App Settings types

@@ -193,16 +193,16 @@ export default function OrderDetailPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white">
-                      {order.items.map((item: any) => (
+                      {(order.items || []).map((item) => (
                         <tr key={item.item_id || item.product_id}>
                           <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                            {item.product_name || item.product?.product_name}
+                            {item.product_name}
                             {item.variant_name && (
                               <div className="text-gray-500">{item.variant_name}</div>
                             )}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                            ₹{item.price?.toFixed(2) || item.unit_price || '0.00'}
+                            ₹{item.price.toFixed(2)}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                             {item.quantity}

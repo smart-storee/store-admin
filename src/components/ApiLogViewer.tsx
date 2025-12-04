@@ -156,7 +156,7 @@ const ApiLogViewer = () => {
               >
                 <div className="flex justify-between">
                   <div className="flex items-center">
-                    <span className={`font-semibold ${logLevelColors[log.level]}`}>
+                    <span className={`font-semibold ${logLevelColors[log.level as LogLevel]}`}>
                       {log.level.toUpperCase()}
                     </span>
                     <span className="mx-2 text-gray-400">|</span>
