@@ -143,11 +143,11 @@ export default function BranchDetailPage() {
                   <dt className="text-sm font-medium text-gray-500">Status</dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      branch.is_active === 1
+                      branch.is_active == 1
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {branch.is_active === 1 ? 'Active' : 'Inactive'}
+                      {branch.is_active == 1 ? 'Active' : 'Inactive'}
                     </span>
                   </dd>
                 </div>
@@ -158,12 +158,30 @@ export default function BranchDetailPage() {
                   </dd>
                 </div>
                 <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Address</dt>
+                  <dt className="text-sm font-medium text-gray-500">Address Line 1</dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {branch.address}, {branch.city}, {branch.pincode}
+                    {branch.address_line_1}
                   </dd>
                 </div>
                 <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                  <dt className="text-sm font-medium text-gray-500">Address Line 2</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                    {branch.address_line_2}
+                  </dd>
+                </div>
+                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                  <dt className="text-sm font-medium text-gray-500">City</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                    {branch.city}
+                  </dd>
+                </div>
+                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                  <dt className="text-sm font-medium text-gray-500">Pincode</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                    {branch.pincode}
+                  </dd>
+                </div>
+                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                   <dt className="text-sm font-medium text-gray-500">Coordinates</dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                     {branch.latitude || 'N/A'}, {branch.longitude || 'N/A'}

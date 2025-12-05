@@ -177,11 +177,11 @@ export default function ProductVariantDetailPage() {
                   <dt className="text-sm font-medium text-gray-500">Status</dt>
                   <dd className="mt-1 text-sm sm:mt-0 sm:col-span-2">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      variant.is_active === 1
+                      variant.is_active == 1
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {variant.is_active === 1 ? 'Active' : 'Inactive'}
+                      {variant.is_active == 1 ? 'Active' : 'Inactive'}
                     </span>
                   </dd>
                 </div>
