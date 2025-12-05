@@ -209,7 +209,7 @@ export default function SetupFlowPage() {
       <AccessDenied theme={isDark} />
     }>
       <div className={`min-h-screen ${bgClass} py-8 px-4 sm:px-6 lg:px-8`}>
-        <div className="max-w-6xl mx-auto">
+        <div>
           {/* Header */}
           <div className="mb-8">
             <h1 className={`text-3xl font-bold ${headingClass} mb-2`}>

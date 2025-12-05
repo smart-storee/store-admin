@@ -55,16 +55,15 @@ export default function UsersPage() {
         await makeAuthenticatedRequest(`/users?${params.toString()}`);
 
       if (response.success) {
-        const usersData = response.data.users || response.data;
+        const usersData = Array.isArray(response.data) ? response.data : [];
         setUsers(usersData);
-        
-        // if (response.pagination) {
-        //   setTotalPages(Math.ceil(response.pagination.total / response.pagination.limit));
-        //   setTotalCount(response.pagination.total);
-        // } else {
-          console.log(usersData.length);
+
+        if (response.pagination) {
+          setTotalPages(Math.ceil(response.pagination.total / response.pagination.limit));
+          setTotalCount(response.pagination.total);
+        } else {
           setTotalCount(usersData.length);
-        // }
+        }
       } else {
         throw new Error(response.message || 'Failed to fetch users');
       }
@@ -179,7 +178,7 @@ export default function UsersPage() {
       <div className={`min-h-screen ${isDarkMode ? 'bg-slate-900' : theme.light.bg} transition-colors duration-300`}>
         {/* Header */}
         <div className={`${t.headerBg} border-b ${t.cardBorder} sticky top-0 z-40 backdrop-blur-xl transition-all duration-300`}>
-          <div className="max-w-7xl mx-auto px-8 py-6">
+          <div className="px-8 py-6">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
@@ -206,7 +205,7 @@ export default function UsersPage() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-8 py-8">
+        <div className="px-8 py-8">
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {[

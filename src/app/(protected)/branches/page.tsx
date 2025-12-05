@@ -178,90 +178,88 @@ export default function BranchesPage() {
 
   return (
     <div className="min-h-screen transition-colors duration-300">
-      {/* Header */}
-      <div className={`${t.headerBg} border-b ${t.headerBorder} sticky top-0 z-40 backdrop-blur-xl transition-all duration-300`}>
-        <div className="max-w-7xl mx-auto px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className={`text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent`}>
-                Branches Management
-              </h1>
-              <p className={`${t.textSecondary} text-sm mt-1`}>Manage and monitor all your business locations efficiently</p>
-            </div>
-            <button
-              onClick={() => window.location.href = '/branches/new'}
-              className={`${t.button.primary} px-6 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
-            >
-              <Plus size={20} />
-              Add New Branch
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {[
-            { label: 'Total Branches', value: totalCount, icon: Building2, color: 'blue' },
-            { label: 'Active Branches', value: activeBranches, icon: TrendingUp, color: 'green' },
-            { label: 'Total Orders', value: totalOrders.toLocaleString(), icon: Package, color: 'purple' },
-            // { label: 'Total Employees', value: totalEmployees, icon: Users, color: 'orange' }
-          ].map((stat, i) => {
-            const Icon = stat.icon;
-            const colorClasses = t.statCard[stat.color as keyof typeof t.statCard];
-            const iconClasses = {
-              blue: isDarkMode ? 'text-blue-400' : 'text-blue-600',
-              green: isDarkMode ? 'text-green-400' : 'text-green-600',
-              purple: isDarkMode ? 'text-purple-400' : 'text-purple-600',
-              // orange: isDarkMode ? 'text-orange-400' : 'text-orange-600'
-            };
-            return (
-              <div key={i} className={`bg-gradient-to-br ${colorClasses} border rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:scale-105`}>
-                <div className="flex items-center justify-between mb-4">
-                  <Icon size={28} className={iconClasses[stat.color as keyof typeof iconClasses]} />
-                </div>
-                <p className={`${t.textTertiary} text-sm font-medium mb-1`}>{stat.label}</p>
-                <p className={`text-3xl font-bold ${t.text}`}>{stat.value}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Search and Filter Bar */}
-        <div className={`${t.cardBg} rounded-xl border ${t.cardBorder} p-5 mb-8 shadow-sm hover:shadow-md transition-shadow duration-300`}>
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex-1">
-              <label className={`block text-sm font-medium ${t.text} mb-2`}>Search Branches</label>
+      <div className="py-8">
+        {/* Combined Header with Search and Filter Bar */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+            {/* Search */}
+            <div className="md:col-span-5">
+              <label className="block text-sm font-medium text-gray-600 mb-2">Search</label>
               <div className="relative">
-                <Search size={18} className={`absolute left-3 top-3.5 ${t.textTertiary}`} />
+                <Search size={18} className="absolute left-3 top-3 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by name, city, or address..."
+                  placeholder="Search by branch name, city, or address..."
                   value={searchTerm}
                   onChange={handleSearch}
-                  className={`w-full pl-10 pr-4 py-2.5 border ${t.input} rounded-lg focus:outline-none focus:ring-2 transition-all duration-300`}
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
                 />
               </div>
             </div>
-            <div className="w-full md:w-auto">
-              <label className={`block text-sm font-medium ${t.text} mb-2`}>Filter</label>
-              <div className="flex gap-2">
-                {['all', 'active', 'inactive'].map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => handleFilterChange(filter as 'all' | 'active' | 'inactive')}
-                    className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 ${
-                      filterActive === filter
-                        ? t.button.filterActive
-                        : t.button.filter
-                    }`}
-                  >
-                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                  </button>
-                ))}
+
+            {/* Status Filter */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-600 mb-2">Status</label>
+              <div className="relative">
+                <select
+                  value={filterActive}
+                  onChange={(e) => handleFilterChange(e.target.value as 'all' | 'active' | 'inactive')}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer transition-all duration-200"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+                <svg
+                  className="absolute right-3 top-3.5 pointer-events-none text-gray-400"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
               </div>
             </div>
+
+            {/* Sort By */}
+            <div className="md:col-span-3">
+              <label className="block text-sm font-medium text-gray-600 mb-2">Sort By</label>
+              <div className="relative">
+                <select
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer transition-all duration-200"
+                >
+                  <option value="newest">Date (Newest First)</option>
+                  <option value="oldest">Date (Oldest First)</option>
+                  <option value="name">Name (A-Z)</option>
+                </select>
+                <svg
+                  className="absolute right-3 top-3.5 pointer-events-none text-gray-400"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Right side: Add New Branch button */}
+            <div className="md:col-span-2 flex items-end">
+              <button
+                onClick={() => window.location.href = '/branches/new'}
+                className={`${t.button.primary} w-full px-6 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 whitespace-nowrap`}
+              >
+                <Plus size={20} />
+                Add New Branch
+              </button>
+            </div>
+          </div>
+
+          {/* Results count */}
+          <div className="text-gray-600 text-sm mt-4">
+            Showing {branches.length} of {totalCount} branches
           </div>
         </div>
 

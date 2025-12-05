@@ -369,4 +369,13 @@ export interface DashboardSummary {
     revenue: number;
     orders: number;
   }>;
+  recent_orders?: Array<{
+    order_id: number;
+    customer_name: string;
+    customer_email?: string;
+    order_date: string;
+    total_amount: number;
+    status: string;
+    payment_method?: string;
+  }>;
 }

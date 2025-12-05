@@ -78,7 +78,7 @@ export default function OrderDetailPage() {
 
   return (
     <RoleGuard
-      requiredPermissions={['view_orders']}
+      requiredPermissions={['manage_orders']}
       fallback={
         <div className="p-6 text-center">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -202,13 +202,13 @@ export default function OrderDetailPage() {
                             )}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                            ₹{item.price.toFixed(2)}
+                            ₹{Number(item.unit_price || item.price || 0).toFixed(2)}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                             {item.quantity}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                            ₹{(item.total_price || (item.price * item.quantity))}
+                            ₹{Number(item.total_price || ((item.unit_price || item.price || 0) * item.quantity)).toFixed(2)}
                           </td>
                         </tr>
                       ))}

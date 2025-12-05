@@ -91,9 +91,9 @@ export default function CustomersPage() {
           );
 
         if (response.success) {
-          const customersData = Array.isArray(response.data.data) 
-            ? response.data.data 
-            : response.data.data || response.data || [];
+          const customersData = Array.isArray(response.data)
+            ? response.data
+            : [];
 
           setCustomers(customersData);
 
@@ -236,20 +236,20 @@ export default function CustomersPage() {
             {customers.length > 0 ? (
               <>
                 <ul className={`${theme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'} divide-y`}>
-                  {customers.map((customer) => (
-                    <li key={customer.customer_id}>
+                  {customers.map((customer, index) => (
+                    <li key={customer.cust_id || `customer-${index}`}>
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white">
-                              {customer.customer_name?.charAt(0).toUpperCase()}
+                              {customer.name?.charAt(0).toUpperCase()}
                             </div>
                             <div className="ml-4">
                               <p className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                                {customer.customer_name}
+                                {customer.name}
                               </p>
                               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                {customer.customer_email}
+                                {customer.email}
                               </p>
                             </div>
                           </div>
@@ -271,7 +271,7 @@ export default function CustomersPage() {
                             </span>
                             <div className="flex space-x-2">
                               <button
-                                onClick={() => window.location.href = `/customers/${customer.customer_id}`}
+                                onClick={() => window.location.href = `/customers/${customer.cust_id}`}
                                 className={`${theme === 'dark' ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-900'}`}
                               >
                                 View
@@ -281,7 +281,7 @@ export default function CustomersPage() {
                         </div>
                         <div className="mt-2 flex justify-between">
                           <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                            {customer.customer_phone}
+                            {customer.phone}
                           </div>
                           {customer.branch_name && (
                             <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>

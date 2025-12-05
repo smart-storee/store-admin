@@ -222,7 +222,7 @@ export default function OrdersPage() {
       <div className="min-h-screen transition-colors duration-300">
         {/* Header */}
         <div className={`${t.headerBg} border-b ${t.cardBorder} sticky top-0 z-40 backdrop-blur-xl transition-all duration-300`}>
-          <div className="max-w-7xl mx-auto px-8 py-6">
+          <div className="px-8 py-6">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
@@ -234,7 +234,7 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-8 py-8">
+        <div className="px-8 py-8">
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
             {[

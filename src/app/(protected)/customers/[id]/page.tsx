@@ -24,6 +24,7 @@ export default function CustomerDetailPage() {
         setLoading(true);
         setError(null);
 
+        console.log('Fetching customer with ID:', params.id);
         const response: ApiResponse<{ data: Customer }> =
           await makeAuthenticatedRequest(
             `/customers/${params.id}?store_id=${user?.store_id}`,
@@ -33,24 +34,24 @@ export default function CustomerDetailPage() {
             user?.branch_id || undefined
           );
 
+        console.log('Customer API Response:', response);
+
         if (response.success) {
-          const customerData = response.data.data || response.data;
+          // Backend returns: { success: true, data: { profile, stats, addresses, orders } }
+          const customerData = response.data.profile || response.data;
+          console.log('Customer Data:', customerData);
+
+          // Merge stats into customer data for display
+          if (response.data.stats) {
+            customerData.total_orders = response.data.stats.total_orders;
+            customerData.total_spent = response.data.stats.total_spent;
+          }
+
           setCustomer(customerData);
-          
-          // Fetch related orders
-          const ordersResponse: ApiResponse<{ data: Order[] }> =
-            await makeAuthenticatedRequest(
-              `/orders?customer_id=${params.id}&store_id=${user?.store_id}`,
-              {},
-              true, // auto-refresh token
-              user?.store_id,
-              user?.branch_id || undefined
-            );
-            
-          if (ordersResponse.success) {
-            setOrders(ordersResponse.data.data || ordersResponse.data);
-          } else {
-            console.error('Failed to fetch customer orders:', ordersResponse.message);
+
+          // Use orders from the same response
+          if (response.data.orders) {
+            setOrders(response.data.orders);
           }
         } else {
           throw new Error(response.message || 'Failed to fetch customer');
@@ -82,7 +83,7 @@ export default function CustomerDetailPage() {
 
   return (
     <RoleGuard
-      requiredPermissions={['view_customers']}
+      requiredPermissions={['manage_customers']}
       fallback={
         <div className="p-6 text-center">
           <div className={`border rounded-lg px-4 py-3 mb-4 ${theme === 'dark' ? 'bg-red-900/30 border-red-700/50 text-red-300' : 'bg-red-100 border-red-400 text-red-700'}`}>
@@ -113,11 +114,11 @@ export default function CustomerDetailPage() {
             <div className={`px-4 py-5 sm:px-6 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="flex items-center">
                 <div className="flex-shrink-0 h-16 w-16 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xl">
-                  {(customer.customer_name || customer.name || 'U').charAt(0).toUpperCase()}
+                  {(customer.name || 'U').charAt(0).toUpperCase()}
                 </div>
                 <div className="ml-4">
                   <h3 className={`text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                    {customer.customer_name || customer.name || 'Unknown Customer'}
+                    {customer.name || 'Unknown Customer'}
                   </h3>
                   <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                     Member since {new Date(customer.created_at).toLocaleDateString('en-IN', {
@@ -139,13 +140,13 @@ export default function CustomerDetailPage() {
                         <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                         <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                       </svg>
-                      {customer.customer_email}
+                      {customer.email}
                     </div>
                     <div className={`mt-1 flex items-center text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}>
                       <svg className={`flex-shrink-0 mr-1.5 h-5 w-5 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                       </svg>
-                      {customer.customer_phone}
+                      {customer.phone}
                     </div>
                   </div>
                 </div>

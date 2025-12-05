@@ -87,7 +87,7 @@ export default function BranchDetailPage() {
 
   return (
     <RoleGuard
-      requiredPermissions={['view_branches']}
+      requiredPermissions={['manage_branches']}
       fallback={
         <div className="p-6 text-center">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -134,7 +134,7 @@ export default function BranchDetailPage() {
                 {branch.branch_name}
               </h3>
               <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                {branch.branch_code ? `Code: ${branch.branch_code}` : ''}
+                {branch.store_name || ''}
               </p>
             </div>
             <div className="border-t border-gray-200">
@@ -152,36 +152,33 @@ export default function BranchDetailPage() {
                   </dd>
                 </div>
                 <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Email</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {branch.branch_email || 'N/A'}
-                  </dd>
-                </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                   <dt className="text-sm font-medium text-gray-500">Phone</dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {branch.branch_phone || 'N/A'}
-                  </dd>
-                </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Address</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {branch.address_line1}, {branch.address_line2 && `${branch.address_line2}, `}
-                    {branch.city}, {branch.state}, {branch.pincode}, {branch.country}
+                    {branch.phone || 'N/A'}
                   </dd>
                 </div>
                 <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Manager</dt>
+                  <dt className="text-sm font-medium text-gray-500">Address</dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {branch.manager_name}<br/>
-                    {branch.manager_email}<br/>
-                    {branch.manager_phone}
+                    {branch.address}, {branch.city}, {branch.pincode}
                   </dd>
                 </div>
                 <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                   <dt className="text-sm font-medium text-gray-500">Coordinates</dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {branch.latitude}, {branch.longitude}
+                    {branch.latitude || 'N/A'}, {branch.longitude || 'N/A'}
+                  </dd>
+                </div>
+                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                  <dt className="text-sm font-medium text-gray-500">Delivery Charge</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                    ₹{branch.delivery_charge || '0.00'}
+                  </dd>
+                </div>
+                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                  <dt className="text-sm font-medium text-gray-500">Surge Fee</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                    ₹{branch.surge_fee || '0.00'}
                   </dd>
                 </div>
                 <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
@@ -191,13 +188,19 @@ export default function BranchDetailPage() {
                   </dd>
                 </div>
                 <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                  <dt className="text-sm font-medium text-gray-500">Total Revenue</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                    ₹{branch.total_revenue || '0.00'}
+                  </dd>
+                </div>
+                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                   <dt className="text-sm font-medium text-gray-500">Created</dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {new Date(branch.created_at).toLocaleDateString('en-IN', {
+                    {branch.created_at ? new Date(branch.created_at).toLocaleDateString('en-IN', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
-                    })}
+                    }) : 'N/A'}
                   </dd>
                 </div>
               </dl>
