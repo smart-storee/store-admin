@@ -320,13 +320,44 @@ export default function OrderDetailPage() {
                         <span className="text-sm text-gray-900">₹{order.subtotal || '0.00'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Delivery Charge</span>
-                        <span className="text-sm text-gray-900">₹{order.delivery_charge || '0.00'}</span>
+                        <span className="text-sm text-gray-500">
+                          Delivery Charge
+                          {order.is_free_delivery && order.free_delivery_reason && (
+                            <span className="ml-2 text-xs text-green-600">
+                              ({order.free_delivery_reason})
+                            </span>
+                          )}
+                        </span>
+                        <span className={`text-sm ${order.is_free_delivery ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                          ₹{order.delivery_charge || '0.00'}
+                        </span>
+                        {order.is_free_delivery && (
+                          <span className="text-sm text-green-600 font-medium ml-2">
+                            FREE
+                          </span>
+                        )}
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-500">Platform Fee</span>
                         <span className="text-sm text-gray-900">₹{order.platform_fee || '0.00'}</span>
                       </div>
+                      {(order.discount_amount && parseFloat(order.discount_amount) > 0) && (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-500">
+                              Coupon Discount
+                              {order.coupon_code && (
+                                <span className="ml-2 text-xs text-gray-400">
+                                  ({order.coupon_code})
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-sm text-green-600 font-medium">
+                              -₹{parseFloat(order.discount_amount || 0).toFixed(2)}
+                            </span>
+                          </div>
+                        </>
+                      )}
                       <div className="flex justify-between pt-2 border-t border-gray-200">
                         <span className="text-base font-medium text-gray-900">Total</span>
                         <span className="text-base font-medium text-gray-900">₹{order.total_amount || '0.00'}</span>

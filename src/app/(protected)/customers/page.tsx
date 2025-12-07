@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useStore } from '@/contexts/StoreContext';
 import { RoleGuard } from '@/components/RoleGuard';
 import { ApiResponse, Customer, Branch, Pagination } from '@/types';
 
@@ -14,6 +15,7 @@ interface CustomerWithBranch extends Customer {
 export default function CustomersPage() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { features } = useStore();
   const [customers, setCustomers] = useState<CustomerWithBranch[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
@@ -150,6 +152,22 @@ export default function CustomersPage() {
   const activeCustomers = customers.filter(c => c.is_active === 1).length;
   const totalOrders = customers.reduce((sum, c) => sum + (parseInt(c.total_orders) || 0), 0);
   const totalRevenue = customers.reduce((sum, c) => sum + (parseFloat(c.total_spent) || 0), 0);
+
+  // Check if customers feature is enabled
+  if (features && !features.customers_enabled) {
+    return (
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} p-8`}>
+        <div className={`max-w-4xl mx-auto ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-8 text-center`}>
+          <h1 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            Customer List Access Disabled
+          </h1>
+          <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+            Customer list access is not enabled for this store. Please contact support to enable this feature.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <RoleGuard

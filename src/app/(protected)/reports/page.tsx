@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useStore } from '@/contexts/StoreContext';
 import { RoleGuard } from '@/components/RoleGuard';
 import { ApiResponse, Branch } from '@/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -32,6 +33,7 @@ interface ReportData {
 export default function ReportsPage() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { features } = useStore();
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
@@ -401,6 +403,22 @@ export default function ReportsPage() {
       setError('Failed to generate PDF report. Please try again.');
     }
   };
+
+  // Check if reports feature is enabled
+  if (features && !features.reports_enabled) {
+    return (
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} p-8`}>
+        <div className={`max-w-4xl mx-auto ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-8 text-center`}>
+          <h1 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            Reports Access Disabled
+          </h1>
+          <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+            Reports access is not enabled for this store. Please contact support to enable this feature.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <RoleGuard

@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface RoleGuardProps {
-  allowedRoles?: ('admin' | 'staff' | 'delivery')[];
+  allowedRoles?: ('admin' | 'staff' | 'delivery' | 'super_admin' | 'manager')[];
   requiredPermissions?: string[];
   fallback?: ReactNode;
   children: ReactNode;

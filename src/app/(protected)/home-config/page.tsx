@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useStore } from '@/contexts/StoreContext';
 import { RoleGuard } from '@/components/RoleGuard';
 import HomeScreenPreview from '@/components/HomeScreenPreview';
 import { ApiResponse, Product, Category } from '@/types';
@@ -77,6 +78,7 @@ const defaultConfig: HomeScreenConfig = {
 export default function HomeConfigPage() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { features } = useStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -279,6 +281,22 @@ export default function HomeConfigPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
           <p className={`mt-4 ${textSecondary}`}>Loading configuration...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if home config feature is enabled
+  if (features && !features.home_config_enabled) {
+    return (
+      <div className={`min-h-screen ${bgClass} p-8`}>
+        <div className={`max-w-4xl mx-auto ${cardBgClass} rounded-lg shadow-lg p-8 text-center`}>
+          <h1 className={`text-2xl font-bold mb-4 ${textPrimary}`}>
+            Home Config Management Disabled
+          </h1>
+          <p className={textSecondary}>
+            Home config management is not enabled for this store. Please contact support to enable this feature.
+          </p>
         </div>
       </div>
     );

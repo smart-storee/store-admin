@@ -16,6 +16,19 @@ type Branch = {
   [key: string]: any; // Allow additional fields
 };
 
+type StoreFeatures = {
+  push_notifications_enabled: boolean;
+  sms_enabled: boolean;
+  whatsapp_enabled: boolean;
+  email_enabled: boolean;
+  coupon_codes_enabled: boolean;
+  app_settings_enabled: boolean;
+  add_options_enabled: boolean;
+  max_categories: number | null;
+  max_products: number | null;
+  max_variants: number | null;
+};
+
 type StoreContextType = {
   stores: Store[];
   branches: Branch[];
@@ -24,6 +37,8 @@ type StoreContextType = {
   setSelectedStore: (storeId: number | null) => void;
   setSelectedBranch: (branchId: number | null) => void;
   loading: boolean;
+  features: StoreFeatures | null;
+  refreshFeatures: () => Promise<void>;
 };
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -34,6 +49,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [selectedStore, setSelectedStore] = useState<number | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [features, setFeatures] = useState<StoreFeatures | null>(null);
   const { user } = useAuth();
 
   // Set the user's assigned store on component mount
@@ -42,16 +58,27 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       // Fetch store details for the user's assigned store
       const fetchStoreDetails = async () => {
         try {
-          const response = await makeAuthenticatedRequest(
-            `/stores/${user.store_id}`,
-            {},
-            true,
-            user.store_id,
-            user.branch_id || undefined
-          );
-          if (response?.success && response?.data) {
+          // Fetch store details and app config (which includes features)
+          const [storeResponse, appConfigResponse] = await Promise.all([
+            makeAuthenticatedRequest(
+              `/stores/${user.store_id}`,
+              {},
+              true,
+              user.store_id,
+              user.branch_id || undefined
+            ),
+            makeAuthenticatedRequest(
+              `/app-settings?store_id=${user.store_id}`,
+              {},
+              true,
+              user.store_id,
+              user.branch_id || undefined
+            )
+          ]);
+
+          if (storeResponse?.success && storeResponse?.data) {
             // Handle both array and object response formats
-            const storeData = Array.isArray(response.data) ? response.data[0] : response.data?.data || response.data;
+            const storeData = Array.isArray(storeResponse.data) ? storeResponse.data[0] : storeResponse.data?.data || storeResponse.data;
 
             // Format the store data to match the Store type
             setStores([{
@@ -67,6 +94,65 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
               name: user.store_name || 'User Store'
             }]);
             setSelectedStore(user.store_id);
+          }
+
+          // Extract features from app config response
+          if (appConfigResponse?.success && appConfigResponse?.data) {
+            const configData = appConfigResponse.data.data || appConfigResponse.data;
+            if (configData.features) {
+              setFeatures({
+                push_notifications_enabled: configData.features.push_notifications_enabled === true || configData.features.push_notifications_enabled === 1,
+                sms_enabled: configData.features.sms_enabled === true || configData.features.sms_enabled === 1,
+                whatsapp_enabled: configData.features.whatsapp_enabled === true || configData.features.whatsapp_enabled === 1,
+                email_enabled: configData.features.email_enabled === true || configData.features.email_enabled === 1,
+                coupon_codes_enabled: configData.features.coupon_codes_enabled === true || configData.features.coupon_codes_enabled === 1,
+                app_settings_enabled: configData.features.app_settings_enabled === true || configData.features.app_settings_enabled === 1,
+                add_options_enabled: configData.features.add_options_enabled === true || configData.features.add_options_enabled === 1,
+                customers_enabled: configData.features.customers_enabled === true || configData.features.customers_enabled === 1,
+                employees_enabled: configData.features.employees_enabled === true || configData.features.employees_enabled === 1,
+                home_config_enabled: configData.features.home_config_enabled === true || configData.features.home_config_enabled === 1,
+                reports_enabled: configData.features.reports_enabled === true || configData.features.reports_enabled === 1,
+                max_categories: configData.features.max_categories ?? null,
+                max_products: configData.features.max_products ?? null,
+                max_variants: configData.features.max_variants ?? null,
+              });
+            } else {
+              // If no features in response, set defaults (all enabled)
+              setFeatures({
+                push_notifications_enabled: true,
+                sms_enabled: true,
+                whatsapp_enabled: false,
+                email_enabled: false,
+                coupon_codes_enabled: true,
+                app_settings_enabled: true,
+                add_options_enabled: true,
+                customers_enabled: true,
+                employees_enabled: true,
+                home_config_enabled: true,
+                reports_enabled: true,
+                max_categories: null,
+                max_products: null,
+                max_variants: null,
+              });
+            }
+          } else {
+            // If app config fetch fails, set defaults
+            setFeatures({
+              push_notifications_enabled: true,
+              sms_enabled: true,
+              whatsapp_enabled: false,
+              email_enabled: false,
+              coupon_codes_enabled: true,
+              app_settings_enabled: true,
+              add_options_enabled: true,
+              customers_enabled: true,
+              employees_enabled: true,
+              home_config_enabled: true,
+              reports_enabled: true,
+              max_categories: null,
+              max_products: null,
+              max_variants: null,
+            });
           }
         } catch (error) {
           console.error('Error fetching store details:', error);
@@ -86,6 +172,41 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   }, [user]);
+
+  // Function to refresh features (can be called after super admin updates)
+  const refreshFeatures = async () => {
+    if (!user?.store_id) return;
+
+    try {
+      const appConfigResponse = await makeAuthenticatedRequest(
+        `/app-settings?store_id=${user.store_id}`,
+        {},
+        true,
+        user.store_id,
+        user.branch_id || undefined
+      );
+
+      if (appConfigResponse?.success && appConfigResponse?.data) {
+        const configData = appConfigResponse.data.data || appConfigResponse.data;
+        if (configData.features) {
+          setFeatures({
+            push_notifications_enabled: configData.features.push_notifications_enabled === true || configData.features.push_notifications_enabled === 1,
+            sms_enabled: configData.features.sms_enabled === true || configData.features.sms_enabled === 1,
+            whatsapp_enabled: configData.features.whatsapp_enabled === true || configData.features.whatsapp_enabled === 1,
+            email_enabled: configData.features.email_enabled === true || configData.features.email_enabled === 1,
+            coupon_codes_enabled: configData.features.coupon_codes_enabled === true || configData.features.coupon_codes_enabled === 1,
+            app_settings_enabled: configData.features.app_settings_enabled === true || configData.features.app_settings_enabled === 1,
+            add_options_enabled: configData.features.add_options_enabled === true || configData.features.add_options_enabled === 1,
+            max_categories: configData.features.max_categories ?? null,
+            max_products: configData.features.max_products ?? null,
+            max_variants: configData.features.max_variants ?? null,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing features:', error);
+    }
+  };
 
   // Fetch branches when selectedStore changes
   useEffect(() => {
@@ -149,6 +270,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         setSelectedStore,
         setSelectedBranch,
         loading,
+        features,
+        refreshFeatures,
       }}
     >
       {children}

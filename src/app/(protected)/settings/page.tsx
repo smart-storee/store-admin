@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useStore } from '@/contexts/StoreContext';
 import { RoleGuard } from '@/components/RoleGuard';
 import { ApiResponse, AppSettings } from '@/types';
 
@@ -13,10 +14,12 @@ interface ExtendedAppSettings extends AppSettings {
   upi_id?: string;
   is_upi_enabled?: number;
   delivery_charge?: number;
+  free_delivery_threshold?: number | null;
 }
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { features } = useStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +38,7 @@ export default function SettingsPage() {
     min_order_amount: 100,
     platform_fee: 0,
     delivery_charge: 0,
+    free_delivery_threshold: null,
     is_cod_enabled: 1,
     is_online_payment_enabled: 0,
     is_upi_enabled: 0,
@@ -80,7 +84,7 @@ export default function SettingsPage() {
     if (user?.store_id) {
       fetchSettings();
     }
-  }, [user?.store_id]);
+  }, [user?.store_id, features]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -109,6 +113,13 @@ export default function SettingsPage() {
     setError(null);
     setSaving(true);
 
+    // Check if app settings are enabled
+    if (features && !features.app_settings_enabled) {
+      setError('App settings are not enabled for your store. Please contact support.');
+      setSaving(false);
+      return;
+    }
+
     try {
       const payload = {
         store_id: user?.store_id,
@@ -121,6 +132,7 @@ export default function SettingsPage() {
         min_order_amount: settings.min_order_amount,
         platform_fee: settings.platform_fee,
         delivery_charge: settings.delivery_charge,
+        free_delivery_threshold: settings.free_delivery_threshold,
         is_cod_enabled: settings.is_cod_enabled,
         is_online_payment_enabled: settings.is_online_payment_enabled,
         is_upi_enabled: settings.is_upi_enabled,
@@ -162,6 +174,26 @@ export default function SettingsPage() {
   const textSecondary = isDarkMode ? 'text-slate-400' : 'text-gray-600';
   const textTertiary = isDarkMode ? 'text-slate-500' : 'text-gray-500';
   const inputBgClass = isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-gray-300 text-gray-900';
+
+  // Check if app settings are enabled (wait for features to load)
+  if (features !== null && features && !features.app_settings_enabled) {
+    return (
+      <RoleGuard allowedRoles={['super_admin', 'admin', 'manager']}>
+        <div className={`p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} min-h-screen`}>
+          <div className="max-w-2xl mx-auto text-center py-12">
+            <div className={`p-6 rounded-lg ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-yellow-50 border border-yellow-200'}`}>
+              <h2 className={`text-xl font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                App Settings Disabled
+              </h2>
+              <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                App settings feature is not enabled for your store. Please contact support to enable this feature.
+              </p>
+            </div>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
   const hoverClass = isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-gray-50';
   const tabActiveBg = isDarkMode ? 'bg-slate-800 border-indigo-500' : 'bg-indigo-50 border-indigo-600';
 
@@ -481,6 +513,32 @@ export default function SettingsPage() {
                     </div>
                     <p className={`text-xs ${textTertiary} mt-1`}>
                       Default delivery charge for all branches (can be overridden per branch)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Free Delivery Threshold */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="free_delivery_threshold" className={`block text-sm font-semibold ${textPrimary} mb-2`}>
+                      Free Delivery Threshold (Store Level)
+                    </label>
+                    <div className="relative">
+                      <span className={`absolute left-4 top-2.5 ${textSecondary}`}>₹</span>
+                      <input
+                        type="number"
+                        id="free_delivery_threshold"
+                        name="free_delivery_threshold"
+                        value={settings.free_delivery_threshold || ''}
+                        onChange={handleChange}
+                        step="0.01"
+                        min="0"
+                        placeholder="Leave empty to disable"
+                        className={`w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                      />
+                    </div>
+                    <p className={`text-xs ${textTertiary} mt-1`}>
+                      Orders above this amount get free delivery. Leave empty to disable. Branch-level settings override this.
                     </p>
                   </div>
                 </div>

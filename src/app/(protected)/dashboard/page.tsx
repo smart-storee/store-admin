@@ -57,6 +57,31 @@ export default function DashboardPage() {
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
           </svg>
         );
+      case 'SMS Sent':
+        return (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <line x1="9" y1="10" x2="15" y2="10"></line>
+            <line x1="9" y1="14" x2="13" y2="14"></line>
+          </svg>
+        );
+      case 'Notifications Sent':
+        return (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            <circle cx="18" cy="8" r="3" fill={color}></circle>
+          </svg>
+        );
+      case 'OTP Sent':
+        return (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            <line x1="12" y1="16" x2="12" y2="19"></line>
+            <circle cx="12" cy="20" r="1"></circle>
+          </svg>
+        );
       default:
         return null;
     }
@@ -340,7 +365,10 @@ export default function DashboardPage() {
                   { title: 'Total Orders', subtitle: `${dashboardData.summary.total_orders} ${dashboardData.summary.total_orders === 1 ? 'order' : 'orders'}`, color: '#3B82F6' },
                   { title: 'Total Revenue', subtitle: `₹${dashboardData.summary.total_revenue.toLocaleString()}`, color: '#10B981' },
                   { title: 'Total Customers', subtitle: `${dashboardData.summary.total_customers} ${dashboardData.summary.total_customers === 1 ? 'customer' : 'customers'}`, color: '#8B5CF6' },
-                  { title: 'Active Branches', subtitle: `${dashboardData.summary.active_branches} ${dashboardData.summary.active_branches === 1 ? 'branch' : 'branches'}`, color: '#F59E0B' }
+                  { title: 'Active Branches', subtitle: `${dashboardData.summary.active_branches} ${dashboardData.summary.active_branches === 1 ? 'branch' : 'branches'}`, color: '#F59E0B' },
+                  { title: 'SMS Sent', subtitle: `${dashboardData.summary.total_sms_sent || 0} ${dashboardData.summary.total_sms_sent === 1 ? 'SMS' : 'SMS'}`, color: '#EC4899' },
+                  { title: 'Notifications Sent', subtitle: `${dashboardData.summary.total_notifications_sent || 0} ${dashboardData.summary.total_notifications_sent === 1 ? 'notification' : 'notifications'}`, color: '#06B6D4' },
+                  { title: 'OTP Sent', subtitle: `${dashboardData.summary.total_otp_sent || 0} ${dashboardData.summary.total_otp_sent === 1 ? 'OTP' : 'OTPs'}`, color: '#10B981' }
                 ].map((action, index) => (
               <div
                 key={index}

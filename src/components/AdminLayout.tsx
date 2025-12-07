@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useStore } from '@/contexts/StoreContext';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import DarkModeToggle from '@/components/DarkModeToggle';
 import StoreBranchSelector from '@/components/StoreBranchSelector';
@@ -23,6 +24,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [storeLogo, setStoreLogo] = useState<string>('');
   const { user, logout } = useAuth();
   const { theme } = useTheme();
+  const { features } = useStore();
   const pathname = usePathname();
   const isDarkMode = theme === 'dark';
 
@@ -88,6 +90,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     name: string;
     href: string;
     permission?: string;
+    feature?: string; // Feature flag name to check
   }
 
   // Navigation items based on permissions
@@ -98,19 +101,30 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     // { name: 'Products', href: '/products', permission: 'manage_products' },
     // { name: 'Categories', href: '/categories', permission: 'manage_categories' },
     { name: 'Orders', href: '/orders', permission: 'manage_orders' },
+    { name: 'Coupons', href: '/coupons', permission: 'manage_orders', feature: 'coupon_codes_enabled' },
     { name: 'UPI Transactions', href: '/upi-transactions', permission: 'manage_orders' },
-    { name: 'Customers', href: '/customers', permission: 'manage_customers' },
-    { name: 'Employees', href: '/users', permission: 'manage_users' },
+    { name: 'Customers', href: '/customers', permission: 'manage_customers', feature: 'customers_enabled' },
+    { name: 'Employees', href: '/users', permission: 'manage_users', feature: 'employees_enabled' },
     { name: 'Notifications', href: '/notifications', permission: 'manage_notifications' },
-    { name: 'Home Config', href: '/home-config', permission: 'app_settings' },
-    { name: 'Reports', href: '/reports', permission: 'view_reports' },
+    { name: 'Communication Logs', href: '/communication-logs', permission: 'view_reports' },
+    { name: 'Home Config', href: '/home-config', permission: 'app_settings', feature: 'home_config_enabled' },
+    { name: 'Reports', href: '/reports', permission: 'view_reports', feature: 'reports_enabled' },
     { name: 'API Logs', href: '/api-logs', permission: 'view_dashboard' },
-    { name: 'Settings', href: '/settings', permission: 'app_settings' },
+    { name: 'Billing', href: '/billing', permission: 'view_reports' },
+    { name: 'Settings', href: '/settings', permission: 'app_settings', feature: 'app_settings_enabled' },
   ];
 
-  // Filter navigation based on user permissions and role
+  // Filter navigation based on user permissions, role, and feature flags
   // Owner role should only see Branches and Reports
   const navigation = allNavigationItems.filter((item) => {
+    // Check feature flag if specified
+    if (item.feature && features) {
+      const featureEnabled = features[item.feature as keyof typeof features];
+      if (!featureEnabled) {
+        return false; // Hide menu item if feature is disabled
+      }
+    }
+
     // If user is owner, only show branches and reports
     if (user?.role === 'owner') {
       return item.permission === 'manage_branches' || item.permission === 'view_reports';
@@ -166,6 +180,15 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <path d="M16 10a4 4 0 0 1-8 0"></path>
           </svg>
         );
+      case 'Coupons':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="8" width="18" height="4" rx="1"></rect>
+            <path d="M12 8v13"></path>
+            <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path>
+            <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"></path>
+          </svg>
+        );
       case 'UPI Transactions':
         return (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -213,6 +236,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
         );
+      case 'Communication Logs':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <line x1="9" y1="10" x2="15" y2="10"></line>
+            <line x1="9" y1="14" x2="13" y2="14"></line>
+          </svg>
+        );
       case 'Home Config':
         return (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -257,10 +288,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             {pathname === '/dashboard' && 'Dashboard'}
             {pathname === '/branches' && 'Branches'}
             {pathname === '/orders' && 'Orders'}
+            {pathname === '/coupons' && 'Coupons'}
             {pathname === '/upi-transactions' && 'UPI Transactions'}
             {pathname === '/customers' && 'Customers'}
             {pathname === '/users' && 'Employees'}
             {pathname === '/notifications' && 'Notifications'}
+            {pathname === '/communication-logs' && 'Communication Logs'}
             {pathname === '/reports' && 'Reports'}
             {pathname === '/api-logs' && 'API Logs'}
             {pathname === '/settings' && 'Settings'}
@@ -534,10 +567,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     {/* {pathname === '/products' && 'Products Management'} */}
                     {/* {pathname === '/categories' && 'Categories Management'} */}
                     {pathname === '/orders' && 'Orders Management'}
+                    {pathname === '/coupons' && 'Coupons Management'}
                     {pathname === '/upi-transactions' && 'UPI Transactions'}
                     {pathname === '/customers' && 'Customers Management'}
                     {pathname === '/users' && 'Employees Management'}
                     {pathname === '/notifications' && 'Notifications'}
+                    {pathname === '/communication-logs' && 'Communication Logs'}
                     {pathname === '/home-config' && 'Home Screen Configuration'}
                     {pathname === '/reports' && 'Reports & Analytics'}
                     {pathname === '/api-logs' && 'API Logs'}
