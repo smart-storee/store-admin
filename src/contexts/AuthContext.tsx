@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 // Import types from shared types file
 import { AdminUser } from '@/types';
+import { API_BASE_URL_WITH_VERSION } from '@/config/api.config';
 
 interface AuthContextType {
   user: AdminUser | null;
@@ -54,8 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Login function
   const login = async (email: string, password: string) => {
     try {
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
-      const response = await fetch(`${apiBaseUrl}/admin/auth/login`, {
+      const response = await fetch(`${API_BASE_URL_WITH_VERSION}/admin/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -108,8 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
-      const response = await fetch(`${apiBaseUrl}/admin/auth/refresh-token`, {
+      const response = await fetch(`${API_BASE_URL_WITH_VERSION}/admin/auth/refresh-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
