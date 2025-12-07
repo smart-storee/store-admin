@@ -1,5 +1,5 @@
 // src/services/upiTransactionService.ts
-import { API_URL } from '@/config/api.config';
+import { API_URL, isNgrokUrl } from '@/config/api.config';
 
 interface UpiTransaction {
   transaction_id: number;
@@ -67,10 +67,17 @@ class UpiTransactionService {
   }
 
   private getHeaders(): HeadersInit {
-    return {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${this.token}`,
     };
+
+    // Add ngrok bypass header if using ngrok
+    if (isNgrokUrl()) {
+      headers['ngrok-skip-browser-warning'] = 'true';
+    }
+
+    return headers;
   }
 
   async getUpiTransactions(params: GetTransactionsParams = {}): Promise<UpiTransactionResponse> {

@@ -43,6 +43,11 @@ export const getApiUrl = (endpoint: string): string => {
   return `${API_URL}/${cleanEndpoint}`;
 };
 
+// Check if using ngrok (free tier shows warning page)
+export const isNgrokUrl = (): boolean => {
+  return API_BASE_URL.includes('ngrok') || API_BASE_URL.includes('ngrok-free.app');
+};
+
 // Export for use in error messages and other places
 export { API_BASE_URL as API_SERVER_URL };
 export { API_BASE_URL };

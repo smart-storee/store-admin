@@ -6,7 +6,7 @@ import {
   logApiError,
   logApiCall
 } from '@/utils/apiLogger';
-import { API_URL, API_SERVER_URL } from '@/config/api.config';
+import { API_URL, API_SERVER_URL, isNgrokUrl } from '@/config/api.config';
 
 // Sanitize input to prevent XSS
 export const sanitizeInput = (input: string): string => {
@@ -56,6 +56,11 @@ export const makeAuthenticatedRequest = async (
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
   };
+
+  // Add ngrok bypass header if using ngrok (to skip warning page)
+  if (isNgrokUrl()) {
+    headers['ngrok-skip-browser-warning'] = 'true';
+  }
 
   // Add store and branch headers if they exist
   if (storeId) {
@@ -296,11 +301,18 @@ export const refreshAuthToken = async (): Promise<boolean> => {
   const startTime = Date.now();
 
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add ngrok bypass header if using ngrok
+    if (isNgrokUrl()) {
+      headers['ngrok-skip-browser-warning'] = 'true';
+    }
+
     const response = await fetch(`${API_URL}/auth/refresh-token`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
 
@@ -431,11 +443,18 @@ export const loginRequest = async (email: string, password: string): Promise<any
   const startTime = Date.now();
 
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add ngrok bypass header if using ngrok
+    if (isNgrokUrl()) {
+      headers['ngrok-skip-browser-warning'] = 'true';
+    }
+
     const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(requestBody),
     });
 

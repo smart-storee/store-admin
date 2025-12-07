@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 // Import types from shared types file
 import { AdminUser } from '@/types';
-import { API_BASE_URL_WITH_VERSION } from '@/config/api.config';
+import { API_BASE_URL_WITH_VERSION, isNgrokUrl } from '@/config/api.config';
 
 interface AuthContextType {
   user: AdminUser | null;
@@ -55,11 +55,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Login function
   const login = async (email: string, password: string) => {
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add ngrok bypass header if using ngrok
+      if (isNgrokUrl()) {
+        headers['ngrok-skip-browser-warning'] = 'true';
+      }
+
       const response = await fetch(`${API_BASE_URL_WITH_VERSION}/admin/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({ email, password }),
       });
 
@@ -108,11 +115,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add ngrok bypass header if using ngrok
+      if (isNgrokUrl()) {
+        headers['ngrok-skip-browser-warning'] = 'true';
+      }
+
       const response = await fetch(`${API_BASE_URL_WITH_VERSION}/admin/auth/refresh-token`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({ refresh_token: refreshToken }),
       });
 
