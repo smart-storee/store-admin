@@ -61,7 +61,7 @@ const EditCouponPage = () => {
           total_usage_limit: couponData.total_usage_limit,
           start_date: new Date(couponData.start_date).toISOString().slice(0, 16),
           end_date: new Date(couponData.end_date).toISOString().slice(0, 16),
-          is_active: couponData.is_active === 1 || couponData.is_active === true ? 1 : 0,
+          is_active: couponData.is_active === 1 ? 1 : 0,
         });
       } else {
         setError(response.message || 'Failed to fetch coupon');

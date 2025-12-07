@@ -13,7 +13,8 @@ export default function EditProductVariantPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const { isDarkMode, currentTheme } = useTheme();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [products, setProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [variant, setVariant] = useState<ProductVariant | null>(null);
@@ -312,7 +313,7 @@ export default function EditProductVariantPage() {
                         id="is_active"
                         name="is_active"
                         type="checkbox"
-                        checked={formData.is_active === 1 || formData.is_active === true}
+                        checked={formData.is_active === 1}
                         onChange={handleActiveToggle}
                         className={`focus:ring-indigo-500 h-4 w-4 text-indigo-600 rounded ${
                           isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300'

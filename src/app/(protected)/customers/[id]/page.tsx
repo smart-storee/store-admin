@@ -32,7 +32,7 @@ export default function CustomerDetailPage() {
         }
 
         console.log('Fetching customer with ID:', customerId);
-        const response: ApiResponse<{ data: Customer }> =
+        const response: ApiResponse<{ profile: Customer; stats?: { total_orders: number; total_spent: number }; addresses?: any[]; orders?: Order[] } | Customer> =
           await makeAuthenticatedRequest(
             `/customers/${customerId}?store_id=${user?.store_id}`,
             {},
@@ -45,20 +45,21 @@ export default function CustomerDetailPage() {
 
         if (response.success) {
           // Backend returns: { success: true, data: { profile, stats, addresses, orders } }
-          const customerData = response.data.profile || response.data;
+          const responseData = response.data as { profile?: Customer; stats?: { total_orders: number; total_spent: number }; addresses?: any[]; orders?: Order[] } | Customer;
+          const customerData = ('profile' in responseData ? responseData.profile : responseData) as Customer;
           console.log('Customer Data:', customerData);
 
           // Merge stats into customer data for display
-          if (response.data.stats) {
-            customerData.total_orders = response.data.stats.total_orders;
-            customerData.total_spent = response.data.stats.total_spent;
+          if ('stats' in responseData && responseData.stats) {
+            customerData.total_orders = responseData.stats.total_orders;
+            customerData.total_spent = responseData.stats.total_spent;
           }
 
           setCustomer(customerData);
 
           // Use orders from the same response
-          if (response.data.orders) {
-            setOrders(response.data.orders);
+          if ('orders' in responseData && responseData.orders) {
+            setOrders(responseData.orders);
           }
         } else {
           throw new Error(response.message || 'Failed to fetch customer');

@@ -13,6 +13,7 @@ export interface User {
   phone: string;
   role: string;
   status: string;
+  branch_id?: number;
   branch_name?: string;
   created_at: string;
   last_login_at?: string;
@@ -404,6 +405,63 @@ export interface ApiResponse<T> {
   pagination?: Pagination;
 }
 
+// UPI Transaction types
+export interface UpiTransaction {
+  transaction_id: number;
+  upi_transaction_id: string;
+  order_id: number;
+  upi_id: string;
+  amount: number;
+  status: string;
+  initiated_at: string;
+  verified_at: string | null;
+  expires_at: string | null;
+  attempts: number;
+  last_attempted_at: string | null;
+  order_number: string;
+  order_status: string;
+  payment_status: string;
+  order_total: number;
+  order_created_at: string;
+  customer_name: string;
+  customer_phone: string;
+}
+
+export interface UpiTransactionResponse {
+  success: boolean;
+  data: UpiTransaction[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+  };
+}
+
+export interface UpiTransactionSummary {
+  summary: {
+    total_transactions: number;
+    successful_transactions: number;
+    failed_transactions: number;
+    total_revenue: number;
+    average_transaction_value: number;
+  };
+  status_breakdown: {
+    status: string;
+    count: number;
+    total_amount: number;
+  }[];
+}
+
+export interface GetTransactionsParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  order_id?: string;
+  date_from?: string;
+  date_to?: string;
+  search?: string;
+}
+
 export interface DashboardSummary {
   summary: {
     total_orders: number;
@@ -431,6 +489,7 @@ export interface DashboardSummary {
     product_name: string;
     total_sold: number;
     revenue: number;
+    product_image?: string;
   }>;
   revenue_chart: Array<{
     date: string;

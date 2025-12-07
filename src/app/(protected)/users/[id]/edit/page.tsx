@@ -104,14 +104,15 @@ export default function EditUserPage() {
         if (response.success) {
           const userData = response.data.data || response.data;
           setUser(userData);
-          setFormData({
+          setFormData(prev => ({
+            ...prev,
             user_name: userData.user_name,
             email: userData.email,
             phone: userData.phone,
             role: userData.role,
             status: userData.status,
             branch_id: userData.branch_id || null,
-          });
+          }));
           // Set permissions if available
           if (userData.permissions && Array.isArray(userData.permissions)) {
             setSelectedPermissions(userData.permissions);

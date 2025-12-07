@@ -20,9 +20,10 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import UpiTransactionService from '@/services/upiTransactionService';
+import { UpiTransaction } from '@/types';
 
 const UpiTransactionsPage = () => {
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<UpiTransaction[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -31,13 +32,13 @@ const UpiTransactionsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<UpiTransaction | null>(null);
 
   useEffect(() => {
     fetchUpiTransactions();
   }, [page, statusFilter, searchTerm, dateRange]);
 
-  const setShowDetailsModal = (transaction) => {
+  const setShowDetailsModal = (transaction: UpiTransaction) => {
     setSelectedTransaction(transaction);
     setIsDetailsModalOpen(true);
   };

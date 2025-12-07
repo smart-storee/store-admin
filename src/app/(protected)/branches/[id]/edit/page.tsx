@@ -78,7 +78,7 @@ export default function EditBranchPage() {
             manager_name: branchData.manager_name || '',
             manager_phone: branchData.manager_phone || '',
             manager_email: branchData.manager_email || '',
-            is_active: branchData.is_active !== undefined ? (branchData.is_active === 1 || branchData.is_active === true ? 1 : 0) : 1,
+            is_active: branchData.is_active !== undefined ? (branchData.is_active === 1 ? 1 : 0) : 1,
           });
         } else {
           throw new Error(response.message || 'Failed to fetch branch');

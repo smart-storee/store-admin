@@ -12,7 +12,8 @@ export default function ProductVariantDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const { isDarkMode } = useTheme();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [variant, setVariant] = useState<ProductVariant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

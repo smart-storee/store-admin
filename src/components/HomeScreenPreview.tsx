@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 interface HomeScreenConfig {
   hero: {
@@ -147,7 +147,7 @@ export default function HomeScreenPreview({ config, isDarkMode = false, products
             {/* Render sections in configured order */}
             {(() => {
               const sectionOrder = config.sectionOrder || ['banners', 'products', 'categories'];
-              const sections: JSX.Element[] = [];
+              const sections: React.ReactElement[] = [];
 
               sectionOrder.forEach((sectionType) => {
                 switch (sectionType) {

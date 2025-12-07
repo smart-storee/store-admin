@@ -186,9 +186,9 @@ export default function OrderDetailPage() {
                   <div>
                     <h4 className="text-sm font-medium text-gray-500">Customer Information</h4>
                     <div className="mt-2">
-                      <p className="text-sm text-gray-900">{order.customer_name || order.customer?.name || 'N/A'}</p>
-                      <p className="text-sm text-gray-500">{order.customer_phone || order.customer?.phone || 'N/A'}</p>
-                      <p className="text-sm text-gray-500">{order.customer_email || order.customer?.email || 'N/A'}</p>
+                      <p className="text-sm text-gray-900">{order.customer_name || 'N/A'}</p>
+                      <p className="text-sm text-gray-500">{order.customer_phone || 'N/A'}</p>
+                      <p className="text-sm text-gray-500">{order.customer_email || 'N/A'}</p>
                     </div>
                   </div>
                   
@@ -303,7 +303,7 @@ export default function OrderDetailPage() {
                       <div><span className="text-sm text-gray-500">Payment Status:</span></div>
                       <div>
                         <span className={`inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full ${
-                          order.payment_status === 'paid' || order.payment_status === 'completed' ? 'bg-green-100 text-green-800' :
+                          order.payment_status === 'completed' ? 'bg-green-100 text-green-800' :
                           order.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
                           'bg-yellow-100 text-yellow-800'
                         }`}>
@@ -341,7 +341,7 @@ export default function OrderDetailPage() {
                         <span className="text-sm text-gray-500">Platform Fee</span>
                         <span className="text-sm text-gray-900">₹{order.platform_fee || '0.00'}</span>
                       </div>
-                      {(order.discount_amount && parseFloat(order.discount_amount) > 0) && (
+                      {(order.discount_amount && order.discount_amount > 0) && (
                         <>
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-500">
@@ -353,7 +353,7 @@ export default function OrderDetailPage() {
                               )}
                             </span>
                             <span className="text-sm text-green-600 font-medium">
-                              -₹{parseFloat(order.discount_amount || 0).toFixed(2)}
+                              -₹{(order.discount_amount || 0).toFixed(2)}
                             </span>
                           </div>
                         </>

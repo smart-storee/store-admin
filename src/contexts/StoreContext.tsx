@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { makeAuthenticatedRequest } from '@/utils/api';
+import { StoreFeatures } from '@/types';
 
 type Store = {
   id: number;
@@ -14,19 +15,6 @@ type Branch = {
   name: string; // Using name to match what the context expects
   store_id: number;
   [key: string]: any; // Allow additional fields
-};
-
-type StoreFeatures = {
-  push_notifications_enabled: boolean;
-  sms_enabled: boolean;
-  whatsapp_enabled: boolean;
-  email_enabled: boolean;
-  coupon_codes_enabled: boolean;
-  app_settings_enabled: boolean;
-  add_options_enabled: boolean;
-  max_categories: number | null;
-  max_products: number | null;
-  max_variants: number | null;
 };
 
 type StoreContextType = {
@@ -197,6 +185,10 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             coupon_codes_enabled: configData.features.coupon_codes_enabled === true || configData.features.coupon_codes_enabled === 1,
             app_settings_enabled: configData.features.app_settings_enabled === true || configData.features.app_settings_enabled === 1,
             add_options_enabled: configData.features.add_options_enabled === true || configData.features.add_options_enabled === 1,
+            customers_enabled: configData.features.customers_enabled === true || configData.features.customers_enabled === 1,
+            employees_enabled: configData.features.employees_enabled === true || configData.features.employees_enabled === 1,
+            home_config_enabled: configData.features.home_config_enabled === true || configData.features.home_config_enabled === 1,
+            reports_enabled: configData.features.reports_enabled === true || configData.features.reports_enabled === 1,
             max_categories: configData.features.max_categories ?? null,
             max_products: configData.features.max_products ?? null,
             max_variants: configData.features.max_variants ?? null,

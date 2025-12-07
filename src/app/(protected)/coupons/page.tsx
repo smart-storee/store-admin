@@ -25,13 +25,13 @@ const CouponsPage = () => {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const response: ApiResponse<Branch[]> = await makeAuthenticatedRequest(
+        const response: ApiResponse<Branch[] | { data: Branch[] }> = await makeAuthenticatedRequest(
           `/branches?store_id=${user?.store_id}`
         );
         if (response.success) {
           const branchesData = Array.isArray(response.data)
             ? response.data
-            : response.data?.data || [];
+            : (response.data as { data: Branch[] })?.data || [];
           setBranches(branchesData);
         }
       } catch (err) {
@@ -70,14 +70,14 @@ const CouponsPage = () => {
       }
       // When filterActive is 'all', don't add is_active parameter at all
 
-      const response: ApiResponse<Coupon[]> = await makeAuthenticatedRequest(
+      const response: ApiResponse<Coupon[] | { data: Coupon[] }> = await makeAuthenticatedRequest(
         `/coupons?${params.toString()}`
       );
 
       if (response.success) {
         const couponsData = Array.isArray(response.data)
           ? response.data
-          : response.data?.data || [];
+          : (response.data as { data: Coupon[] })?.data || [];
         setCoupons(couponsData);
       } else {
         throw new Error(response?.message || 'Failed to fetch coupons');
@@ -91,7 +91,7 @@ const CouponsPage = () => {
   };
 
   const handleToggleStatus = async (coupon: Coupon) => {
-    const isActive = coupon.is_active === 1 || coupon.is_active === true;
+    const isActive = coupon.is_active === 1;
     const action = isActive ? 'deactivate' : 'activate';
     const actionCapitalized = isActive ? 'Deactivate' : 'Activate';
     
@@ -329,12 +329,12 @@ const CouponsPage = () => {
                             <button
                               onClick={() => handleToggleStatus(coupon)}
                               className={
-                                coupon.is_active === 1 || coupon.is_active === true
+                                coupon.is_active === 1
                                   ? "text-red-600 hover:text-red-900"
                                   : "text-green-600 hover:text-green-900"
                               }
                             >
-                              {coupon.is_active === 1 || coupon.is_active === true
+                              {coupon.is_active === 1
                                 ? "Deactivate"
                                 : "Activate"}
                             </button>

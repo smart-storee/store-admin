@@ -13,7 +13,7 @@ export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const { isDarkMode } = useTheme();
+  const { theme } = useTheme();
   const [product, setProduct] = useState<Product | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -224,7 +224,7 @@ export default function EditProductPage() {
 
   if (loading) {
     return (
-      <div className={`p-6 text-center min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className={`p-6 text-center min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="flex justify-center">
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
         </div>
@@ -243,23 +243,23 @@ export default function EditProductPage() {
         </div>
       }
     >
-      <div className={`min-h-screen pb-20 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className={`min-h-screen pb-20 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="max-w-4xl mx-auto p-6">
           {/* Header with action buttons */}
           <div className="mb-6">
             <button
               onClick={() => router.push(`/products/${params.id}`)}
-              className={`inline-flex items-center mb-4 ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}
+              className={`inline-flex items-center mb-4 ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}
             >
               <ArrowLeft size={20} className="mr-2" />
               Back to Product
             </button>
             <div className="flex items-center justify-between">
               <div>
-                <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                   Edit Product
                 </h1>
-                <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                   {product?.product_name || 'Loading...'}
                 </p>
               </div>
@@ -277,12 +277,12 @@ export default function EditProductPage() {
           </div>
         
           {error && (
-            <div className={`mb-4 px-4 py-3 rounded ${isDarkMode ? 'bg-red-900/40 border border-red-700 text-red-300' : 'bg-red-100 border border-red-400 text-red-700'}`}>
+            <div className={`mb-4 px-4 py-3 rounded ${theme === 'dark' ? 'bg-red-900/40 border border-red-700 text-red-300' : 'bg-red-100 border border-red-400 text-red-700'}`}>
               {error}
             </div>
           )}
-        
-        <form onSubmit={handleSubmit} className={`shadow sm:rounded-md ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+
+        <form onSubmit={handleSubmit} className={`shadow sm:rounded-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="px-4 py-5 sm:p-6">
             <div className="grid grid-cols-6 gap-6">
               <div className="col-span-6">
@@ -452,9 +452,9 @@ export default function EditProductPage() {
           </div>
 
           {/* Product Variants Section */}
-          <div className={`border-t px-4 py-5 sm:px-6 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <div className={`border-t px-4 py-5 sm:px-6 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
             <div className="flex justify-between items-center mb-4">
-              <h3 className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <h3 className={`text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                 Product Variants
               </h3>
               <button
@@ -470,61 +470,61 @@ export default function EditProductPage() {
             <div id="variants-list" className="space-y-3">
               {variants.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                    <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}>
+                  <table className={`min-w-full divide-y ${theme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                    <thead className={theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'}>
                       <tr>
                         <th scope="col" className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-500'
                         }`}>
                           Variant Name
                         </th>
                         <th scope="col" className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-500'
                         }`}>
                           Price
                         </th>
                         <th scope="col" className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-500'
                         }`}>
                           Stock
                         </th>
                         <th scope="col" className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-500'
                         }`}>
                           Status
                         </th>
                         <th scope="col" className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-500'
                         }`}>
                           Actions
                         </th>
                       </tr>
                     </thead>
-                    <tbody className={`divide-y ${isDarkMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'}`}>
+                    <tbody className={`divide-y ${theme === 'dark' ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'}`}>
                       {variants.map((variant) => (
-                        <tr key={variant.variant_id} className={isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}>
+                        <tr key={variant.variant_id} className={theme === 'dark' ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            <div className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                               {variant.variant_name}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}>
                               ₹{variant.variant_price}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}>
                               {variant.stock || 0} units
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                               variant.is_active === 1
-                                ? isDarkMode 
-                                  ? 'bg-green-900/40 text-green-300' 
+                                ? theme === 'dark'
+                                  ? 'bg-green-900/40 text-green-300'
                                   : 'bg-green-100 text-green-800'
-                                : isDarkMode
+                                : theme === 'dark'
                                   ? 'bg-red-900/40 text-red-300'
                                   : 'bg-red-100 text-red-800'
                             }`}>
@@ -536,7 +536,7 @@ export default function EditProductPage() {
                               <button
                                 onClick={() => router.push(`/product-variants/${variant.variant_id}/edit`)}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors ${
-                                  isDarkMode
+                                  theme === 'dark'
                                     ? 'text-indigo-400 hover:bg-indigo-900/40 border border-indigo-700'
                                     : 'text-indigo-600 hover:bg-indigo-50 border border-indigo-200'
                                 }`}
@@ -548,7 +548,7 @@ export default function EditProductPage() {
                               <button
                                 onClick={() => router.push(`/product-variants/${variant.variant_id}`)}
                                 className={`px-3 py-1.5 rounded-md transition-colors ${
-                                  isDarkMode
+                                  theme === 'dark'
                                     ? 'text-gray-400 hover:bg-gray-700'
                                     : 'text-gray-600 hover:bg-gray-100'
                                 }`}
@@ -564,9 +564,9 @@ export default function EditProductPage() {
                 </div>
               ) : (
                 <div className={`text-center py-8 rounded-md ${
-                  isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-gray-50 border border-gray-200'
+                  theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-gray-50 border border-gray-200'
                 }`}>
-                  <p className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
+                  <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
                     No variants found for this product.
                   </p>
                   <button

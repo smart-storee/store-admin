@@ -31,9 +31,8 @@ export default function UserDetailPage() {
           );
 
         if (response.success && response.data) {
-          // Handle different response structures
-          const userData = response.data.data || response.data;
-          setUser(userData);
+          // response.data is already the User object according to ApiResponse<User>
+          setUser(response.data);
         } else {
           throw new Error(response.message || 'Failed to fetch user');
         }

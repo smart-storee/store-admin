@@ -12,7 +12,7 @@ export default function NewProductVariantPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { isDarkMode } = useTheme();
+  const { theme } = useTheme();
   const productId = searchParams.get('product_id');
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -176,20 +176,20 @@ export default function NewProductVariantPage() {
         </div>
       }
     >
-      <div className={`p-6 min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-        <h1 className={`text-2xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Add New Product Variant</h1>
+      <div className={`p-6 min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <h1 className={`text-2xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Add New Product Variant</h1>
 
         {error && (
-          <div className={`mb-4 px-4 py-3 rounded ${isDarkMode ? 'bg-red-900/40 border border-red-700 text-red-300' : 'bg-red-100 border border-red-400 text-red-700'}`}>
+          <div className={`mb-4 px-4 py-3 rounded ${theme === 'dark' ? 'bg-red-900/40 border border-red-700 text-red-300' : 'bg-red-100 border border-red-400 text-red-700'}`}>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className={`shadow sm:rounded-md ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+        <form onSubmit={handleSubmit} className={`shadow sm:rounded-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="px-4 py-5 sm:p-6">
             <div className="grid grid-cols-6 gap-6">
               <div className="col-span-6">
-                <label htmlFor="product_id" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label htmlFor="product_id" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                   Product *
                 </label>
                 <select
@@ -200,8 +200,8 @@ export default function NewProductVariantPage() {
                   required
                   disabled={!!productId} // Disable if product_id was provided via URL
                   className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                    theme === 'dark'
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-white border-gray-300 text-gray-900'
                   }`}
                 >
@@ -215,7 +215,7 @@ export default function NewProductVariantPage() {
               </div>
 
               <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="variant_name" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label htmlFor="variant_name" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                   Variant Name *
                 </label>
                 <input
@@ -226,15 +226,15 @@ export default function NewProductVariantPage() {
                   onChange={handleChange}
                   required
                   className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    theme === 'dark'
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                       : 'bg-white border-gray-300 text-gray-900'
                   }`}
                 />
               </div>
 
               <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="variant_price" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label htmlFor="variant_price" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                   Price (₹) *
                 </label>
                 <input
@@ -247,15 +247,15 @@ export default function NewProductVariantPage() {
                   min="0"
                   step="0.01"
                   className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    theme === 'dark'
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                       : 'bg-white border-gray-300 text-gray-900'
                   }`}
                 />
               </div>
 
               <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="stock" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label htmlFor="stock" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                   Stock Quantity *
                 </label>
                 <input
@@ -267,8 +267,8 @@ export default function NewProductVariantPage() {
                   required
                   min="0"
                   className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    theme === 'dark'
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                       : 'bg-white border-gray-300 text-gray-900'
                   }`}
                 />
@@ -284,15 +284,15 @@ export default function NewProductVariantPage() {
                       checked={formData.is_active === 1}
                       onChange={handleChange}
                       className={`focus:ring-indigo-500 h-4 w-4 text-indigo-600 rounded ${
-                        isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300'
+                        theme === 'dark' ? 'border-gray-600 bg-gray-700' : 'border-gray-300'
                       }`}
                     />
                   </div>
                   <div className="ml-3 text-sm">
-                    <label htmlFor="is_active" className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label htmlFor="is_active" className={`font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                       Active
                     </label>
-                    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>When checked, this variant will be available for purchase</p>
+                    <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>When checked, this variant will be available for purchase</p>
                   </div>
                 </div>
               </div>
@@ -300,13 +300,13 @@ export default function NewProductVariantPage() {
           </div>
 
           <div className={`px-4 py-3 sm:px-6 flex justify-end ${
-            isDarkMode ? 'bg-gray-800 border-t border-gray-700' : 'bg-gray-50'
+            theme === 'dark' ? 'bg-gray-800 border-t border-gray-700' : 'bg-gray-50'
           }`}>
             <button
               type="button"
               onClick={() => router.push(`/setup-flow`)}
               className={`py-2 px-4 border rounded-md text-sm font-medium mr-3 ${
-                isDarkMode
+                theme === 'dark'
                   ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
                   : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
               }`}

@@ -48,7 +48,7 @@ export default function BillingPage() {
     try {
       setLoading(true);
       setError(null);
-      const response: ApiResponse<Invoice[]> = await makeAuthenticatedRequest(
+      const response: ApiResponse<Invoice[] | { data: Invoice[] }> = await makeAuthenticatedRequest(
         `/billing?store_id=${user?.store_id}`,
         {},
         true,
@@ -59,7 +59,7 @@ export default function BillingPage() {
       if (response.success) {
         const invoicesData = Array.isArray(response.data)
           ? response.data
-          : response.data?.data || [];
+          : (response.data as { data: Invoice[] })?.data || [];
         setInvoices(invoicesData);
       } else {
         setError(response.message || 'Failed to fetch invoices');

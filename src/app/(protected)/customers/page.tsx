@@ -83,7 +83,7 @@ export default function CustomersPage() {
           params.append('branch_id', selectedBranch.toString());
         }
 
-        const response: ApiResponse<{ data: Customer[]; pagination: Pagination }> =
+        const response: ApiResponse<Customer[] | { data: Customer[]; pagination?: Pagination } | { [key: string]: Customer }> =
           await makeAuthenticatedRequest(
             `/customers?${params.toString()}`,
             {},
@@ -94,13 +94,18 @@ export default function CustomersPage() {
 
         if (response.success) {
           // Handle different response structures
-          let customersData = [];
+          let customersData: CustomerWithBranch[] = [];
           if (Array.isArray(response.data)) {
             customersData = response.data;
           } else if (response.data && Array.isArray(response.data.data)) {
             customersData = response.data.data;
-          } else if (response.data && typeof response.data === 'object') {
-            customersData = Object.values(response.data).filter(item => typeof item === 'object' && item.cust_id);
+          } else if (response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
+            customersData = Object.values(response.data).filter((item): item is CustomerWithBranch => 
+              typeof item === 'object' && 
+              item !== null && 
+              'cust_id' in item && 
+              !('total' in item && 'page' in item && 'limit' in item) // Exclude Pagination objects
+            ) as CustomerWithBranch[];
           }
 
           setCustomers(customersData);
@@ -108,9 +113,10 @@ export default function CustomersPage() {
           if (response.pagination) {
             setTotalPages(Math.ceil(response.pagination.total / response.pagination.limit));
             setTotalCount(response.pagination.total);
-          } else if (response.data && response.data.pagination) {
-            setTotalPages(Math.ceil(response.data.pagination.total / response.data.pagination.limit));
-            setTotalCount(response.data.pagination.total);
+          } else if (response.data && typeof response.data === 'object' && !Array.isArray(response.data) && 'pagination' in response.data) {
+            const pagination = (response.data as { pagination: Pagination }).pagination;
+            setTotalPages(Math.ceil(pagination.total / pagination.limit));
+            setTotalCount(pagination.total);
           } else {
             setTotalPages(1);
             setTotalCount(customersData.length);
@@ -150,8 +156,8 @@ export default function CustomersPage() {
   // Calculate stats
   const totalCustomers = totalCount; // Use totalCount from pagination instead of customers.length
   const activeCustomers = customers.filter(c => c.is_active === 1).length;
-  const totalOrders = customers.reduce((sum, c) => sum + (parseInt(c.total_orders) || 0), 0);
-  const totalRevenue = customers.reduce((sum, c) => sum + (parseFloat(c.total_spent) || 0), 0);
+  const totalOrders = customers.reduce((sum, c) => sum + (c.total_orders || 0), 0);
+  const totalRevenue = customers.reduce((sum, c) => sum + (c.total_spent || 0), 0);
 
   // Check if customers feature is enabled
   if (features && !features.customers_enabled) {
@@ -288,7 +294,7 @@ export default function CustomersPage() {
                                 {customer.total_orders} orders
                               </p>
                               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                Spent ₹{parseFloat(customer.total_spent || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                Spent ₹{(customer.total_spent || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </p>
                             </div>
                             <span className={`px-2 py-1 text-xs rounded-full ${
