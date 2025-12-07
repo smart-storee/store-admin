@@ -13,6 +13,7 @@ export interface User {
   phone: string;
   role: string;
   status: string;
+  branch_id?: number;
   branch_name?: string;
   created_at: string;
   last_login_at?: string;
@@ -160,6 +161,9 @@ export interface Product {
   branch_id?: number;
   branch_name?: string;
   created_at: string;
+  serves_count?: number;
+  is_vegetarian?: number;
+  is_bestseller?: number;
 }
 
 export interface CreateProductRequest {
@@ -170,6 +174,9 @@ export interface CreateProductRequest {
   product_description: string;
   product_image: string;
   base_price: number;
+  serves_count?: number;
+  is_vegetarian?: number;
+  is_bestseller?: number;
 }
 
 // Product Variant types
@@ -230,12 +237,54 @@ export interface Order {
   delivery_landmark?: string;
   delivery_notes?: string;
   subtotal: number;
-  delivery_charge: number;
+  delivery_charge?: number;
+  is_free_delivery?: boolean;
+  free_delivery_reason?: string | null;
+  discount_amount?: number;
+  coupon_id?: number;
+  coupon_code?: string;
+  coupon_type?: string;
   platform_fee: number;
   total_amount: number;
   items_count: number;
   items?: OrderItem[];
   created_at: string;
+}
+
+// Coupon types
+export interface Coupon {
+  coupon_id: number;
+  store_id: number;
+  branch_id: number | null;
+  branch_name?: string;
+  coupon_code: string;
+  coupon_type: 'percentage' | 'fixed';
+  discount_value: number;
+  min_order_amount: number;
+  max_discount_amount: number | null;
+  usage_limit_per_user: number;
+  total_usage_limit: number | null;
+  used_count: number;
+  start_date: string;
+  end_date: string;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCouponRequest {
+  store_id: number;
+  branch_id?: number | null;
+  coupon_code: string;
+  coupon_type: 'percentage' | 'fixed';
+  discount_value: number;
+  min_order_amount?: number;
+  max_discount_amount?: number | null;
+  usage_limit_per_user?: number;
+  total_usage_limit?: number | null;
+  start_date: string;
+  end_date: string;
+  is_active?: number;
 }
 
 export interface OrderDetail {
@@ -295,6 +344,23 @@ export interface Customer {
 }
 
 // App Settings types
+export interface StoreFeatures {
+  push_notifications_enabled: boolean;
+  sms_enabled: boolean;
+  whatsapp_enabled: boolean;
+  email_enabled: boolean;
+  coupon_codes_enabled: boolean;
+  app_settings_enabled: boolean;
+  add_options_enabled: boolean;
+  customers_enabled: boolean;
+  employees_enabled: boolean;
+  home_config_enabled: boolean;
+  reports_enabled: boolean;
+  max_categories: number | null;
+  max_products: number | null;
+  max_variants: number | null;
+}
+
 export interface AppSettings {
   app_config_id: number;
   store_id: number;
@@ -339,6 +405,63 @@ export interface ApiResponse<T> {
   pagination?: Pagination;
 }
 
+// UPI Transaction types
+export interface UpiTransaction {
+  transaction_id: number;
+  upi_transaction_id: string;
+  order_id: number;
+  upi_id: string;
+  amount: number;
+  status: string;
+  initiated_at: string;
+  verified_at: string | null;
+  expires_at: string | null;
+  attempts: number;
+  last_attempted_at: string | null;
+  order_number: string;
+  order_status: string;
+  payment_status: string;
+  order_total: number;
+  order_created_at: string;
+  customer_name: string;
+  customer_phone: string;
+}
+
+export interface UpiTransactionResponse {
+  success: boolean;
+  data: UpiTransaction[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+  };
+}
+
+export interface UpiTransactionSummary {
+  summary: {
+    total_transactions: number;
+    successful_transactions: number;
+    failed_transactions: number;
+    total_revenue: number;
+    average_transaction_value: number;
+  };
+  status_breakdown: {
+    status: string;
+    count: number;
+    total_amount: number;
+  }[];
+}
+
+export interface GetTransactionsParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  order_id?: string;
+  date_from?: string;
+  date_to?: string;
+  search?: string;
+}
+
 export interface DashboardSummary {
   summary: {
     total_orders: number;
@@ -346,6 +469,9 @@ export interface DashboardSummary {
     total_customers: number;
     active_branches: number;
     total_products: number;
+    total_sms_sent: number;
+    total_notifications_sent: number;
+    total_otp_sent: number;
   };
   today_metrics: {
     orders_today: number;
@@ -363,10 +489,20 @@ export interface DashboardSummary {
     product_name: string;
     total_sold: number;
     revenue: number;
+    product_image?: string;
   }>;
   revenue_chart: Array<{
     date: string;
     revenue: number;
     orders: number;
+  }>;
+  recent_orders?: Array<{
+    order_id: number;
+    customer_name: string;
+    customer_email?: string;
+    order_date: string;
+    total_amount: number;
+    status: string;
+    payment_method?: string;
   }>;
 }

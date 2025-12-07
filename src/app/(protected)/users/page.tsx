@@ -5,6 +5,7 @@ import { makeAuthenticatedRequest } from '@/utils/api';
 import { AdminUser, ApiResponse, Pagination } from '@/types';
 import { RoleGuard } from '@/components/RoleGuard';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStore } from '@/contexts/StoreContext';
 import { Plus, Search, Edit3, Trash2, Eye, Moon, Sun, ChevronLeft, ChevronRight, AlertCircle, Users, Mail, Phone, Calendar, ShieldCheck, Zap } from 'lucide-react';
 
 export default function UsersPage() {
@@ -20,6 +21,7 @@ export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [hoveredUser, setHoveredUser] = useState<number | null>(null);
   const { user } = useAuth();
+  const { features } = useStore();
 
   useEffect(() => {
     fetchUsers();
@@ -55,16 +57,15 @@ export default function UsersPage() {
         await makeAuthenticatedRequest(`/users?${params.toString()}`);
 
       if (response.success) {
-        const usersData = response.data.users || response.data;
+        const usersData = Array.isArray(response.data) ? response.data : [];
         setUsers(usersData);
-        
-        // if (response.pagination) {
-        //   setTotalPages(Math.ceil(response.pagination.total / response.pagination.limit));
-        //   setTotalCount(response.pagination.total);
-        // } else {
-          console.log(usersData.length);
+
+        if (response.pagination) {
+          setTotalPages(Math.ceil(response.pagination.total / response.pagination.limit));
+          setTotalCount(response.pagination.total);
+        } else {
           setTotalCount(usersData.length);
-        // }
+        }
       } else {
         throw new Error(response.message || 'Failed to fetch users');
       }
@@ -165,6 +166,22 @@ export default function UsersPage() {
 
   const t = isDarkMode ? theme.dark : theme.light;
 
+  // Check if employees feature is enabled
+  if (features && !features.employees_enabled) {
+    return (
+      <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} p-8`}>
+        <div className={`max-w-4xl mx-auto ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-8 text-center`}>
+          <h1 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            Employee Management Disabled
+          </h1>
+          <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Employee management is not enabled for this store. Please contact support to enable this feature.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <RoleGuard
       requiredPermissions={['manage_users']}
@@ -179,7 +196,7 @@ export default function UsersPage() {
       <div className={`min-h-screen ${isDarkMode ? 'bg-slate-900' : theme.light.bg} transition-colors duration-300`}>
         {/* Header */}
         <div className={`${t.headerBg} border-b ${t.cardBorder} sticky top-0 z-40 backdrop-blur-xl transition-all duration-300`}>
-          <div className="max-w-7xl mx-auto px-8 py-6">
+          <div className="px-8 py-6">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
@@ -206,7 +223,7 @@ export default function UsersPage() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-8 py-8">
+        <div className="px-8 py-8">
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {[

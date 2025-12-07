@@ -6,7 +6,26 @@ import { Order, ApiResponse, Pagination, Branch } from '@/types';
 import { RoleGuard } from '@/components/RoleGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { ChevronLeft, ChevronRight, Search, MapPin, Phone, Calendar, Package, TrendingUp, Clock, CheckCircle, XCircle, Eye, Edit, Moon, Sun, MoreVertical, Filter, Download } from 'lucide-react';
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Search, 
+  MapPin, 
+  Phone, 
+  Calendar, 
+  Package, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  Eye, 
+  ArrowRight,
+  Filter,
+  X,
+  Truck,
+  ChefHat,
+  ShoppingBag
+} from 'lucide-react';
+import Link from 'next/link';
 
 interface OrderStats {
   total: number;
@@ -38,7 +57,7 @@ export default function OrdersPage() {
     delivered: 0,
     cancelled: 0,
   });
-  const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
   const { user } = useAuth();
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
@@ -78,7 +97,7 @@ export default function OrdersPage() {
 
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '10',
+        limit: '20',
         store_id: user.store_id.toString(),
       });
 
@@ -106,9 +125,9 @@ export default function OrdersPage() {
           setTotalCount(response.pagination.total);
         }
 
-        // Calculate stats
+        // Calculate stats from current page (note: these are page-level stats)
         const stats: OrderStats = {
-          total: ordersData.length,
+          total: totalCount,
           pending: ordersData.filter(o => o.order_status === 'pending').length,
           confirmed: ordersData.filter(o => o.order_status === 'confirmed').length,
           preparing: ordersData.filter(o => o.order_status === 'preparing').length,
@@ -131,6 +150,10 @@ export default function OrdersPage() {
   };
 
   const handleStatusUpdate = async (orderId: number, newStatus: string) => {
+    if (!confirm(`Are you sure you want to update this order status to ${newStatus.replace('_', ' ')}?`)) {
+      return;
+    }
+
     try {
       const response: ApiResponse<null> = await makeAuthenticatedRequest(
         `/orders/${orderId}/status`,
@@ -142,7 +165,6 @@ export default function OrdersPage() {
 
       if (response.success) {
         fetchOrders();
-        setExpandedOrder(null);
       } else {
         alert(response.message || 'Failed to update order status');
       }
@@ -155,62 +177,83 @@ export default function OrdersPage() {
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const getStatusConfig = (status: string) => {
-    const configs: Record<string, { icon: any; bgLight: string; bgDark: string; textLight: string; textDark: string; badge: string }> = {
-      pending: { icon: Clock, bgLight: 'bg-yellow-50 border-yellow-200', bgDark: 'bg-yellow-900/20 border-yellow-700/50', textLight: 'text-yellow-700', textDark: 'text-yellow-300', badge: 'bg-yellow-100 text-yellow-800' },
-      confirmed: { icon: CheckCircle, bgLight: 'bg-blue-50 border-blue-200', bgDark: 'bg-blue-900/20 border-blue-700/50', textLight: 'text-blue-700', textDark: 'text-blue-300', badge: 'bg-blue-100 text-blue-800' },
-      preparing: { icon: Package, bgLight: 'bg-purple-50 border-purple-200', bgDark: 'bg-purple-900/20 border-purple-700/50', textLight: 'text-purple-700', textDark: 'text-purple-300', badge: 'bg-purple-100 text-purple-800' },
-      ready: { icon: TrendingUp, bgLight: 'bg-indigo-50 border-indigo-200', bgDark: 'bg-indigo-900/20 border-indigo-700/50', textLight: 'text-indigo-700', textDark: 'text-indigo-300', badge: 'bg-indigo-100 text-indigo-800' },
-      out_for_delivery: { icon: TrendingUp, bgLight: 'bg-teal-50 border-teal-200', bgDark: 'bg-teal-900/20 border-teal-700/50', textLight: 'text-teal-700', textDark: 'text-teal-300', badge: 'bg-teal-100 text-teal-800' },
-      delivered: { icon: CheckCircle, bgLight: 'bg-green-50 border-green-200', bgDark: 'bg-green-900/20 border-green-700/50', textLight: 'text-green-700', textDark: 'text-green-300', badge: 'bg-green-100 text-green-800' },
-      cancelled: { icon: XCircle, bgLight: 'bg-red-50 border-red-200', bgDark: 'bg-red-900/20 border-red-700/50', textLight: 'text-red-700', textDark: 'text-red-300', badge: 'bg-red-100 text-red-800' },
+    const configs: Record<string, { 
+      label: string; 
+      icon: any; 
+      bg: string; 
+      text: string; 
+      border: string;
+    }> = {
+      pending: { 
+        label: 'Pending', 
+        icon: Clock, 
+        bg: isDarkMode ? 'bg-yellow-900/30' : 'bg-yellow-50', 
+        text: isDarkMode ? 'text-yellow-300' : 'text-yellow-700',
+        border: isDarkMode ? 'border-yellow-700/50' : 'border-yellow-200'
+      },
+      confirmed: { 
+        label: 'Confirmed', 
+        icon: CheckCircle, 
+        bg: isDarkMode ? 'bg-blue-900/30' : 'bg-blue-50', 
+        text: isDarkMode ? 'text-blue-300' : 'text-blue-700',
+        border: isDarkMode ? 'border-blue-700/50' : 'border-blue-200'
+      },
+      preparing: { 
+        label: 'Preparing', 
+        icon: ChefHat, 
+        bg: isDarkMode ? 'bg-purple-900/30' : 'bg-purple-50', 
+        text: isDarkMode ? 'text-purple-300' : 'text-purple-700',
+        border: isDarkMode ? 'border-purple-700/50' : 'border-purple-200'
+      },
+      ready: { 
+        label: 'Ready', 
+        icon: ShoppingBag, 
+        bg: isDarkMode ? 'bg-indigo-900/30' : 'bg-indigo-50', 
+        text: isDarkMode ? 'text-indigo-300' : 'text-indigo-700',
+        border: isDarkMode ? 'border-indigo-700/50' : 'border-indigo-200'
+      },
+      out_for_delivery: { 
+        label: 'Out for Delivery', 
+        icon: Truck, 
+        bg: isDarkMode ? 'bg-teal-900/30' : 'bg-teal-50', 
+        text: isDarkMode ? 'text-teal-300' : 'text-teal-700',
+        border: isDarkMode ? 'border-teal-700/50' : 'border-teal-200'
+      },
+      delivered: { 
+        label: 'Delivered', 
+        icon: CheckCircle, 
+        bg: isDarkMode ? 'bg-green-900/30' : 'bg-green-50', 
+        text: isDarkMode ? 'text-green-300' : 'text-green-700',
+        border: isDarkMode ? 'border-green-700/50' : 'border-green-200'
+      },
+      cancelled: { 
+        label: 'Cancelled', 
+        icon: XCircle, 
+        bg: isDarkMode ? 'bg-red-900/30' : 'bg-red-50', 
+        text: isDarkMode ? 'text-red-300' : 'text-red-700',
+        border: isDarkMode ? 'border-red-700/50' : 'border-red-200'
+      },
     };
     return configs[status] || configs.pending;
   };
 
-  const themeStyles = {
-    dark: {
-      bg: 'bg-slate-900',
-      headerBg: 'bg-slate-800/50',
-      cardBg: 'bg-slate-800/50',
-      cardBorder: 'border-slate-700/50',
-      text: 'text-white',
-      textSecondary: 'text-slate-300',
-      textTertiary: 'text-slate-400',
-      input: 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500 focus:ring-blue-500',
-      button: {
-        primary: 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white',
-        secondary: 'bg-slate-700/50 hover:bg-slate-700 text-slate-300',
-      },
-      statCard: 'bg-slate-700/50 border-slate-600/50',
-      orderCard: 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-700/50',
-    },
-    light: {
-      bg: 'bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50',
-      headerBg: 'bg-white',
-      cardBg: 'bg-white',
-      cardBorder: 'border-slate-200',
-      text: 'text-slate-900',
-      textSecondary: 'text-slate-600',
-      textTertiary: 'text-slate-500',
-      input: 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:ring-blue-500',
-      button: {
-        primary: 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white',
-        secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-700',
-      },
-      statCard: 'bg-blue-50 border-blue-200',
-      orderCard: 'bg-white border-slate-200 hover:bg-slate-50',
-    }
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setSelectedBranch(null);
+    setCurrentPage(1);
   };
 
-  const t = theme === 'dark' ? themeStyles.dark : themeStyles.light;
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || selectedBranch;
 
   return (
     <RoleGuard
-      requiredPermissions={['manage_orders']}
+      allowedRoles={['admin', 'manager', 'staff']}
       fallback={
         <div className="p-6 text-center">
           <div className="border rounded-lg px-4 py-3 mb-4">
@@ -219,259 +262,401 @@ export default function OrdersPage() {
         </div>
       }
     >
-      <div className="min-h-screen transition-colors duration-300">
+      <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-slate-900' : 'bg-gray-50'}`}>
         {/* Header */}
-        <div className={`${t.headerBg} border-b ${t.cardBorder} sticky top-0 z-40 backdrop-blur-xl transition-all duration-300`}>
-          <div className="max-w-7xl mx-auto px-8 py-6">
+        <div className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b sticky top-0 z-40 backdrop-blur-xl transition-all duration-300`}>
+          <div className="px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Orders Management
+                <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Orders
                 </h1>
-                <p className={`${t.textSecondary} text-sm mt-1`}>Track and manage all customer orders</p>
+                <p className={`${isDarkMode ? 'text-slate-400' : 'text-gray-600'} text-sm mt-1`}>
+                  Manage and track all customer orders
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                    hasActiveFilters
+                      ? isDarkMode 
+                        ? 'bg-blue-600 border-blue-500 text-white' 
+                        : 'bg-blue-600 border-blue-500 text-white'
+                      : isDarkMode
+                        ? 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Filter size={18} />
+                  Filters
+                  {hasActiveFilters && (
+                    <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
+                      isDarkMode ? 'bg-blue-500' : 'bg-blue-500'
+                    }`}>
+                      {[searchTerm, statusFilter !== 'all', selectedBranch].filter(Boolean).length}
+                    </span>
+                  )}
+                </button>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-8 py-8">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
+        <div className="px-6 py-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
             {[
-              { label: 'Total', value: totalCount, icon: '📋', color: 'blue' },
-              { label: 'Pending', value: orderStats.pending, icon: '⏳', color: 'yellow' },
-              { label: 'Confirmed', value: orderStats.confirmed, icon: '✓', color: 'blue' },
-              { label: 'Preparing', value: orderStats.preparing, icon: '👨‍🍳', color: 'purple' },
-              { label: 'Ready', value: orderStats.ready, icon: '📦', color: 'indigo' },
-              { label: 'Delivered', value: orderStats.delivered, icon: '✔', color: 'green' },
-              { label: 'Cancelled', value: orderStats.cancelled, icon: '✕', color: 'red' },
-            ].map((stat, i) => (
+              { label: 'Total', value: totalCount, status: 'all', color: 'blue' },
+              { label: 'Pending', value: orderStats.pending, status: 'pending', color: 'yellow' },
+              { label: 'Confirmed', value: orderStats.confirmed, status: 'confirmed', color: 'blue' },
+              { label: 'Preparing', value: orderStats.preparing, status: 'preparing', color: 'purple' },
+              { label: 'Ready', value: orderStats.ready, status: 'ready', color: 'indigo' },
+              { label: 'Delivered', value: orderStats.delivered, status: 'delivered', color: 'green' },
+              { label: 'Cancelled', value: orderStats.cancelled, status: 'cancelled', color: 'red' },
+            ].map((stat) => (
               <button
-                key={i}
-                onClick={() => stat.label !== 'Total' ? setStatusFilter(stat.label.toLowerCase().replace(' ', '_')) : setStatusFilter('all')}
-                className={`rounded-lg border ${t.statCard} p-3 hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-105 ${
-                  (statusFilter === 'all' && stat.label === 'Total') || 
-                  (statusFilter === stat.label.toLowerCase().replace(' ', '_')) 
-                    ? 'ring-2 ring-blue-500' 
-                    : ''
+                key={stat.label}
+                onClick={() => {
+                  setStatusFilter(stat.status);
+                  setCurrentPage(1);
+                }}
+                className={`rounded-lg border p-4 text-left transition-all duration-200 hover:shadow-md ${
+                  statusFilter === stat.status
+                    ? isDarkMode
+                      ? 'bg-blue-600/20 border-blue-500 ring-2 ring-blue-500/50'
+                      : 'bg-blue-50 border-blue-300 ring-2 ring-blue-200'
+                    : isDarkMode
+                      ? 'bg-slate-800 border-slate-700 hover:bg-slate-750'
+                      : 'bg-white border-gray-200 hover:bg-gray-50'
                 }`}
               >
-                <p className="text-2xl mb-1">{stat.icon}</p>
-                <p className={`text-xl font-bold ${t.text}`}>{stat.value}</p>
-                <p className={`text-xs ${t.textTertiary}`}>{stat.label}</p>
+                <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-gray-600'} mb-1`}>
+                  {stat.label}
+                </p>
+                <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {stat.value}
+                </p>
               </button>
             ))}
           </div>
 
-          {/* Search and Filters */}
-          <div className={`${t.cardBg} rounded-xl border ${t.cardBorder} p-5 mb-8 shadow-sm`}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className={`block text-sm font-medium ${t.text} mb-2`}>Search Orders</label>
-                <div className="relative">
-                  <Search size={18} className={`absolute left-3 top-3.5 ${t.textTertiary}`} />
-                  <input
-                    type="text"
-                    placeholder="Order #, customer name, phone..."
-                    value={searchTerm}
-                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                    className={`w-full pl-10 pr-4 py-2.5 border ${t.input} rounded-lg focus:outline-none focus:ring-2 transition-all duration-300`}
-                  />
+          {/* Filters Panel */}
+          {showFilters && (
+            <div className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} rounded-lg border p-4 mb-6`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Filters</h3>
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className={`text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'} flex items-center gap-1`}
+                  >
+                    <X size={16} />
+                    Clear all
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} mb-2`}>
+                    Search
+                  </label>
+                  <div className="relative">
+                    <Search size={18} className={`absolute left-3 top-3 ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`} />
+                    <input
+                      type="text"
+                      placeholder="Order #, customer name, phone..."
+                      value={searchTerm}
+                      onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        isDarkMode
+                          ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
+                          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                      }`}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} mb-2`}>
+                    Branch
+                  </label>
+                  <select
+                    value={selectedBranch || ''}
+                    onChange={(e) => { setSelectedBranch(e.target.value ? parseInt(e.target.value) : null); setCurrentPage(1); }}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isDarkMode
+                        ? 'bg-slate-700 border-slate-600 text-white'
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                  >
+                    <option value="">All Branches</option>
+                    {branches.map((branch) => (
+                      <option key={branch.branch_id} value={branch.branch_id}>
+                        {branch.branch_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} mb-2`}>
+                    Status
+                  </label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isDarkMode
+                        ? 'bg-slate-700 border-slate-600 text-white'
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="preparing">Preparing</option>
+                    <option value="ready">Ready</option>
+                    <option value="out_for_delivery">Out for Delivery</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
                 </div>
               </div>
-              <div>
-                <label className={`block text-sm font-medium ${t.text} mb-2`}>Branch</label>
-                <select
-                  value={selectedBranch || ''}
-                  onChange={(e) => { setSelectedBranch(e.target.value ? parseInt(e.target.value) : null); setCurrentPage(1); }}
-                  className={`w-full px-4 py-2.5 border ${t.input} rounded-lg focus:outline-none focus:ring-2 transition-all duration-300`}
-                >
-                  <option value="">All Branches</option>
-                  {branches.map((branch) => (
-                    <option key={branch.branch_id} value={branch.branch_id}>
-                      {branch.branch_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={`block text-sm font-medium ${t.text} mb-2`}>Status</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                  className={`w-full px-4 py-2.5 border ${t.input} rounded-lg focus:outline-none focus:ring-2 transition-all duration-300`}
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="preparing">Preparing</option>
-                  <option value="ready">Ready</option>
-                  <option value="out_for_delivery">Out for Delivery</option>
-                  <option value="delivered">Delivered</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className={`border rounded-xl p-4 mb-8 flex items-center gap-3 ${theme === 'dark' ? 'bg-red-900/30 border-red-700/50' : 'bg-red-50 border-red-200'}`}>
-              <XCircle size={20} className={theme === 'dark' ? 'text-red-400' : 'text-red-600'} />
-              <p className={`text-sm font-medium ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{error}</p>
             </div>
           )}
 
-          {/* Loading State */}
+          {/* Error Message */}
+          {error && (
+            <div className={`rounded-lg border p-4 mb-6 flex items-center gap-3 ${
+              isDarkMode ? 'bg-red-900/30 border-red-700/50' : 'bg-red-50 border-red-200'
+            }`}>
+              <XCircle size={20} className={isDarkMode ? 'text-red-400' : 'text-red-600'} />
+              <p className={`text-sm font-medium ${isDarkMode ? 'text-red-300' : 'text-red-800'}`}>{error}</p>
+            </div>
+          )}
+
+          {/* Orders Table */}
           {loading ? (
-            <div className={`${t.cardBg} rounded-xl border ${t.cardBorder} shadow-sm p-12`}>
+            <div className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} rounded-lg border p-12`}>
               <div className="flex flex-col items-center justify-center gap-4">
-                <div className={`w-12 h-12 border-4 ${theme === 'dark' ? 'border-slate-700 border-t-blue-500' : 'border-blue-200 border-t-blue-600'} rounded-full animate-spin`}></div>
-                <p className={`${t.textSecondary} font-medium`}>Loading orders...</p>
+                <div className={`w-12 h-12 border-4 ${isDarkMode ? 'border-slate-700 border-t-blue-500' : 'border-blue-200 border-t-blue-600'} rounded-full animate-spin`}></div>
+                <p className={`${isDarkMode ? 'text-slate-400' : 'text-gray-600'} font-medium`}>Loading orders...</p>
               </div>
             </div>
           ) : orders.length === 0 ? (
-            <div className={`${t.cardBg} rounded-xl border ${t.cardBorder} shadow-sm p-12 text-center`}>
-              <Package size={48} className={`mx-auto ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'} mb-3`} />
-              <p className={`${t.textSecondary} font-medium`}>No orders found</p>
+            <div className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} rounded-lg border p-12 text-center`}>
+              <Package size={48} className={`mx-auto ${isDarkMode ? 'text-slate-600' : 'text-gray-300'} mb-3`} />
+              <p className={`${isDarkMode ? 'text-slate-400' : 'text-gray-600'} font-medium`}>No orders found</p>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className={`mt-4 text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}
+                >
+                  Clear filters to see all orders
+                </button>
+              )}
             </div>
           ) : (
-            <div className="space-y-4">
-              {orders.map((order) => {
-                const statusConfig = getStatusConfig(order.order_status);
-                const StatusIcon = statusConfig.icon;
-                return (
-                  <div
-                    key={order.order_id}
-                    className={`${t.orderCard} border rounded-xl transition-all duration-300 overflow-hidden`}
-                  >
-                    {/* Order Header */}
-                    <button
-                      onClick={() => setExpandedOrder(expandedOrder === order.order_id ? null : order.order_id)}
-                      className="w-full px-6 py-4 hover:bg-opacity-50 transition-all duration-200 flex items-center justify-between"
-                    >
-                      <div className="flex-1 text-left">
-                        <div className="flex items-center gap-4 mb-2">
-                          <h3 className={`text-lg font-bold ${t.text}`}>Order #{order.order_number}</h3>
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusConfig.badge}`}>
-                            {order.order_status.replace('_', ' ').toUpperCase()}
-                          </span>
-                          <span className={`text-lg font-bold ${t.text}`}>₹{order.total_amount}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-4 text-sm">
-                          <div className={`flex items-center gap-1 ${t.textSecondary}`}>
-                            <span className="font-semibold">{order.customer_name}</span>
-                          </div>
-                          <div className={`flex items-center gap-1 ${t.textSecondary}`}>
-                            <Phone size={14} />
-                            {order.customer_phone}
-                          </div>
-                          <div className={`flex items-center gap-1 ${t.textSecondary}`}>
-                            <MapPin size={14} />
-                            {order.branch_name}
-                          </div>
-                          <div className={`flex items-center gap-1 ${t.textSecondary}`}>
-                            <Calendar size={14} />
-                            {new Date(order.created_at).toLocaleDateString()}
-                          </div>
-                          <div className={`flex items-center gap-1 ${t.textSecondary}`}>
-                            <Package size={14} />
-                            {order.items_count} items
-                          </div>
-                        </div>
-                      </div>
-                      <div className={`ml-4 ${expandedOrder === order.order_id ? 'rotate-180' : ''} transition-transform duration-300`}>
-                        <ChevronLeft size={24} className={t.textSecondary} />
-                      </div>
-                    </button>
-
-                    {/* Expanded Details */}
-                    {expandedOrder === order.order_id && (
-                      <div className={`border-t ${t.cardBorder} px-6 py-4 space-y-4`}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <p className={`${t.textTertiary} text-xs mb-1`}>STATUS WORKFLOW</p>
-                            <div className="flex flex-wrap gap-2">
-                              {['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered'].map((status) => (
-                                <button
-                                  key={status}
-                                  onClick={() => handleStatusUpdate(order.order_id, status)}
-                                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
-                                    order.order_status === status
-                                      ? 'ring-2 ring-blue-500 ' + getStatusConfig(status).badge
-                                      : isDarkMode ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                  }`}
-                                >
-                                  {status.replace('_', ' ')}
-                                </button>
-                              ))}
+            <div className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} rounded-lg border overflow-hidden`}>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className={isDarkMode ? 'bg-slate-900' : 'bg-gray-50'}>
+                    <tr>
+                      <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
+                        Order
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
+                        Customer
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
+                        Branch
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
+                        Items
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
+                        Amount
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
+                        Status
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
+                        Date
+                      </th>
+                      <th className={`px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-gray-200'}`}>
+                    {orders.map((order) => {
+                      const statusConfig = getStatusConfig(order.order_status);
+                      const StatusIcon = statusConfig.icon;
+                      return (
+                        <tr 
+                          key={order.order_id}
+                          className={`transition-colors ${isDarkMode ? 'hover:bg-slate-750' : 'hover:bg-gray-50'}`}
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                #{order.order_number}
+                              </div>
+                              <div className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                                {order.payment_method?.toUpperCase() || 'N/A'}
+                              </div>
                             </div>
-                          </div>
-                          <div>
-                            <p className={`${t.textTertiary} text-xs mb-1`}>QUICK ACTIONS</p>
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                onClick={() => handleStatusUpdate(order.order_id, 'confirmed')}
-                                className={`${t.button.primary} px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300`}
-                              >
-                                ✓ Accept
-                              </button>
-                              <button
-                                onClick={() => handleStatusUpdate(order.order_id, 'cancelled')}
-                                className={`${isDarkMode ? 'bg-red-900/40 hover:bg-red-900/60 text-red-300' : 'bg-red-50 hover:bg-red-100 text-red-600'} px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300`}
-                              >
-                                ✕ Reject
-                              </button>
-                              <button
-                                onClick={() => window.location.href = `/orders/${order.order_id}`}
-                                className={`${isDarkMode ? 'bg-slate-700/50 hover:bg-slate-600 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'} px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2`}
-                              >
-                                <Eye size={16} /> View Details
-                              </button>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                {order.customer_name || 'N/A'}
+                              </div>
+                              <div className={`text-sm flex items-center gap-1 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                                <Phone size={12} />
+                                {order.customer_phone || 'N/A'}
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
+                              {order.branch_name || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className={`flex items-center gap-1 ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
+                              <Package size={16} />
+                              <span className="font-medium">{order.items_count || 0}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              ₹{parseFloat(String(order.total_amount || 0)).toFixed(2)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
+                              <StatusIcon size={14} />
+                              {statusConfig.label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                              {order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric'
+                              }) : 'N/A'}
+                            </div>
+                            <div className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
+                              {order.created_at ? new Date(order.created_at).toLocaleTimeString('en-IN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : ''}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <select
+                                value={order.order_status}
+                                onChange={(e) => handleStatusUpdate(order.order_id, e.target.value)}
+                                className={`text-xs px-2 py-1 rounded border focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                  isDarkMode
+                                    ? 'bg-slate-700 border-slate-600 text-slate-300'
+                                    : 'bg-white border-gray-300 text-gray-700'
+                                }`}
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="preparing">Preparing</option>
+                                <option value="ready">Ready</option>
+                                <option value="out_for_delivery">Out for Delivery</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                              </select>
+                              <Link
+                                href={`/orders/${order.order_id}`}
+                                className={`p-2 rounded-lg transition-colors ${
+                                  isDarkMode
+                                    ? 'text-slate-400 hover:text-white hover:bg-slate-700'
+                                    : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+                                }`}
+                              >
+                                <Eye size={18} />
+                              </Link>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className={`${t.cardBg} border ${t.cardBorder} rounded-xl mt-8 px-6 py-4 flex items-center justify-between`}>
-              <div className={`text-sm ${t.textSecondary}`}>
-                Showing <span className={`font-semibold ${t.text}`}>{(currentPage - 1) * 10 + 1}</span> to{' '}
-                <span className={`font-semibold ${t.text}`}>{Math.min(currentPage * 10, totalCount)}</span> of{' '}
-                <span className={`font-semibold ${t.text}`}>{totalCount}</span> orders
+            <div className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} rounded-lg border mt-6 px-6 py-4 flex items-center justify-between`}>
+              <div className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
+                Showing <span className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {(currentPage - 1) * 20 + 1}
+                </span> to{' '}
+                <span className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {Math.min(currentPage * 20, totalCount)}
+                </span> of{' '}
+                <span className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {totalCount}
+                </span> orders
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`p-2 rounded-lg border ${t.cardBorder} ${t.button.secondary} disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300`}
+                  className={`p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isDarkMode
+                      ? 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
                   <ChevronLeft size={18} />
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all duration-300 ${
-                      currentPage === page
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : t.button.secondary
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white'
+                            : isDarkMode
+                              ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                              : 'bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`p-2 rounded-lg border ${t.cardBorder} ${t.button.secondary} disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300`}
+                  className={`p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isDarkMode
+                      ? 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
                   <ChevronRight size={18} />
                 </button>

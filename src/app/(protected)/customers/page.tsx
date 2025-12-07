@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useStore } from '@/contexts/StoreContext';
 import { RoleGuard } from '@/components/RoleGuard';
 import { ApiResponse, Customer, Branch, Pagination } from '@/types';
 
@@ -14,6 +15,7 @@ interface CustomerWithBranch extends Customer {
 export default function CustomersPage() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { features } = useStore();
   const [customers, setCustomers] = useState<CustomerWithBranch[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
@@ -81,7 +83,7 @@ export default function CustomersPage() {
           params.append('branch_id', selectedBranch.toString());
         }
 
-        const response: ApiResponse<{ data: Customer[]; pagination: Pagination }> =
+        const response: ApiResponse<Customer[] | { data: Customer[]; pagination?: Pagination } | { [key: string]: Customer }> =
           await makeAuthenticatedRequest(
             `/customers?${params.toString()}`,
             {},
@@ -91,15 +93,30 @@ export default function CustomersPage() {
           );
 
         if (response.success) {
-          const customersData = Array.isArray(response.data.data) 
-            ? response.data.data 
-            : response.data.data || response.data || [];
+          // Handle different response structures
+          let customersData: CustomerWithBranch[] = [];
+          if (Array.isArray(response.data)) {
+            customersData = response.data;
+          } else if (response.data && Array.isArray(response.data.data)) {
+            customersData = response.data.data;
+          } else if (response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
+            customersData = Object.values(response.data).filter((item): item is CustomerWithBranch => 
+              typeof item === 'object' && 
+              item !== null && 
+              'cust_id' in item && 
+              !('total' in item && 'page' in item && 'limit' in item) // Exclude Pagination objects
+            ) as CustomerWithBranch[];
+          }
 
           setCustomers(customersData);
 
           if (response.pagination) {
             setTotalPages(Math.ceil(response.pagination.total / response.pagination.limit));
             setTotalCount(response.pagination.total);
+          } else if (response.data && typeof response.data === 'object' && !Array.isArray(response.data) && 'pagination' in response.data) {
+            const pagination = (response.data as { pagination: Pagination }).pagination;
+            setTotalPages(Math.ceil(pagination.total / pagination.limit));
+            setTotalCount(pagination.total);
           } else {
             setTotalPages(1);
             setTotalCount(customersData.length);
@@ -137,10 +154,26 @@ export default function CustomersPage() {
   };
 
   // Calculate stats
-  const totalCustomers = customers.length;
+  const totalCustomers = totalCount; // Use totalCount from pagination instead of customers.length
   const activeCustomers = customers.filter(c => c.is_active === 1).length;
   const totalOrders = customers.reduce((sum, c) => sum + (c.total_orders || 0), 0);
   const totalRevenue = customers.reduce((sum, c) => sum + (c.total_spent || 0), 0);
+
+  // Check if customers feature is enabled
+  if (features && !features.customers_enabled) {
+    return (
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} p-8`}>
+        <div className={`max-w-4xl mx-auto ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-8 text-center`}>
+          <h1 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            Customer List Access Disabled
+          </h1>
+          <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+            Customer list access is not enabled for this store. Please contact support to enable this feature.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <RoleGuard
@@ -174,7 +207,9 @@ export default function CustomersPage() {
           </div>
           <div className={`border rounded-lg p-4 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
             <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Total Revenue</p>
-            <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>₹{totalRevenue}</p>
+            <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              ₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
           </div>
         </div>
 
@@ -236,20 +271,20 @@ export default function CustomersPage() {
             {customers.length > 0 ? (
               <>
                 <ul className={`${theme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'} divide-y`}>
-                  {customers.map((customer) => (
-                    <li key={customer.customer_id}>
+                  {customers.map((customer, index) => (
+                    <li key={customer.cust_id || `customer-${index}`}>
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white">
-                              {customer.customer_name?.charAt(0).toUpperCase()}
+                              {customer.name?.charAt(0).toUpperCase()}
                             </div>
                             <div className="ml-4">
                               <p className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                                {customer.customer_name}
+                                {customer.name}
                               </p>
                               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                {customer.customer_email}
+                                {customer.email}
                               </p>
                             </div>
                           </div>
@@ -259,7 +294,7 @@ export default function CustomersPage() {
                                 {customer.total_orders} orders
                               </p>
                               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                Spent ₹{customer.total_spent || '0.00'}
+                                Spent ₹{(customer.total_spent || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </p>
                             </div>
                             <span className={`px-2 py-1 text-xs rounded-full ${
@@ -271,7 +306,12 @@ export default function CustomersPage() {
                             </span>
                             <div className="flex space-x-2">
                               <button
-                                onClick={() => window.location.href = `/customers/${customer.customer_id}`}
+                                onClick={() => {
+                                  const customerId = customer.cust_id ? String(customer.cust_id) : '';
+                                  if (customerId) {
+                                    window.location.href = `/customers/${encodeURIComponent(customerId)}`;
+                                  }
+                                }}
                                 className={`${theme === 'dark' ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-900'}`}
                               >
                                 View
@@ -281,7 +321,7 @@ export default function CustomersPage() {
                         </div>
                         <div className="mt-2 flex justify-between">
                           <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                            {customer.customer_phone}
+                            {customer.phone}
                           </div>
                           {customer.branch_name && (
                             <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>

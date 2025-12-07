@@ -22,7 +22,7 @@ export default function ApiLogsPage() {
       >
         <div className="min-h-screen bg-gray-50">
           <header className="bg-white shadow">
-            <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <div className="py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
               <h1 className="text-2xl font-bold text-gray-900">API Logs</h1>
               <div className="flex items-center space-x-4">
                 <button
@@ -36,7 +36,7 @@ export default function ApiLogsPage() {
           </header>
           
           <main>
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div className="py-6 sm:px-6 lg:px-8">
               {showViewer && <ApiLogViewer />}
             </div>
           </main>

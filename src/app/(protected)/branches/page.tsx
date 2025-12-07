@@ -5,7 +5,8 @@ import { makeAuthenticatedRequest } from '@/utils/api';
 import { Branch, ApiResponse, Pagination } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { MapPin, Plus, Search, Edit3, Trash2, Eye, ChevronLeft, ChevronRight, AlertCircle, Package, Users, Building2, TrendingUp, Moon, Sun } from 'lucide-react';
+import { RoleGuard } from '@/components/RoleGuard';
+import { MapPin, Plus, Search, Edit3, Eye, ChevronLeft, ChevronRight, AlertCircle, Package, Users, Building2, TrendingUp, Moon, Sun, Power, PowerOff, DollarSign } from 'lucide-react';
 
 export default function BranchesPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -16,13 +17,14 @@ export default function BranchesPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const { user } = useAuth();
   const { theme } = useTheme();
 
   useEffect(() => {
     fetchBranches();
-  }, [currentPage, searchTerm, filterActive]);
+  }, [currentPage, searchTerm, filterActive, sortBy, user?.store_id]);
 
   const fetchBranches = async () => {
     try {
@@ -39,6 +41,10 @@ export default function BranchesPage() {
 
       if (filterActive !== 'all') {
         params.append('is_active', filterActive === 'active' ? '1' : '0');
+      }
+
+      if (sortBy) {
+        params.append('sort_by', sortBy);
       }
 
       const response: ApiResponse<{ data: Branch[]; pagination: Pagination }> =
@@ -87,24 +93,31 @@ export default function BranchesPage() {
     }
   };
 
-  const handleDeleteBranch = async (branchId: number) => {
-    if (!confirm('Are you sure you want to delete this branch? This action cannot be undone.')) {
+  const handleToggleActive = async (branchId: number, currentStatus: number) => {
+    const newStatus = currentStatus === 1 ? 0 : 1;
+    const action = newStatus === 1 ? 'activate' : 'deactivate';
+    
+    if (!confirm(`Are you sure you want to ${action} this branch?`)) {
       return;
     }
 
     try {
       const response = await makeAuthenticatedRequest(`/branches/${branchId}`, {
-        method: 'DELETE',
+        method: 'PUT',
+        body: JSON.stringify({
+          is_active: newStatus,
+          store_id: user?.store_id,
+        }),
       });
 
       if (response.success) {
-        fetchBranches();
+        fetchBranches(); // Refresh the list
       } else {
-        throw new Error(response.message || 'Failed to delete branch');
+        throw new Error(response.message || `Failed to ${action} branch`);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to delete branch');
-      console.error('Branch delete error:', err);
+      setError(err.message || `Failed to ${action} branch`);
+      console.error(`Toggle branch status error:`, err);
     }
   };
 
@@ -177,91 +190,122 @@ export default function BranchesPage() {
   const isDarkMode = theme === 'dark';
 
   return (
-    <div className="min-h-screen transition-colors duration-300">
-      {/* Header */}
-      <div className={`${t.headerBg} border-b ${t.headerBorder} sticky top-0 z-40 backdrop-blur-xl transition-all duration-300`}>
-        <div className="max-w-7xl mx-auto px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className={`text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent`}>
-                Branches Management
-              </h1>
-              <p className={`${t.textSecondary} text-sm mt-1`}>Manage and monitor all your business locations efficiently</p>
-            </div>
-            <button
-              onClick={() => window.location.href = '/branches/new'}
-              className={`${t.button.primary} px-6 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
-            >
-              <Plus size={20} />
-              Add New Branch
-            </button>
+    <RoleGuard
+      requiredPermissions={['manage_branches']}
+      fallback={
+        <div className="p-6 text-center">
+          <div className={`border rounded-lg p-4 ${isDarkMode ? 'bg-red-900/30 border-red-700/50 text-red-300' : 'bg-red-100 border-red-400 text-red-700'}`}>
+            Access denied. You do not have permission to view branches.
           </div>
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {[
-            { label: 'Total Branches', value: totalCount, icon: Building2, color: 'blue' },
-            { label: 'Active Branches', value: activeBranches, icon: TrendingUp, color: 'green' },
-            { label: 'Total Orders', value: totalOrders.toLocaleString(), icon: Package, color: 'purple' },
-            // { label: 'Total Employees', value: totalEmployees, icon: Users, color: 'orange' }
-          ].map((stat, i) => {
-            const Icon = stat.icon;
-            const colorClasses = t.statCard[stat.color as keyof typeof t.statCard];
-            const iconClasses = {
-              blue: isDarkMode ? 'text-blue-400' : 'text-blue-600',
-              green: isDarkMode ? 'text-green-400' : 'text-green-600',
-              purple: isDarkMode ? 'text-purple-400' : 'text-purple-600',
-              // orange: isDarkMode ? 'text-orange-400' : 'text-orange-600'
-            };
-            return (
-              <div key={i} className={`bg-gradient-to-br ${colorClasses} border rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:scale-105`}>
-                <div className="flex items-center justify-between mb-4">
-                  <Icon size={28} className={iconClasses[stat.color as keyof typeof iconClasses]} />
-                </div>
-                <p className={`${t.textTertiary} text-sm font-medium mb-1`}>{stat.label}</p>
-                <p className={`text-3xl font-bold ${t.text}`}>{stat.value}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Search and Filter Bar */}
-        <div className={`${t.cardBg} rounded-xl border ${t.cardBorder} p-5 mb-8 shadow-sm hover:shadow-md transition-shadow duration-300`}>
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex-1">
-              <label className={`block text-sm font-medium ${t.text} mb-2`}>Search Branches</label>
+      }
+    >
+      <div className="min-h-screen transition-colors duration-300">
+      <div className="py-8">
+        {/* Combined Header with Search and Filter Bar */}
+        <div 
+          className={`rounded-xl border p-6 mb-8 shadow-sm ${
+            isDarkMode 
+              ? 'bg-slate-800/50 border-slate-700/50' 
+              : 'bg-white border-gray-200'
+          }`}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+            {/* Search */}
+            <div className="md:col-span-5">
+              <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>Search</label>
               <div className="relative">
-                <Search size={18} className={`absolute left-3 top-3.5 ${t.textTertiary}`} />
+                <Search size={18} className={`absolute left-3 top-3 ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`} />
                 <input
                   type="text"
-                  placeholder="Search by name, city, or address..."
+                  placeholder="Search by branch name, city, or address..."
                   value={searchTerm}
                   onChange={handleSearch}
-                  className={`w-full pl-10 pr-4 py-2.5 border ${t.input} rounded-lg focus:outline-none focus:ring-2 transition-all duration-300`}
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                    isDarkMode
+                      ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
+                      : 'bg-gray-50 border-gray-200 text-gray-900'
+                  }`}
                 />
               </div>
             </div>
-            <div className="w-full md:w-auto">
-              <label className={`block text-sm font-medium ${t.text} mb-2`}>Filter</label>
-              <div className="flex gap-2">
-                {['all', 'active', 'inactive'].map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => handleFilterChange(filter as 'all' | 'active' | 'inactive')}
-                    className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 ${
-                      filterActive === filter
-                        ? t.button.filterActive
-                        : t.button.filter
-                    }`}
-                  >
-                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                  </button>
-                ))}
+
+            {/* Status Filter */}
+            <div className="md:col-span-2">
+              <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>Status</label>
+              <div className="relative">
+                <select
+                  value={filterActive}
+                  onChange={(e) => handleFilterChange(e.target.value as 'all' | 'active' | 'inactive')}
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer transition-all duration-200 ${
+                    isDarkMode
+                      ? 'bg-slate-800/80 border-slate-700/50 text-white'
+                      : 'bg-gray-50 border-gray-200 text-gray-900'
+                  }`}
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+                <svg
+                  className="absolute right-3 top-3.5 pointer-events-none text-gray-400"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
               </div>
             </div>
+
+            {/* Sort By */}
+            <div className="md:col-span-3">
+              <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>Sort By</label>
+              <div className="relative">
+                <select
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value as 'newest' | 'oldest' | 'name');
+                    setCurrentPage(1);
+                  }}
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer transition-all duration-200 ${
+                    isDarkMode
+                      ? 'bg-slate-800/80 border-slate-700/50 text-white'
+                      : 'bg-gray-50 border-gray-200 text-gray-900'
+                  }`}
+                >
+                  <option value="newest">Date (Newest First)</option>
+                  <option value="oldest">Date (Oldest First)</option>
+                  <option value="name">Name (A-Z)</option>
+                </select>
+                <svg
+                  className={`absolute right-3 top-3.5 pointer-events-none ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}
+                  width="16"
+                  height="16"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Right side: Add New Branch button */}
+            <div className="md:col-span-2 flex items-end">
+              <button
+                onClick={() => window.location.href = '/branches/new'}
+                className={`${t.button.primary} w-full px-6 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 whitespace-nowrap`}
+              >
+                <Plus size={20} />
+                Add New Branch
+              </button>
+            </div>
+          </div>
+
+          {/* Results count */}
+          <div className={`text-sm mt-4 ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
+            Showing {branches.length} of {totalCount} branches
           </div>
         </div>
 
@@ -291,6 +335,7 @@ export default function BranchesPage() {
                     <th className={`px-6 py-4 text-left text-sm font-semibold ${t.text}`}>Branch Name</th>
                     <th className={`px-6 py-4 text-left text-sm font-semibold ${t.text}`}>Location</th>
                     <th className={`px-6 py-4 text-left text-sm font-semibold ${t.text}`}>Address</th>
+                    <th className={`px-6 py-4 text-center text-sm font-semibold ${t.text}`}>Delivery Charge</th>
                     <th className={`px-6 py-4 text-center text-sm font-semibold ${t.text}`}>Orders</th>
                     <th className={`px-6 py-4 text-center text-sm font-semibold ${t.text}`}>Status</th>
                     <th className={`px-6 py-4 text-right text-sm font-semibold ${t.text}`}>Actions</th>
@@ -311,10 +356,29 @@ export default function BranchesPage() {
                         <td className="px-6 py-4">
                           <div className={`flex items-center gap-2 ${t.textSecondary} text-sm`}>
                             <MapPin size={16} className="text-blue-500 flex-shrink-0" />
-                            <span>{branch.city}, {branch.pincode}</span>
+                            <span>
+                              {branch.city || 'N/A'}
+                              {branch.pincode && `, ${branch.pincode}`}
+                              {branch.latitude && branch.longitude && (
+                                <span className="text-xs opacity-70 ml-1">
+                                  ({Number(branch.latitude).toFixed(4)}, {Number(branch.longitude).toFixed(4)})
+                                </span>
+                              )}
+                            </span>
                           </div>
                         </td>
-                        <td className={`px-6 py-4 ${t.textSecondary} text-sm`}>{branch.address}</td>
+                        <td className={`px-6 py-4 ${t.textSecondary} text-sm`}>
+                          {branch.address || 
+                           (branch.address_line_1 && branch.address_line_2 
+                             ? `${branch.address_line_1}, ${branch.address_line_2}, ${branch.city || ''}, ${branch.pincode || ''}`
+                             : branch.address_line_1 || 'N/A')}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className={`inline-flex items-center gap-1 ${theme === 'dark' ? 'bg-green-900/40 text-green-300' : 'bg-green-50 text-green-900'} px-3 py-1.5 rounded-lg`}>
+                            <DollarSign size={14} />
+                            <span className="font-semibold">₹{parseFloat(branch.delivery_charge?.toString() || '0').toFixed(2)}</span>
+                          </div>
+                        </td>
                         <td className="px-6 py-4 text-center">
                           <div className={`inline-flex items-center gap-2 ${theme === 'dark' ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-50 text-blue-900'} px-3 py-1.5 rounded-lg`}>
                             <Package size={16} />
@@ -349,11 +413,19 @@ export default function BranchesPage() {
                               <Edit3 size={18} />
                             </button>
                             <button
-                              onClick={() => handleDeleteBranch(branch.branch_id)}
-                              className={`p-2 rounded-lg transition-colors duration-200 ${theme === 'dark' ? 'hover:bg-red-900/40 text-red-400' : 'hover:bg-red-100 text-red-600'}`}
-                              title="Delete"
+                              onClick={() => handleToggleActive(branch.branch_id, branch.is_active || 0)}
+                              className={`p-2 rounded-lg transition-colors duration-200 ${
+                                branch.is_active === 1
+                                  ? theme === 'dark' 
+                                    ? 'hover:bg-orange-900/40 text-orange-400' 
+                                    : 'hover:bg-orange-100 text-orange-600'
+                                  : theme === 'dark'
+                                    ? 'hover:bg-green-900/40 text-green-400'
+                                    : 'hover:bg-green-100 text-green-600'
+                              }`}
+                              title={branch.is_active === 1 ? 'Deactivate' : 'Activate'}
                             >
-                              <Trash2 size={18} />
+                              {branch.is_active === 1 ? <PowerOff size={18} /> : <Power size={18} />}
                             </button>
                           </div>
                         </td>
@@ -396,7 +468,9 @@ export default function BranchesPage() {
                       className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all duration-300 ${
                         currentPage === page
                           ? 'bg-blue-600 text-white shadow-md'
-                          : `${t.textSecondary} hover:bg-slate-700/50`
+                          : isDarkMode
+                            ? `${t.textSecondary} hover:bg-slate-700/50`
+                            : `${t.textSecondary} hover:bg-slate-100`
                       }`}
                     >
                       {page}
@@ -417,5 +491,6 @@ export default function BranchesPage() {
         )}
       </div>
     </div>
+    </RoleGuard>
   );
 }

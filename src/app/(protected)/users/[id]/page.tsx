@@ -21,7 +21,7 @@ export default function UserDetailPage() {
         setLoading(true);
         setError(null);
 
-        const response: ApiResponse<{ data: User }> = 
+        const response: ApiResponse<User> = 
           await makeAuthenticatedRequest(
             `/users/${params.id}?store_id=${currentUser?.store_id}`,
             {},
@@ -30,8 +30,9 @@ export default function UserDetailPage() {
             currentUser?.branch_id || undefined
           );
 
-        if (response.success) {
-          setUser(response.data.data || response.data);
+        if (response.success && response.data) {
+          // response.data is already the User object according to ApiResponse<User>
+          setUser(response.data);
         } else {
           throw new Error(response.message || 'Failed to fetch user');
         }

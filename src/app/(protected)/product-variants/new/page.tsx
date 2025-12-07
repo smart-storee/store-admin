@@ -5,12 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleGuard } from '@/components/RoleGuard';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ApiResponse, Product, Branch, ProductVariant } from '@/types';
 
 export default function NewProductVariantPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const productId = searchParams.get('product_id');
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -22,13 +24,8 @@ export default function NewProductVariantPage() {
     product_id: parseInt(productId || '') || 0,
     variant_name: '',
     variant_price: 0,
-    variant_description: '',
-    sku: '',
-    barcode: '',
     stock: 0,
     is_active: 1,
-    variant_image: '',
-    attribute_values: '{}', // JSON string for attributes like size, color, etc.
     branch_id: user?.branch_id || 1,
   });
 
@@ -124,12 +121,14 @@ export default function NewProductVariantPage() {
     try {
       const response: ApiResponse<{ data: ProductVariant }> =
         await makeAuthenticatedRequest(
-          `/variants/${formData.product_id}/variants`,
+          `/products/${formData.product_id}/variants`,
           {
             method: 'POST',
             body: JSON.stringify({
-              ...formData,
-
+              variant_name: formData.variant_name,
+              variant_price: formData.variant_price,
+              stock: formData.stock || 0,
+              is_active: formData.is_active,
               store_id: user?.store_id,
               branch_id: formData.branch_id || 1,
             }),
@@ -168,7 +167,7 @@ export default function NewProductVariantPage() {
 
   return (
     <RoleGuard
-      requiredPermissions={['manage_products']}
+      allowedRoles={['admin', 'manager', 'staff']}
       fallback={
         <div className="p-6 text-center">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -177,20 +176,20 @@ export default function NewProductVariantPage() {
         </div>
       }
     >
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Add New Product Variant</h1>
+      <div className={`p-6 min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <h1 className={`text-2xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Add New Product Variant</h1>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className={`mb-4 px-4 py-3 rounded ${theme === 'dark' ? 'bg-red-900/40 border border-red-700 text-red-300' : 'bg-red-100 border border-red-400 text-red-700'}`}>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white shadow sm:rounded-md">
+        <form onSubmit={handleSubmit} className={`shadow sm:rounded-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="px-4 py-5 sm:p-6">
             <div className="grid grid-cols-6 gap-6">
               <div className="col-span-6">
-                <label htmlFor="product_id" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="product_id" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                   Product *
                 </label>
                 <select
@@ -200,7 +199,11 @@ export default function NewProductVariantPage() {
                   onChange={handleChange}
                   required
                   disabled={!!productId} // Disable if product_id was provided via URL
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                  className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                    theme === 'dark'
+                      ? 'bg-gray-700 border-gray-600 text-white'
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 >
                   <option value="">Select a product</option>
                   {products.map((product) => (
@@ -212,7 +215,7 @@ export default function NewProductVariantPage() {
               </div>
 
               <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="variant_name" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="variant_name" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                   Variant Name *
                 </label>
                 <input
@@ -222,12 +225,16 @@ export default function NewProductVariantPage() {
                   value={formData.variant_name}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                  className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                    theme === 'dark'
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 />
               </div>
 
               <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="variant_price" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="variant_price" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                   Price (₹) *
                 </label>
                 <input
@@ -239,12 +246,16 @@ export default function NewProductVariantPage() {
                   required
                   min="0"
                   step="0.01"
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                  className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                    theme === 'dark'
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 />
               </div>
 
               <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="stock" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="stock" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                   Stock Quantity *
                 </label>
                 <input
@@ -255,82 +266,12 @@ export default function NewProductVariantPage() {
                   onChange={handleChange}
                   required
                   min="0"
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                  className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                    theme === 'dark'
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 />
-              </div>
-
-              <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="sku" className="block text-sm font-medium text-gray-700">
-                  SKU (Stock Keeping Unit)
-                </label>
-                <input
-                  type="text"
-                  id="sku"
-                  name="sku"
-                  value={formData.sku}
-                  onChange={handleChange}
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                />
-              </div>
-
-              <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="barcode" className="block text-sm font-medium text-gray-700">
-                  Barcode
-                </label>
-                <input
-                  type="text"
-                  id="barcode"
-                  name="barcode"
-                  value={formData.barcode}
-                  onChange={handleChange}
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                />
-              </div>
-
-              <div className="col-span-6">
-                <label htmlFor="variant_description" className="block text-sm font-medium text-gray-700">
-                  Description
-                </label>
-                <textarea
-                  id="variant_description"
-                  name="variant_description"
-                  value={formData.variant_description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                ></textarea>
-              </div>
-
-              <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="variant_image" className="block text-sm font-medium text-gray-700">
-                  Image URL
-                </label>
-                <input
-                  type="text"
-                  id="variant_image"
-                  name="variant_image"
-                  value={formData.variant_image}
-                  onChange={handleChange}
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                />
-              </div>
-
-              <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="attribute_values" className="block text-sm font-medium text-gray-700">
-                  Attributes (JSON)
-                </label>
-                <textarea
-                  id="attribute_values"
-                  name="attribute_values"
-                  value={formData.attribute_values}
-                  onChange={handleChange}
-                  rows={2}
-                  placeholder='{"size": "large", "color": "red", "weight": "500g"}'
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                ></textarea>
-                <p className="mt-1 text-xs text-gray-500">
-                  JSON format for size, color, weight, or other distinguishing attributes
-                </p>
               </div>
 
               <div className="col-span-6">
@@ -342,25 +283,33 @@ export default function NewProductVariantPage() {
                       type="checkbox"
                       checked={formData.is_active === 1}
                       onChange={handleChange}
-                      className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                      className={`focus:ring-indigo-500 h-4 w-4 text-indigo-600 rounded ${
+                        theme === 'dark' ? 'border-gray-600 bg-gray-700' : 'border-gray-300'
+                      }`}
                     />
                   </div>
                   <div className="ml-3 text-sm">
-                    <label htmlFor="is_active" className="font-medium text-gray-700">
+                    <label htmlFor="is_active" className={`font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                       Active
                     </label>
-                    <p className="text-gray-500">When checked, this variant will be available for purchase</p>
+                    <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>When checked, this variant will be available for purchase</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="px-4 py-3 bg-gray-50 sm:px-6 flex justify-end">
+          <div className={`px-4 py-3 sm:px-6 flex justify-end ${
+            theme === 'dark' ? 'bg-gray-800 border-t border-gray-700' : 'bg-gray-50'
+          }`}>
             <button
               type="button"
               onClick={() => router.push(`/setup-flow`)}
-              className="bg-white py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3"
+              className={`py-2 px-4 border rounded-md text-sm font-medium mr-3 ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
             >
               Cancel
             </button>

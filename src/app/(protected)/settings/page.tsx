@@ -4,16 +4,22 @@ import { useState, useEffect } from 'react';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useStore } from '@/contexts/StoreContext';
 import { RoleGuard } from '@/components/RoleGuard';
 import { ApiResponse, AppSettings } from '@/types';
 
 interface ExtendedAppSettings extends AppSettings {
   splash_background_url?: string;
   maintenance_message?: string;
+  upi_id?: string;
+  is_upi_enabled?: number;
+  delivery_charge?: number;
+  free_delivery_threshold?: number | null;
 }
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { features } = useStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,8 +37,12 @@ export default function SettingsPage() {
     splash_background_url: '',
     min_order_amount: 100,
     platform_fee: 0,
+    delivery_charge: 0,
+    free_delivery_threshold: null,
     is_cod_enabled: 1,
     is_online_payment_enabled: 0,
+    is_upi_enabled: 0,
+    upi_id: '',
     maintenance_mode: 0,
     maintenance_message: '',
     created_at: new Date().toISOString(),
@@ -74,7 +84,7 @@ export default function SettingsPage() {
     if (user?.store_id) {
       fetchSettings();
     }
-  }, [user?.store_id]);
+  }, [user?.store_id, features]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -103,6 +113,13 @@ export default function SettingsPage() {
     setError(null);
     setSaving(true);
 
+    // Check if app settings are enabled
+    if (features && !features.app_settings_enabled) {
+      setError('App settings are not enabled for your store. Please contact support.');
+      setSaving(false);
+      return;
+    }
+
     try {
       const payload = {
         store_id: user?.store_id,
@@ -114,8 +131,12 @@ export default function SettingsPage() {
         splash_background_url: settings.splash_background_url,
         min_order_amount: settings.min_order_amount,
         platform_fee: settings.platform_fee,
+        delivery_charge: settings.delivery_charge,
+        free_delivery_threshold: settings.free_delivery_threshold,
         is_cod_enabled: settings.is_cod_enabled,
         is_online_payment_enabled: settings.is_online_payment_enabled,
+        is_upi_enabled: settings.is_upi_enabled,
+        upi_id: settings.upi_id,
         maintenance_mode: settings.maintenance_mode,
         maintenance_message: settings.maintenance_message
       };
@@ -153,6 +174,26 @@ export default function SettingsPage() {
   const textSecondary = isDarkMode ? 'text-slate-400' : 'text-gray-600';
   const textTertiary = isDarkMode ? 'text-slate-500' : 'text-gray-500';
   const inputBgClass = isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-gray-300 text-gray-900';
+
+  // Check if app settings are enabled (wait for features to load)
+  if (features !== null && features && !features.app_settings_enabled) {
+    return (
+      <RoleGuard allowedRoles={['super_admin', 'admin', 'manager']}>
+        <div className={`p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} min-h-screen`}>
+          <div className="max-w-2xl mx-auto text-center py-12">
+            <div className={`p-6 rounded-lg ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-yellow-50 border border-yellow-200'}`}>
+              <h2 className={`text-xl font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                App Settings Disabled
+              </h2>
+              <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                App settings feature is not enabled for your store. Please contact support to enable this feature.
+              </p>
+            </div>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
   const hoverClass = isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-gray-50';
   const tabActiveBg = isDarkMode ? 'bg-slate-800 border-indigo-500' : 'bg-indigo-50 border-indigo-600';
 
@@ -413,8 +454,8 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Min Order Amount & Platform Fee */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Min Order Amount, Platform Fee & Delivery Charge */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div>
                     <label htmlFor="min_order_amount" className={`block text-sm font-semibold ${textPrimary} mb-2`}>
                       Minimum Order Amount
@@ -451,6 +492,54 @@ export default function SettingsPage() {
                         className={`w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="delivery_charge" className={`block text-sm font-semibold ${textPrimary} mb-2`}>
+                      Store Delivery Charge
+                    </label>
+                    <div className="relative">
+                      <span className={`absolute left-4 top-2.5 ${textSecondary}`}>₹</span>
+                      <input
+                        type="number"
+                        id="delivery_charge"
+                        name="delivery_charge"
+                        value={settings.delivery_charge || 0}
+                        onChange={handleChange}
+                        step="0.01"
+                        min="0"
+                        className={`w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                      />
+                    </div>
+                    <p className={`text-xs ${textTertiary} mt-1`}>
+                      Default delivery charge for all branches (can be overridden per branch)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Free Delivery Threshold */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="free_delivery_threshold" className={`block text-sm font-semibold ${textPrimary} mb-2`}>
+                      Free Delivery Threshold (Store Level)
+                    </label>
+                    <div className="relative">
+                      <span className={`absolute left-4 top-2.5 ${textSecondary}`}>₹</span>
+                      <input
+                        type="number"
+                        id="free_delivery_threshold"
+                        name="free_delivery_threshold"
+                        value={settings.free_delivery_threshold || ''}
+                        onChange={handleChange}
+                        step="0.01"
+                        min="0"
+                        placeholder="Leave empty to disable"
+                        className={`w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                      />
+                    </div>
+                    <p className={`text-xs ${textTertiary} mt-1`}>
+                      Orders above this amount get free delivery. Leave empty to disable. Branch-level settings override this.
+                    </p>
                   </div>
                 </div>
 
@@ -560,7 +649,53 @@ export default function SettingsPage() {
                       {settings.is_online_payment_enabled === 1 ? 'Enabled' : 'Disabled'}
                     </div>
                   </div>
+
+                  {/* UPI Payment */}
+                  <div className={`flex items-center p-4 border rounded-lg ${hoverClass} transition ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
+                    <input
+                      id="is_upi_enabled"
+                      name="is_upi_enabled"
+                      type="checkbox"
+                      checked={settings.is_upi_enabled === 1}
+                      onChange={handleChange}
+                      className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <div className="ml-4 flex-1">
+                      <label htmlFor="is_upi_enabled" className={`text-sm font-semibold ${textPrimary} cursor-pointer`}>
+                        UPI Payment
+                      </label>
+                      <p className={`text-xs ${textTertiary} mt-1`}>Enable UPI (Unified Payments Interface) payments</p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-xs font-semibold ${settings.is_upi_enabled === 1
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
+                      : 'bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300'
+                      }`}>
+                      {settings.is_upi_enabled === 1 ? 'Enabled' : 'Disabled'}
+                    </div>
+                  </div>
                 </div>
+
+                {/* UPI ID Field - Show when UPI is enabled */}
+                {settings.is_upi_enabled === 1 && (
+                  <div className="mt-6">
+                    <label htmlFor="upi_id" className={`block text-sm font-semibold ${textPrimary} mb-2`}>
+                      Store UPI ID <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="upi_id"
+                      name="upi_id"
+                      value={settings.upi_id || ''}
+                      onChange={handleChange}
+                      placeholder="merchant@paytm or merchant@ybl"
+                      required={settings.is_upi_enabled === 1}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                    />
+                    <p className={`text-xs ${textTertiary} mt-2`}>
+                      Enter your store's UPI ID where customers will send payments (e.g., merchant@paytm, merchant@ybl, merchant@phonepe)
+                    </p>
+                  </div>
+                )}
 
                 {/* Info Box */}
                 <div className={`${isDarkMode ? 'bg-blue-950 border-blue-900' : 'bg-blue-50 border-blue-200'} border rounded-lg p-4`}>

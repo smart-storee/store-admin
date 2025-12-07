@@ -1,17 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleGuard } from '@/components/RoleGuard';
-import { ApiResponse } from '@/types';
+import { ApiResponse, Branch } from '@/types';
+
+interface Permission {
+  name: string;
+  description: string;
+}
 
 export default function NewUserPage() {
   const router = useRouter();
   const { user: currentUser } = useAuth();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadingPermissions, setLoadingPermissions] = useState(true);
+  const [availablePermissions, setAvailablePermissions] = useState<Permission[]>([]);
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [loadingBranches, setLoadingBranches] = useState(false);
   const [formData, setFormData] = useState({
     user_name: '',
     email: '',
@@ -19,7 +29,57 @@ export default function NewUserPage() {
     password: '',
     role: 'staff',
     status: 'active',
+    branch_id: null as number | null,
   });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoadingPermissions(true);
+        setLoadingBranches(true);
+
+        // Fetch permissions
+        const permissionsResponse: ApiResponse<Permission[]> = await makeAuthenticatedRequest(
+          '/users/permissions',
+          {},
+          true,
+          currentUser?.store_id,
+          currentUser?.branch_id || undefined
+        );
+
+        if (permissionsResponse.success && permissionsResponse.data) {
+          setAvailablePermissions(Array.isArray(permissionsResponse.data) ? permissionsResponse.data : []);
+        }
+
+        // Fetch branches
+        if (currentUser?.store_id) {
+          const branchesResponse: ApiResponse<{ data: Branch[] }> = await makeAuthenticatedRequest(
+            `/branches?store_id=${currentUser?.store_id}`,
+            {},
+            true,
+            currentUser?.store_id,
+            currentUser?.branch_id || undefined
+          );
+
+          if (branchesResponse.success) {
+            const branchesData = Array.isArray(branchesResponse.data.data) 
+              ? branchesResponse.data.data 
+              : branchesResponse.data.data || branchesResponse.data || [];
+            setBranches(branchesData);
+          }
+        }
+      } catch (err: any) {
+        console.error('Failed to load data:', err);
+      } finally {
+        setLoadingPermissions(false);
+        setLoadingBranches(false);
+      }
+    };
+
+    if (currentUser?.store_id) {
+      fetchData();
+    }
+  }, [currentUser?.store_id, currentUser?.branch_id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -27,6 +87,14 @@ export default function NewUserPage() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handlePermissionToggle = (permissionName: string) => {
+    setSelectedPermissions(prev => 
+      prev.includes(permissionName)
+        ? prev.filter(p => p !== permissionName)
+        : [...prev, permissionName]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,7 +111,8 @@ export default function NewUserPage() {
             body: JSON.stringify({
               ...formData,
               store_id: currentUser?.store_id,
-              branch_id: currentUser?.branch_id || null,
+              branch_id: formData.branch_id,
+              permissions: selectedPermissions,
             }),
           },
           true, // auto-refresh token
@@ -167,7 +236,7 @@ export default function NewUserPage() {
                 </select>
               </div>
               
-              <div className="col-span-6">
+              <div className="col-span-6 sm:col-span-3">
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700">
                   Status *
                 </label>
@@ -183,6 +252,78 @@ export default function NewUserPage() {
                   <option value="inactive">Inactive</option>
                   <option value="suspended">Suspended</option>
                 </select>
+              </div>
+
+              <div className="col-span-6 sm:col-span-3">
+                <label htmlFor="branch_id" className="block text-sm font-medium text-gray-700">
+                  Branch
+                </label>
+                <select
+                  id="branch_id"
+                  name="branch_id"
+                  value={formData.branch_id || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData(prev => ({
+                      ...prev,
+                      branch_id: value ? parseInt(value) : null
+                    }));
+                  }}
+                  className="mt-1 block w-full max-w-lg pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md border p-2"
+                >
+                  <option value="">No branch assigned</option>
+                  {branches.map((branch) => (
+                    <option key={branch.branch_id} value={branch.branch_id}>
+                      {branch.branch_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-span-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assigned Permissions
+                </label>
+                {loadingPermissions ? (
+                  <div className="text-sm text-gray-500">Loading permissions...</div>
+                ) : (
+                  <div className="border border-gray-300 rounded-md p-4 max-h-64 overflow-y-auto">
+                    {availablePermissions.length === 0 ? (
+                      <div className="text-sm text-gray-500">No permissions available</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {availablePermissions.map((permission) => (
+                          <label
+                            key={permission.name}
+                            className="flex items-start space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedPermissions.includes(permission.name)}
+                              onChange={() => handlePermissionToggle(permission.name)}
+                              className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-gray-900">
+                                {permission.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </div>
+                              {permission.description && (
+                                <div className="text-xs text-gray-500 mt-0.5">
+                                  {permission.description}
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {selectedPermissions.length > 0 && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    {selectedPermissions.length} permission{selectedPermissions.length !== 1 ? 's' : ''} selected
+                  </div>
+                )}
               </div>
             </div>
           </div>

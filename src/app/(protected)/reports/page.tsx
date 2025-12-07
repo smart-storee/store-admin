@@ -4,8 +4,12 @@ import { useState, useEffect } from 'react';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useStore } from '@/contexts/StoreContext';
 import { RoleGuard } from '@/components/RoleGuard';
 import { ApiResponse, Branch } from '@/types';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface ReportData {
   total_orders: number;
@@ -29,6 +33,7 @@ interface ReportData {
 export default function ReportsPage() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { features } = useStore();
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
@@ -38,6 +43,8 @@ export default function ReportsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [storeName, setStoreName] = useState<string>('');
+  const [storeLogo, setStoreLogo] = useState<string>('');
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -61,6 +68,30 @@ export default function ReportsPage() {
           } else {
             throw new Error(branchesResponse.message || 'Failed to fetch branches');
           }
+
+          // Fetch store config (name and logo)
+          try {
+            const storeConfigResponse: ApiResponse<any> = await makeAuthenticatedRequest(
+              `/app-settings?store_id=${user.store_id}`,
+              {},
+              true,
+              user.store_id,
+              user.branch_id || undefined
+            );
+
+            if (storeConfigResponse.success) {
+              const config = storeConfigResponse.data.data || storeConfigResponse.data;
+              setStoreName(config.app_name || user.store_name || 'Store');
+              setStoreLogo(config.logo_url || '');
+            } else {
+              setStoreName(user.store_name || 'Store');
+              setStoreLogo('');
+            }
+          } catch (configErr) {
+            console.error('Error fetching store config:', configErr);
+            setStoreName(user.store_name || 'Store');
+            setStoreLogo('');
+          }
         }
       } catch (err: any) {
         setError(err.message || 'Failed to load initial data');
@@ -71,7 +102,7 @@ export default function ReportsPage() {
     if (user?.store_id) {
       fetchInitialData();
     }
-  }, [user?.store_id, user?.branch_id]);
+  }, [user?.store_id, user?.branch_id, user?.store_name]);
 
   useEffect(() => {
     const fetchReportData = async () => {
@@ -134,6 +165,261 @@ export default function ReportsPage() {
     setSelectedBranch(branchId);
   };
 
+  const handleDownloadPDF = async () => {
+    if (!reportData) return;
+
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let yPosition = 20;
+
+      // Helper function to add a new page if needed
+      const checkPageBreak = (requiredHeight: number) => {
+        if (yPosition + requiredHeight > pageHeight - 20) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+      };
+
+      // Header with Logo and Store Name
+      const logoSize = 20; // Logo size in mm
+      const logoX = 14; // Left margin
+      const logoY = yPosition;
+      let logoLoaded = false;
+      
+      // Add logo if available
+      if (storeLogo) {
+        try {
+          // Try to load and add logo to PDF
+          const response = await fetch(storeLogo, { mode: 'cors' });
+          if (response.ok) {
+            const blob = await response.blob();
+            const reader = new FileReader();
+            await new Promise((resolve, reject) => {
+              reader.onloadend = () => {
+                try {
+                  const base64data = reader.result as string;
+                  pdf.addImage(base64data, 'PNG', logoX, logoY, logoSize, logoSize);
+                  logoLoaded = true;
+                  resolve(true);
+                } catch (err) {
+                  console.warn('Could not add logo to PDF:', err);
+                  resolve(false);
+                }
+              };
+              reader.onerror = () => {
+                console.warn('Could not read logo file');
+                resolve(false);
+              };
+              reader.readAsDataURL(blob);
+            });
+          }
+        } catch (logoError) {
+          console.warn('Could not load logo:', logoError);
+          // Continue without logo
+        }
+      }
+
+      // Store Name and Report Title
+      const textStartX = logoLoaded ? logoX + logoSize + 5 : 14;
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      const storeNameText = storeName || user?.store_name || 'Store';
+      pdf.text(storeNameText, textStartX, yPosition + 8);
+      
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Business Reports & Analytics', textStartX, yPosition + 15);
+      
+      yPosition += 25;
+
+      // Report period
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      const periodText = dateRange.startDate && dateRange.endDate
+        ? `Period: ${new Date(dateRange.startDate).toLocaleDateString('en-IN')} - ${new Date(dateRange.endDate).toLocaleDateString('en-IN')}`
+        : `Period: Last 30 days`;
+      pdf.text(periodText, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 5;
+
+      // Branch filter info
+      if (selectedBranch) {
+        const branchName = branches.find(b => b.branch_id === selectedBranch)?.branch_name || 'Selected Branch';
+        pdf.text(`Branch: ${branchName}`, pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 5;
+      }
+
+      yPosition += 5;
+
+      // Summary Cards
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Summary', 14, yPosition);
+      yPosition += 8;
+
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      
+      const summaryData = [
+        ['Metric', 'Value'],
+        ['Total Orders', reportData.total_orders.toString()],
+        ['Total Revenue', `₹${reportData.total_revenue.toLocaleString('en-IN')}`],
+        ['Average Order Value', `₹${reportData.avg_order_value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+      ];
+
+      autoTable(pdf, {
+        startY: yPosition,
+        head: [summaryData[0]],
+        body: summaryData.slice(1),
+        theme: 'striped',
+        headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 10 },
+        margin: { left: 14, right: 14 },
+      });
+
+      yPosition = (pdf as any).lastAutoTable.finalY + 15;
+      checkPageBreak(50);
+
+      // Top Products
+      if (reportData.top_products && reportData.top_products.length > 0) {
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Top Selling Products', 14, yPosition);
+        yPosition += 8;
+
+        const topProductsData = [
+          ['Rank', 'Product Name', 'Quantity Sold'],
+          ...reportData.top_products.map((product, index) => [
+            `#${index + 1}`,
+            product.product_name,
+            product.quantity_sold.toString(),
+          ]),
+        ];
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [topProductsData[0]],
+          body: topProductsData.slice(1),
+          theme: 'striped',
+          headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+          styles: { fontSize: 10 },
+          margin: { left: 14, right: 14 },
+        });
+
+        yPosition = (pdf as any).lastAutoTable.finalY + 15;
+        checkPageBreak(50);
+      }
+
+      // Monthly Summary
+      if (reportData.monthly_summary && reportData.monthly_summary.length > 0) {
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Monthly Summary', 14, yPosition);
+        yPosition += 8;
+
+        const monthlyData = [
+          ['Month', 'Total Orders', 'Total Revenue'],
+          ...reportData.monthly_summary.map((month) => [
+            month.month,
+            month.total_orders.toString(),
+            `₹${month.total_revenue.toLocaleString('en-IN')}`,
+          ]),
+        ];
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [monthlyData[0]],
+          body: monthlyData.slice(1),
+          theme: 'striped',
+          headStyles: { fillColor: [139, 92, 246], textColor: 255, fontStyle: 'bold' },
+          styles: { fontSize: 10 },
+          margin: { left: 14, right: 14 },
+        });
+
+        yPosition = (pdf as any).lastAutoTable.finalY + 15;
+        checkPageBreak(30);
+      }
+
+      // Daily Revenue (if available)
+      if (reportData.daily_revenue && reportData.daily_revenue.length > 0) {
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Daily Revenue Breakdown', 14, yPosition);
+        yPosition += 8;
+
+        // Show first 20 days to avoid table overflow
+        const dailyDataToShow = reportData.daily_revenue.slice(0, 20);
+        const dailyData = [
+          ['Date', 'Revenue'],
+          ...dailyDataToShow.map((day) => [
+            new Date(day.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+            `₹${day.revenue.toLocaleString('en-IN')}`,
+          ]),
+        ];
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [dailyData[0]],
+          body: dailyData.slice(1),
+          theme: 'striped',
+          headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+          styles: { fontSize: 9 },
+          margin: { left: 14, right: 14 },
+        });
+
+        if (reportData.daily_revenue.length > 20) {
+          yPosition = (pdf as any).lastAutoTable.finalY + 10;
+          pdf.setFontSize(10);
+          pdf.setFont('helvetica', 'italic');
+          pdf.text(`* Showing first 20 days. Total days: ${reportData.daily_revenue.length}`, 14, yPosition);
+        }
+      }
+
+      // Footer
+      const totalPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'italic');
+        pdf.text(
+          `Generated on ${new Date().toLocaleString('en-IN')} | Page ${i} of ${totalPages}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+      }
+
+      // Generate filename
+      const branchSuffix = selectedBranch ? `_${branches.find(b => b.branch_id === selectedBranch)?.branch_name?.replace(/\s+/g, '_') || 'branch'}` : '';
+      const dateSuffix = dateRange.startDate && dateRange.endDate
+        ? `_${dateRange.startDate}_to_${dateRange.endDate}`
+        : `_${new Date().toISOString().split('T')[0]}`;
+      const filename = `Business_Report${branchSuffix}${dateSuffix}.pdf`;
+
+      pdf.save(filename);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      setError('Failed to generate PDF report. Please try again.');
+    }
+  };
+
+  // Check if reports feature is enabled
+  if (features && !features.reports_enabled) {
+    return (
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} p-8`}>
+        <div className={`max-w-4xl mx-auto ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-8 text-center`}>
+          <h1 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            Reports Access Disabled
+          </h1>
+          <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+            Reports access is not enabled for this store. Please contact support to enable this feature.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <RoleGuard
       requiredPermissions={['view_reports']}
@@ -157,6 +443,22 @@ export default function ReportsPage() {
                   Detailed insights and analytics for your business
                 </p>
               </div>
+              {reportData && (
+                <button
+                  onClick={handleDownloadPDF}
+                  disabled={loading}
+                  className={`mt-4 sm:mt-0 px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                    theme === 'dark'
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
+                      : 'bg-red-600 hover:bg-red-700 text-white'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Download PDF Report
+                </button>
+              )}
             </div>
 
             {/* Filters */}
@@ -307,12 +609,65 @@ export default function ReportsPage() {
                     </div>
                   </div>
 
-                  {/* Revenue Chart Placeholder */}
+                  {/* Revenue Chart */}
                   <div className={`p-6 rounded-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow`}>
                     <h2 className={`text-xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Revenue Trend</h2>
-                    <div className={`h-64 flex items-center justify-center rounded-lg ${theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
-                      <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Interactive revenue chart would be displayed here</p>
-                    </div>
+                    {reportData.daily_revenue && reportData.daily_revenue.length > 0 ? (
+                      <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={reportData.daily_revenue}
+                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? '#374151' : '#e5e7eb'} />
+                            <XAxis
+                              dataKey="date"
+                              stroke={theme === 'dark' ? '#9ca3af' : '#6b7280'}
+                              tick={{ fill: theme === 'dark' ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                              tickFormatter={(value) => {
+                                const date = new Date(value);
+                                return `${date.getDate()}/${date.getMonth() + 1}`;
+                              }}
+                            />
+                            <YAxis
+                              stroke={theme === 'dark' ? '#9ca3af' : '#6b7280'}
+                              tick={{ fill: theme === 'dark' ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                              tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: theme === 'dark' ? '#1f2937' : '#ffffff',
+                                border: theme === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                color: theme === 'dark' ? '#f3f4f6' : '#111827'
+                              }}
+                              labelStyle={{ color: theme === 'dark' ? '#9ca3af' : '#6b7280' }}
+                              formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, 'Revenue']}
+                              labelFormatter={(label) => {
+                                const date = new Date(label);
+                                return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                              }}
+                            />
+                            <Legend
+                              wrapperStyle={{ color: theme === 'dark' ? '#9ca3af' : '#6b7280' }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="revenue"
+                              stroke="#10b981"
+                              strokeWidth={2}
+                              dot={{ fill: '#10b981', r: 4 }}
+                              activeDot={{ r: 6 }}
+                              name="Revenue"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className={`h-64 flex items-center justify-center rounded-lg ${theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                        <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>No revenue data available for the selected period</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

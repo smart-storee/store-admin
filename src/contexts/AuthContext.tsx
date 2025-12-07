@@ -54,7 +54,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Login function
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch('http://localhost:3000/api/v1/admin/auth/login', {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
+      const response = await fetch(`${apiBaseUrl}/admin/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +108,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/v1/admin/auth/refresh-token', {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
+      const response = await fetch(`${apiBaseUrl}/admin/auth/refresh-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
