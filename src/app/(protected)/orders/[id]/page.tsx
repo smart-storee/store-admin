@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { CreditCard } from 'lucide-react';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleGuard } from '@/components/RoleGuard';
@@ -12,8 +13,11 @@ export default function OrderDetailPage() {
   const params = useParams();
   const { user } = useAuth();
   const [order, setOrder] = useState<Order | null>(null);
+  const [upiTransaction, setUpiTransaction] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingUpi, setLoadingUpi] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [upiError, setUpiError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -21,7 +25,7 @@ export default function OrderDetailPage() {
         setLoading(true);
         setError(null);
 
-        const response: ApiResponse<{ data: Order }> = 
+        const response: ApiResponse<{ data: Order }> =
           await makeAuthenticatedRequest(
             `/orders/${params.id}?store_id=${user?.store_id}`,
             {},
@@ -31,7 +35,13 @@ export default function OrderDetailPage() {
           );
 
         if (response.success) {
-          setOrder(response.data.data || response.data);
+          const orderData = response.data.data || response.data;
+          setOrder(orderData);
+
+          // If payment method is UPI or online, fetch UPI transaction details
+          if (orderData.payment_method === 'upi' || orderData.payment_method === 'online') {
+            fetchUpiTransaction(orderData.order_id);
+          }
         } else {
           throw new Error(response.message || 'Failed to fetch order');
         }
@@ -43,10 +53,68 @@ export default function OrderDetailPage() {
       }
     };
 
+    const fetchUpiTransaction = async (orderId: number) => {
+      try {
+        setLoadingUpi(true);
+        setUpiError(null);
+
+        const response: ApiResponse<any> = await makeAuthenticatedRequest(
+          `/orders/${orderId}/upi`,
+          {},
+          true, // auto-refresh token
+          user?.store_id,
+          user?.branch_id || undefined
+        );
+
+        if (response.success) {
+          // Handle both null and undefined data gracefully
+          if (response.data !== null && response.data !== undefined) {
+            setUpiTransaction(response.data);
+          } else {
+            // No UPI transaction found - this is normal for COD orders or orders without UPI
+            setUpiTransaction(null);
+          }
+        } else {
+          // No UPI transaction found - this is normal for COD orders
+          setUpiTransaction(null);
+        }
+      } catch (err: any) {
+        // 404 or "not found" messages are expected if no UPI transaction exists - don't show error
+        const errorMessage = err.message || '';
+        if (errorMessage.includes('404') || 
+            errorMessage.includes('not found') || 
+            errorMessage.includes('No UPI transaction')) {
+          setUpiTransaction(null);
+          setUpiError(null);
+          // Don't log this as an error - it's expected behavior
+        } else {
+          setUpiError(errorMessage || 'Failed to load UPI transaction details');
+          console.error('Load UPI transaction error:', err);
+        }
+      } finally {
+        setLoadingUpi(false);
+      }
+    };
+
     if (params.id && user?.store_id) {
       fetchOrder();
     }
   }, [params.id, user?.store_id, user?.branch_id]);
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (e) {
+      return dateString;
+    }
+  };
 
   if (loading) {
     return (
@@ -78,7 +146,7 @@ export default function OrderDetailPage() {
 
   return (
     <RoleGuard
-      requiredPermissions={['manage_orders']}
+      allowedRoles={['admin', 'manager', 'staff']}
       fallback={
         <div className="p-6 text-center">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -118,9 +186,9 @@ export default function OrderDetailPage() {
                   <div>
                     <h4 className="text-sm font-medium text-gray-500">Customer Information</h4>
                     <div className="mt-2">
-                      <p className="text-sm text-gray-900">{order.customer_name}</p>
-                      <p className="text-sm text-gray-500">{order.customer_phone}</p>
-                      <p className="text-sm text-gray-500">{order.customer_email}</p>
+                      <p className="text-sm text-gray-900">{order.customer_name || order.customer?.name || 'N/A'}</p>
+                      <p className="text-sm text-gray-500">{order.customer_phone || order.customer?.phone || 'N/A'}</p>
+                      <p className="text-sm text-gray-500">{order.customer_email || order.customer?.email || 'N/A'}</p>
                     </div>
                   </div>
                   
@@ -193,8 +261,8 @@ export default function OrderDetailPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white">
-                      {(order.items || []).map((item) => (
-                        <tr key={item.item_id || item.product_id}>
+                      {(order.items || []).map((item, index) => (
+                        <tr key={item.item_id || item.product_id || `item-${index}`}>
                           <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
                             {item.product_name}
                             {item.variant_name && (
@@ -217,28 +285,34 @@ export default function OrderDetailPage() {
                 </div>
               </div>
               
-              {/* Pricing Summary */}
+              {/* Payment Information */}
               <div className="border-b border-gray-200 pb-5 mb-6">
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div>
                     <h4 className="text-sm font-medium text-gray-500 mb-3">Payment Information</h4>
                     <div className="grid grid-cols-2 gap-2">
                       <div><span className="text-sm text-gray-500">Payment Method:</span></div>
-                      <div><span className="text-sm text-gray-900">{order.payment_method?.replace('_', ' ')}</span></div>
-                      
+                      <div>
+                        <span className="text-sm text-gray-900 capitalize">
+                          {order.payment_method 
+                            ? order.payment_method.replace('_', ' ').toUpperCase()
+                            : 'N/A'}
+                        </span>
+                      </div>
+
                       <div><span className="text-sm text-gray-500">Payment Status:</span></div>
                       <div>
                         <span className={`inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full ${
-                          order.payment_status === 'completed' ? 'bg-green-100 text-green-800' :
+                          order.payment_status === 'paid' || order.payment_status === 'completed' ? 'bg-green-100 text-green-800' :
                           order.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
                           'bg-yellow-100 text-yellow-800'
                         }`}>
-                          {order.payment_status.replace('_', ' ').toUpperCase()}
+                          {order.payment_status ? order.payment_status.replace('_', ' ').toUpperCase() : 'N/A'}
                         </span>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="space-y-2">
                       <div className="flex justify-between">
@@ -261,18 +335,108 @@ export default function OrderDetailPage() {
                   </div>
                 </div>
               </div>
+
+              {/* UPI Transaction Details - Only show if payment method is UPI or online */}
+              {(order?.payment_method === 'upi' || order?.payment_method === 'online') && (
+                <div className="border border-gray-200 rounded-lg p-5 mb-6 bg-blue-50">
+                  <div className="flex items-center mb-4">
+                    <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                      <CreditCard className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <h4 className="text-sm font-medium text-gray-900">UPI Transaction Details</h4>
+                  </div>
+
+                  {loadingUpi ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <span className="ml-2 text-sm text-gray-600">Loading UPI transaction details...</span>
+                    </div>
+                  ) : upiError ? (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                      {upiError}
+                    </div>
+                  ) : upiTransaction ? (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Transaction ID:</span>
+                          <span className="text-gray-900 font-medium">{upiTransaction.upi_transaction_id || upiTransaction.transaction_id || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">UPI ID:</span>
+                          <span className="text-gray-900 font-medium">{upiTransaction.upi_id || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Amount:</span>
+                          <span className="text-gray-900 font-medium">₹{upiTransaction.amount ? Number(upiTransaction.amount).toFixed(2) : 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Status:</span>
+                          <span className={`inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full ${
+                            upiTransaction.status === 'paid' ? 'bg-green-100 text-green-800' :
+                            upiTransaction.status === 'failed' || upiTransaction.status === 'initiated_timeout' ? 'bg-red-100 text-red-800' :
+                            upiTransaction.status === 'pending' || upiTransaction.status === 'initiated' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {upiTransaction.status?.replace('_', ' ').toUpperCase() || 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Initiated At:</span>
+                          <span className="text-gray-900 font-medium">
+                            {upiTransaction.initiated_at
+                              ? formatDate(upiTransaction.initiated_at)
+                              : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Verified At:</span>
+                          <span className="text-gray-900 font-medium">
+                            {upiTransaction.verified_at
+                              ? formatDate(upiTransaction.verified_at)
+                              : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Expires At:</span>
+                          <span className="text-gray-900 font-medium">
+                            {upiTransaction.expires_at
+                              ? formatDate(upiTransaction.expires_at)
+                              : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Attempts:</span>
+                          <span className="text-gray-900 font-medium">{upiTransaction.attempts || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-600 italic">
+                      No UPI transaction details available for this order.
+                    </div>
+                  )}
+                </div>
+              )}
               
               {/* Branch Information */}
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-3">Branch Information</h4>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div>
-                    <p className="text-sm text-gray-900"><strong>Branch:</strong> {order.branch_name}</p>
-                    <p className="text-sm text-gray-500">{order.branch_address}</p>
+                    <p className="text-sm text-gray-900"><strong>Branch:</strong> {order.branch_name || 'N/A'}</p>
+                    {order.branch_address && (
+                      <p className="text-sm text-gray-500 mt-1">{order.branch_address}</p>
+                    )}
                   </div>
                   
                   <div>
-                    <p className="text-sm text-gray-500"><strong>Branch Phone:</strong> {order.branch_phone}</p>
+                    {order.branch_phone && (
+                      <p className="text-sm text-gray-500"><strong>Branch Phone:</strong> {order.branch_phone}</p>
+                    )}
                   </div>
                 </div>
               </div>

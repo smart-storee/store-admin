@@ -5,12 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleGuard } from '@/components/RoleGuard';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ApiResponse, ProductVariant } from '@/types';
 
 export default function ProductVariantDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
+  const { isDarkMode } = useTheme();
   const [variant, setVariant] = useState<ProductVariant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export default function ProductVariantDetailPage() {
 
   return (
     <RoleGuard
-      requiredPermissions={['view_products']}
+      allowedRoles={['admin', 'manager', 'staff']}
       fallback={
         <div className="p-6 text-center">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -126,80 +128,56 @@ export default function ProductVariantDetailPage() {
         )}
 
         {variant ? (
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
+          <div className={`shadow overflow-hidden sm:rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`px-4 py-5 sm:px-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h3 className={`text-lg leading-6 font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 {variant.variant_name}
               </h3>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">
+              <p className={`mt-1 max-w-2xl text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 Product Variant #{variant.variant_id}
               </p>
             </div>
-            <div className="border-t border-gray-200">
+            <div className={`border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <dl>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Product Name</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <div className={`px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                  <dt className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Product Name</dt>
+                  <dd className={`mt-1 text-sm sm:mt-0 sm:col-span-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
                     {variant.product_name}
                   </dd>
                 </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Variant Name</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <div className={`px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <dt className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Variant Name</dt>
+                  <dd className={`mt-1 text-sm sm:mt-0 sm:col-span-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
                     {variant.variant_name}
                   </dd>
                 </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Price</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    ₹{variant.variant_price.toFixed(2)}
+                <div className={`px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                  <dt className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Price</dt>
+                  <dd className={`mt-1 text-sm sm:mt-0 sm:col-span-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                    ₹{parseFloat(String(variant.variant_price || 0)).toFixed(2)}
                   </dd>
                 </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Stock Quantity</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {variant.stock} units
+                <div className={`px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <dt className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Stock Quantity</dt>
+                  <dd className={`mt-1 text-sm sm:mt-0 sm:col-span-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                    {variant.stock || 0} units
                   </dd>
                 </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">SKU</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {variant.sku || 'N/A'}
-                  </dd>
-                </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Barcode</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {variant.barcode || 'N/A'}
-                  </dd>
-                </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Status</dt>
+                <div className={`px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                  <dt className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Status</dt>
                   <dd className="mt-1 text-sm sm:mt-0 sm:col-span-2">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       variant.is_active == 1
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                        ? isDarkMode ? 'bg-green-900/40 text-green-300 border border-green-700' : 'bg-green-100 text-green-800'
+                        : isDarkMode ? 'bg-red-900/40 text-red-300 border border-red-700' : 'bg-red-100 text-red-800'
                     }`}>
                       {variant.is_active == 1 ? 'Active' : 'Inactive'}
                     </span>
                   </dd>
                 </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Description</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {variant.variant_description || 'No description provided'}
-                  </dd>
-                </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Attributes</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {variant.attribute_values ? JSON.stringify(variant.attribute_values) : 'No attributes defined'}
-                  </dd>
-                </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Created</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <div className={`px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <dt className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Created</dt>
+                  <dd className={`mt-1 text-sm sm:mt-0 sm:col-span-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
                     {new Date(variant.created_at).toLocaleDateString('en-IN', {
                       year: 'numeric',
                       month: 'long',
@@ -209,9 +187,9 @@ export default function ProductVariantDetailPage() {
                     })}
                   </dd>
                 </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Updated</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <div className={`px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                  <dt className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Updated</dt>
+                  <dd className={`mt-1 text-sm sm:mt-0 sm:col-span-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
                     {variant.updated_at ? new Date(variant.updated_at).toLocaleDateString('en-IN', {
                       year: 'numeric',
                       month: 'long',
@@ -225,10 +203,14 @@ export default function ProductVariantDetailPage() {
             </div>
             
             {/* Actions */}
-            <div className="px-4 py-4 bg-gray-50 sm:px-6 flex justify-end space-x-3">
+            <div className={`px-4 py-4 sm:px-6 flex justify-end space-x-3 ${isDarkMode ? 'bg-gray-800 border-t border-gray-700' : 'bg-gray-50'}`}>
               <button
                 onClick={handleDeleteVariant}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                className={`px-4 py-2 rounded-md ${
+                  isDarkMode 
+                    ? 'bg-red-700 text-white hover:bg-red-600' 
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
               >
                 Delete Variant
               </button>

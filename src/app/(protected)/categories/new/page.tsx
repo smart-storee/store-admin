@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,7 +23,7 @@ export default function NewCategoryPage() {
   });
 
   // Fetch branches when component loads
-  useState(() => {
+  useEffect(() => {
     const fetchBranches = async () => {
       try {
         const response: ApiResponse<{ data: Branch[] }> =
@@ -42,7 +42,7 @@ export default function NewCategoryPage() {
     if (user?.store_id) {
       fetchBranches();
     }
-  });
+  }, [user?.store_id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -119,16 +119,17 @@ export default function NewCategoryPage() {
         </div>
       }
     >
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Add New Category</h1>
+      <div className="min-h-screen pb-20">
+        <div className="max-w-4xl mx-auto p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">Add New Category</h1>
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="bg-white shadow sm:rounded-md">
+          <form onSubmit={handleSubmit} className="bg-white shadow sm:rounded-md">
           <div className="px-4 py-5 sm:p-6">
             <div className="grid grid-cols-6 gap-6">
               <div className="col-span-6">
@@ -179,19 +180,21 @@ export default function NewCategoryPage() {
               </div>
 
               {branches.length > 0 ? (
-                <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="branch_id" className="block text-sm font-medium text-gray-700">
-                    Branch
+                <div className="col-span-6">
+                  <label htmlFor="branch_id" className="block text-sm font-medium text-gray-700 mb-2">
+                    Master Category (Store-Level)
                   </label>
+                  <p className="text-sm text-gray-500 mb-3">
+                    This category will be available across all branches. Branch selection is optional - if not selected, the first active branch will be used as default.
+                  </p>
                   <select
                     id="branch_id"
                     name="branch_id"
                     value={formData.branch_id || ''}
                     onChange={handleChange}
                     className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                    required
                   >
-                    <option value="">Select a branch</option>
+                    <option value="">Auto-select first branch (Master Category)</option>
                     {branches.map((branch) => (
                       <option key={branch.branch_id} value={branch.branch_id}>
                         {branch.branch_name}
@@ -241,18 +244,18 @@ export default function NewCategoryPage() {
             </div>
           </div>
 
-          <div className="px-4 py-3 bg-gray-50 sm:px-6 flex justify-end">
+          <div className="px-4 py-5 sm:px-6 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 sticky bottom-0 z-10">
             <button
               type="button"
               onClick={() => router.push('/setup-flow')}
-              className="bg-white py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3"
+              className="bg-white py-2.5 px-6 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving || branches.length === 0}
-              className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+              className={`inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
                 branches.length === 0 
                   ? 'bg-gray-400 cursor-not-allowed' 
                   : 'bg-indigo-600 hover:bg-indigo-700'
@@ -263,6 +266,7 @@ export default function NewCategoryPage() {
             </button>
           </div>
         </form>
+        </div>
       </div>
     </RoleGuard>
   );

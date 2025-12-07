@@ -223,8 +223,22 @@ const ProductsPage = () => {
                             }}
                           />
                           <div>
-                            <p className={`text-sm font-medium ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} truncate`}>{product.product_name}</p>
-                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{product.category_name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className={`text-sm font-medium ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} truncate`}>{product.product_name}</p>
+                              {product.is_bestseller === 1 && (
+                                <span className={`px-1.5 py-0.5 text-xs font-semibold rounded ${theme === 'dark' ? 'bg-yellow-900/40 text-yellow-300' : 'bg-yellow-100 text-yellow-800'}`}>
+                                  ⭐ Bestseller
+                                </span>
+                              )}
+                              {product.is_vegetarian === 1 && (
+                                <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${theme === 'dark' ? 'bg-green-900/40 border-green-700' : 'bg-green-100 border-green-500'}`}>
+                                  <span className="w-2 h-2 rounded-full bg-green-600"></span>
+                                </span>
+                              )}
+                            </div>
+                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                              {product.category_name} • Serves {product.serves_count || 1}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">

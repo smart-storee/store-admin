@@ -24,10 +24,17 @@ export default function CustomerDetailPage() {
         setLoading(true);
         setError(null);
 
-        console.log('Fetching customer with ID:', params.id);
+        // Handle params.id - it might be an array or object in Next.js 14
+        const customerId = Array.isArray(params.id) ? params.id[0] : (typeof params.id === 'object' ? String(params.id) : params.id);
+        
+        if (!customerId) {
+          throw new Error('Customer ID is required');
+        }
+
+        console.log('Fetching customer with ID:', customerId);
         const response: ApiResponse<{ data: Customer }> =
           await makeAuthenticatedRequest(
-            `/customers/${params.id}?store_id=${user?.store_id}`,
+            `/customers/${customerId}?store_id=${user?.store_id}`,
             {},
             true, // auto-refresh token
             user?.store_id,
@@ -64,7 +71,8 @@ export default function CustomerDetailPage() {
       }
     };
 
-    if (params.id && user?.store_id) {
+    const customerId = Array.isArray(params.id) ? params.id[0] : (typeof params.id === 'object' ? String(params.id) : params.id);
+    if (customerId && user?.store_id) {
       fetchCustomer();
     }
   }, [params.id, user?.store_id, user?.branch_id]);

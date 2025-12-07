@@ -91,15 +91,24 @@ export default function CustomersPage() {
           );
 
         if (response.success) {
-          const customersData = Array.isArray(response.data)
-            ? response.data
-            : [];
+          // Handle different response structures
+          let customersData = [];
+          if (Array.isArray(response.data)) {
+            customersData = response.data;
+          } else if (response.data && Array.isArray(response.data.data)) {
+            customersData = response.data.data;
+          } else if (response.data && typeof response.data === 'object') {
+            customersData = Object.values(response.data).filter(item => typeof item === 'object' && item.cust_id);
+          }
 
           setCustomers(customersData);
 
           if (response.pagination) {
             setTotalPages(Math.ceil(response.pagination.total / response.pagination.limit));
             setTotalCount(response.pagination.total);
+          } else if (response.data && response.data.pagination) {
+            setTotalPages(Math.ceil(response.data.pagination.total / response.data.pagination.limit));
+            setTotalCount(response.data.pagination.total);
           } else {
             setTotalPages(1);
             setTotalCount(customersData.length);
@@ -137,10 +146,10 @@ export default function CustomersPage() {
   };
 
   // Calculate stats
-  const totalCustomers = customers.length;
+  const totalCustomers = totalCount; // Use totalCount from pagination instead of customers.length
   const activeCustomers = customers.filter(c => c.is_active === 1).length;
-  const totalOrders = customers.reduce((sum, c) => sum + (c.total_orders || 0), 0);
-  const totalRevenue = customers.reduce((sum, c) => sum + (c.total_spent || 0), 0);
+  const totalOrders = customers.reduce((sum, c) => sum + (parseInt(c.total_orders) || 0), 0);
+  const totalRevenue = customers.reduce((sum, c) => sum + (parseFloat(c.total_spent) || 0), 0);
 
   return (
     <RoleGuard
@@ -174,7 +183,9 @@ export default function CustomersPage() {
           </div>
           <div className={`border rounded-lg p-4 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
             <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Total Revenue</p>
-            <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>₹{totalRevenue}</p>
+            <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              ₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
           </div>
         </div>
 
@@ -259,7 +270,7 @@ export default function CustomersPage() {
                                 {customer.total_orders} orders
                               </p>
                               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                Spent ₹{customer.total_spent || '0.00'}
+                                Spent ₹{parseFloat(customer.total_spent || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </p>
                             </div>
                             <span className={`px-2 py-1 text-xs rounded-full ${
@@ -271,7 +282,12 @@ export default function CustomersPage() {
                             </span>
                             <div className="flex space-x-2">
                               <button
-                                onClick={() => window.location.href = `/customers/${customer.cust_id}`}
+                                onClick={() => {
+                                  const customerId = customer.cust_id ? String(customer.cust_id) : '';
+                                  if (customerId) {
+                                    window.location.href = `/customers/${encodeURIComponent(customerId)}`;
+                                  }
+                                }}
                                 className={`${theme === 'dark' ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-900'}`}
                               >
                                 View

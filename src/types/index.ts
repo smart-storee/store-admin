@@ -160,6 +160,9 @@ export interface Product {
   branch_id?: number;
   branch_name?: string;
   created_at: string;
+  serves_count?: number;
+  is_vegetarian?: number;
+  is_bestseller?: number;
 }
 
 export interface CreateProductRequest {
@@ -170,6 +173,9 @@ export interface CreateProductRequest {
   product_description: string;
   product_image: string;
   base_price: number;
+  serves_count?: number;
+  is_vegetarian?: number;
+  is_bestseller?: number;
 }
 
 // Product Variant types

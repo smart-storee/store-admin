@@ -32,6 +32,8 @@ export default function EditBranchPage() {
     pincode: '',
     latitude: 0,
     longitude: 0,
+    delivery_charge: 0,
+    surge_fee: 0,
     manager_name: '',
     manager_phone: '',
     manager_email: '',
@@ -57,24 +59,26 @@ export default function EditBranchPage() {
           const branchData = response.data.data || response.data;
           setBranch(branchData);
           
-          // Set form data from fetched branch
+          // Set form data from fetched branch - use correct field names
           setFormData({
             branch_name: branchData.branch_name || '',
             branch_code: branchData.branch_code || '',
             branch_email: branchData.branch_email || '',
-            branch_phone: branchData.phone || '',
-            address_line1: branchData.address || '',
-            address_line2: branchData.address_line2 || '',
+            branch_phone: branchData.branch_phone || branchData.phone || '',
+            address_line1: branchData.address_line_1 || branchData.address_line1 || '',
+            address_line2: branchData.address_line_2 || branchData.address_line2 || '',
             city: branchData.city || '',
             state: branchData.state || '',
             country: branchData.country || '',
             pincode: branchData.pincode || '',
-            latitude: branchData.latitude || 0,
-            longitude: branchData.longitude || 0,
+            latitude: branchData.latitude ? parseFloat(branchData.latitude.toString()) : 0,
+            longitude: branchData.longitude ? parseFloat(branchData.longitude.toString()) : 0,
+            delivery_charge: branchData.delivery_charge ? parseFloat(branchData.delivery_charge.toString()) : 0,
+            surge_fee: branchData.surge_fee ? parseFloat(branchData.surge_fee.toString()) : 0,
             manager_name: branchData.manager_name || '',
             manager_phone: branchData.manager_phone || '',
             manager_email: branchData.manager_email || '',
-            is_active: branchData.is_active !== undefined ? branchData.is_active : 1,
+            is_active: branchData.is_active !== undefined ? (branchData.is_active === 1 || branchData.is_active === true ? 1 : 0) : 1,
           });
         } else {
           throw new Error(response.message || 'Failed to fetch branch');
@@ -101,7 +105,7 @@ export default function EditBranchPage() {
         ...prev,
         [name]: checked ? 1 : 0
       }));
-    } else if (name === 'latitude' || name === 'longitude') {
+    } else if (name === 'latitude' || name === 'longitude' || name === 'delivery_charge' || name === 'surge_fee') {
       const numericValue = parseFloat(value) || 0;
       setFormData(prev => ({
         ...prev,
@@ -127,7 +131,19 @@ export default function EditBranchPage() {
         {
           method: 'PUT',
           body: JSON.stringify({
-            ...formData,
+            branch_name: formData.branch_name,
+            address_line_1: formData.address_line1,
+            address_line_2: formData.address_line2,
+            city: formData.city,
+            state: formData.state,
+            country: formData.country,
+            pincode: formData.pincode,
+            branch_phone: formData.branch_phone,
+            latitude: formData.latitude || null,
+            longitude: formData.longitude || null,
+            delivery_charge: formData.delivery_charge || 0,
+            surge_fee: formData.surge_fee || 0,
+            is_active: formData.is_active,
             store_id: user?.store_id,
           }),
         },
@@ -173,20 +189,42 @@ export default function EditBranchPage() {
       }
     >
       <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Branch</h1>
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => router.push('/branches')}
+            className={`p-2 rounded-lg transition-colors ${
+              theme === 'dark'
+                ? 'hover:bg-slate-700 text-slate-300'
+                : 'hover:bg-gray-100 text-gray-600'
+            }`}
+          >
+            ← Back
+          </button>
+          <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            Edit Branch
+          </h1>
+        </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className={`border rounded-lg p-4 mb-6 ${
+            theme === 'dark'
+              ? 'bg-red-900/30 border-red-700/50 text-red-300'
+              : 'bg-red-100 border-red-400 text-red-700'
+          }`}>
             {error}
           </div>
         )}
 
         {branch ? (
-          <form onSubmit={handleSubmit} className="bg-white shadow sm:rounded-md">
+          <form onSubmit={handleSubmit} className={`shadow sm:rounded-md ${
+            theme === 'dark'
+              ? 'bg-slate-800/50 border border-slate-700/50'
+              : 'bg-white'
+          }`}>
             <div className="px-4 py-5 sm:p-6">
               <div className="grid grid-cols-6 gap-6">
                 <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="branch_name" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="branch_name" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                     Branch Name *
                   </label>
                   <input
@@ -196,41 +234,17 @@ export default function EditBranchPage() {
                     value={formData.branch_name}
                     onChange={handleChange}
                     required
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    className={`mt-1 block w-full max-w-lg rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
                 <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="branch_code" className="block text-sm font-medium text-gray-700">
-                    Branch Code
-                  </label>
-                  <input
-                    type="text"
-                    id="branch_code"
-                    name="branch_code"
-                    value={formData.branch_code}
-                    onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                  />
-                </div>
-
-                <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="branch_email" className="block text-sm font-medium text-gray-700">
-                    Branch Email
-                  </label>
-                  <input
-                    type="email"
-                    id="branch_email"
-                    name="branch_email"
-                    value={formData.branch_email}
-                    onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                  />
-                </div>
-
-                <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="branch_phone" className="block text-sm font-medium text-gray-700">
-                    Branch Phone
+                  <label htmlFor="branch_phone" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                    Branch Phone *
                   </label>
                   <input
                     type="text"
@@ -238,13 +252,18 @@ export default function EditBranchPage() {
                     name="branch_phone"
                     value={formData.branch_phone}
                     onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    required
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
                 <div className="col-span-6">
-                  <label htmlFor="address_line1" className="block text-sm font-medium text-gray-700">
-                    Address Line 1
+                  <label htmlFor="address_line1" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                    Address Line 1 *
                   </label>
                   <input
                     type="text"
@@ -252,12 +271,17 @@ export default function EditBranchPage() {
                     name="address_line1"
                     value={formData.address_line1}
                     onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    required
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
                 <div className="col-span-6">
-                  <label htmlFor="address_line2" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="address_line2" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                     Address Line 2
                   </label>
                   <input
@@ -266,13 +290,17 @@ export default function EditBranchPage() {
                     name="address_line2"
                     value={formData.address_line2}
                     onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
                 <div className="col-span-6 sm:col-span-2">
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                    City
+                  <label htmlFor="city" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                    City *
                   </label>
                   <input
                     type="text"
@@ -280,12 +308,17 @@ export default function EditBranchPage() {
                     name="city"
                     value={formData.city}
                     onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    required
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
                 <div className="col-span-6 sm:col-span-2">
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="state" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                     State
                   </label>
                   <input
@@ -294,27 +327,17 @@ export default function EditBranchPage() {
                     name="state"
                     value={formData.state}
                     onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
                 <div className="col-span-6 sm:col-span-2">
-                  <label htmlFor="country" className="block text-sm font-medium text-gray-700">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    id="country"
-                    name="country"
-                    value={formData.country}
-                    onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                  />
-                </div>
-
-                <div className="col-span-6 sm:col-span-2">
-                  <label htmlFor="pincode" className="block text-sm font-medium text-gray-700">
-                    PIN Code
+                  <label htmlFor="pincode" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                    PIN Code *
                   </label>
                   <input
                     type="text"
@@ -322,12 +345,17 @@ export default function EditBranchPage() {
                     name="pincode"
                     value={formData.pincode}
                     onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    required
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
-                <div className="col-span-6 sm:col-span-2">
-                  <label htmlFor="latitude" className="block text-sm font-medium text-gray-700">
+                <div className="col-span-6 sm:col-span-3">
+                  <label htmlFor="latitude" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                     Latitude
                   </label>
                   <input
@@ -337,12 +365,16 @@ export default function EditBranchPage() {
                     value={formData.latitude || ''}
                     onChange={handleChange}
                     step="any"
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
-                <div className="col-span-6 sm:col-span-2">
-                  <label htmlFor="longitude" className="block text-sm font-medium text-gray-700">
+                <div className="col-span-6 sm:col-span-3">
+                  <label htmlFor="longitude" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                     Longitude
                   </label>
                   <input
@@ -352,49 +384,52 @@ export default function EditBranchPage() {
                     value={formData.longitude || ''}
                     onChange={handleChange}
                     step="any"
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
                 <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="manager_name" className="block text-sm font-medium text-gray-700">
-                    Manager Name
+                  <label htmlFor="delivery_charge" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                    Delivery Charge (₹) *
                   </label>
                   <input
-                    type="text"
-                    id="manager_name"
-                    name="manager_name"
-                    value={formData.manager_name}
+                    type="number"
+                    id="delivery_charge"
+                    name="delivery_charge"
+                    value={formData.delivery_charge || ''}
                     onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    min="0"
+                    step="0.01"
+                    required
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
                 <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="manager_phone" className="block text-sm font-medium text-gray-700">
-                    Manager Phone
+                  <label htmlFor="surge_fee" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                    Surge Fee (₹)
                   </label>
                   <input
-                    type="text"
-                    id="manager_phone"
-                    name="manager_phone"
-                    value={formData.manager_phone}
+                    type="number"
+                    id="surge_fee"
+                    name="surge_fee"
+                    value={formData.surge_fee || ''}
                     onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                  />
-                </div>
-
-                <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="manager_email" className="block text-sm font-medium text-gray-700">
-                    Manager Email
-                  </label>
-                  <input
-                    type="email"
-                    id="manager_email"
-                    name="manager_email"
-                    value={formData.manager_email}
-                    onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    min="0"
+                    step="0.01"
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
@@ -407,32 +442,44 @@ export default function EditBranchPage() {
                         type="checkbox"
                         checked={formData.is_active === 1}
                         onChange={handleChange}
-                        className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                        className={`focus:ring-indigo-500 h-4 w-4 text-indigo-600 rounded ${
+                          theme === 'dark' ? 'border-slate-600 bg-slate-700' : 'border-gray-300'
+                        }`}
                       />
                     </div>
                     <div className="ml-3 text-sm">
-                      <label htmlFor="is_active" className={theme === 'dark' ? 'font-medium text-white' : 'font-medium text-gray-700'}>
+                      <label htmlFor="is_active" className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
                         Active
                       </label>
-                      <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>When unchecked, this branch will be deactivated</p>
+                      <p className={theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}>When unchecked, this branch will be deactivated</p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="px-4 py-3 bg-gray-50 sm:px-6 flex justify-end">
+            <div className={`px-4 py-3 sm:px-6 flex justify-end border-t ${
+              theme === 'dark' ? 'bg-slate-800/50 border-slate-700/50' : 'bg-gray-50 border-gray-200'
+            }`}>
               <button
                 type="button"
                 onClick={() => router.push('/branches')}
-                className="bg-white py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3"
+                className={`py-2 px-4 border rounded-md text-sm font-medium mr-3 transition-colors ${
+                  theme === 'dark'
+                    ? 'bg-slate-700/50 border-slate-600/50 text-slate-300 hover:bg-slate-700'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors ${
+                  theme === 'dark'
+                    ? 'bg-indigo-600 hover:bg-indigo-700'
+                    : 'bg-indigo-600 hover:bg-indigo-700'
+                }`}
               >
                 {saving ? 'Saving...' : 'Save Branch'}
               </button>

@@ -10,6 +10,9 @@ import { ApiResponse, AppSettings } from '@/types';
 interface ExtendedAppSettings extends AppSettings {
   splash_background_url?: string;
   maintenance_message?: string;
+  upi_id?: string;
+  is_upi_enabled?: number;
+  delivery_charge?: number;
 }
 
 export default function SettingsPage() {
@@ -31,8 +34,11 @@ export default function SettingsPage() {
     splash_background_url: '',
     min_order_amount: 100,
     platform_fee: 0,
+    delivery_charge: 0,
     is_cod_enabled: 1,
     is_online_payment_enabled: 0,
+    is_upi_enabled: 0,
+    upi_id: '',
     maintenance_mode: 0,
     maintenance_message: '',
     created_at: new Date().toISOString(),
@@ -114,8 +120,11 @@ export default function SettingsPage() {
         splash_background_url: settings.splash_background_url,
         min_order_amount: settings.min_order_amount,
         platform_fee: settings.platform_fee,
+        delivery_charge: settings.delivery_charge,
         is_cod_enabled: settings.is_cod_enabled,
         is_online_payment_enabled: settings.is_online_payment_enabled,
+        is_upi_enabled: settings.is_upi_enabled,
+        upi_id: settings.upi_id,
         maintenance_mode: settings.maintenance_mode,
         maintenance_message: settings.maintenance_message
       };
@@ -413,8 +422,8 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Min Order Amount & Platform Fee */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Min Order Amount, Platform Fee & Delivery Charge */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div>
                     <label htmlFor="min_order_amount" className={`block text-sm font-semibold ${textPrimary} mb-2`}>
                       Minimum Order Amount
@@ -451,6 +460,28 @@ export default function SettingsPage() {
                         className={`w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="delivery_charge" className={`block text-sm font-semibold ${textPrimary} mb-2`}>
+                      Store Delivery Charge
+                    </label>
+                    <div className="relative">
+                      <span className={`absolute left-4 top-2.5 ${textSecondary}`}>₹</span>
+                      <input
+                        type="number"
+                        id="delivery_charge"
+                        name="delivery_charge"
+                        value={settings.delivery_charge || 0}
+                        onChange={handleChange}
+                        step="0.01"
+                        min="0"
+                        className={`w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                      />
+                    </div>
+                    <p className={`text-xs ${textTertiary} mt-1`}>
+                      Default delivery charge for all branches (can be overridden per branch)
+                    </p>
                   </div>
                 </div>
 
@@ -560,7 +591,53 @@ export default function SettingsPage() {
                       {settings.is_online_payment_enabled === 1 ? 'Enabled' : 'Disabled'}
                     </div>
                   </div>
+
+                  {/* UPI Payment */}
+                  <div className={`flex items-center p-4 border rounded-lg ${hoverClass} transition ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
+                    <input
+                      id="is_upi_enabled"
+                      name="is_upi_enabled"
+                      type="checkbox"
+                      checked={settings.is_upi_enabled === 1}
+                      onChange={handleChange}
+                      className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <div className="ml-4 flex-1">
+                      <label htmlFor="is_upi_enabled" className={`text-sm font-semibold ${textPrimary} cursor-pointer`}>
+                        UPI Payment
+                      </label>
+                      <p className={`text-xs ${textTertiary} mt-1`}>Enable UPI (Unified Payments Interface) payments</p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-xs font-semibold ${settings.is_upi_enabled === 1
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
+                      : 'bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300'
+                      }`}>
+                      {settings.is_upi_enabled === 1 ? 'Enabled' : 'Disabled'}
+                    </div>
+                  </div>
                 </div>
+
+                {/* UPI ID Field - Show when UPI is enabled */}
+                {settings.is_upi_enabled === 1 && (
+                  <div className="mt-6">
+                    <label htmlFor="upi_id" className={`block text-sm font-semibold ${textPrimary} mb-2`}>
+                      Store UPI ID <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="upi_id"
+                      name="upi_id"
+                      value={settings.upi_id || ''}
+                      onChange={handleChange}
+                      placeholder="merchant@paytm or merchant@ybl"
+                      required={settings.is_upi_enabled === 1}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                    />
+                    <p className={`text-xs ${textTertiary} mt-2`}>
+                      Enter your store's UPI ID where customers will send payments (e.g., merchant@paytm, merchant@ybl, merchant@phonepe)
+                    </p>
+                  </div>
+                )}
 
                 {/* Info Box */}
                 <div className={`${isDarkMode ? 'bg-blue-950 border-blue-900' : 'bg-blue-50 border-blue-200'} border rounded-lg p-4`}>

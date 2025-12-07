@@ -123,7 +123,7 @@ export default function LoginPage() {
                   className="block text-sm font-medium mb-2"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  Email or Mobile <span style={{ color: '#EF4444' }}>*</span>
+                  Email ID <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
                   id="email"
@@ -156,7 +156,7 @@ export default function LoginPage() {
                     e.target.style.backgroundColor = '#F9FAFB';
                     e.target.style.borderColor = '#E5E7EB';
                   }}
-                  placeholder="Enter your Email or mobile no"
+                  placeholder="Enter your Email ID"
                 />
                 {emailError && (
                   <p className="mt-2 text-sm" style={{ color: 'var(--error-color)' }}>

@@ -2,15 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleGuard } from '@/components/RoleGuard';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ApiResponse, Product, Branch, ProductVariant } from '@/types';
 
 export default function EditProductVariantPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
+  const { isDarkMode, currentTheme } = useTheme();
   const [products, setProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [variant, setVariant] = useState<ProductVariant | null>(null);
@@ -21,13 +24,8 @@ export default function EditProductVariantPage() {
     product_id: 0,
     variant_name: '',
     variant_price: 0,
-    variant_description: '',
-    sku: '',
-    barcode: '',
     stock: 0,
     is_active: 1,
-    variant_image: '',
-    attribute_values: '{}', // JSON string for attributes like size, color, etc.
   });
 
   // Fetch initial data (products and branches) and the variant to edit
@@ -84,14 +82,9 @@ export default function EditProductVariantPage() {
           setFormData({
             product_id: v.product_id,
             variant_name: v.variant_name,
-            variant_price: v.variant_price,
-            variant_description: v.variant_description || '',
-            sku: v.sku || '',
-            barcode: v.barcode || '',
-            stock: v.stock,
-            is_active: v.is_active,
-            variant_image: v.variant_image || '',
-            attribute_values: JSON.stringify(v.attribute_values || {}),
+            variant_price: parseFloat(String(v.variant_price || 0)),
+            stock: parseFloat(String(v.stock || 0)),
+            is_active: v.is_active || 1,
           });
         } else {
           throw new Error(variantResponse.message || 'Failed to fetch variant');
@@ -132,28 +125,31 @@ export default function EditProductVariantPage() {
     }
   };
 
+  const handleActiveToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setFormData(prev => ({
+      ...prev,
+      is_active: checked ? 1 : 0,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSaving(true);
 
     try {
-      // Parse the attribute_values JSON to make sure it's valid
-      let parsedAttributes = {};
-      try {
-        parsedAttributes = JSON.parse(formData.attribute_values);
-      } catch (parseErr) {
-        throw new Error('Attribute values must be valid JSON');
-      }
-
+      // Only send fields that exist in the database
       const response: ApiResponse<{ data: ProductVariant }> =
         await makeAuthenticatedRequest(
           `/product-variants/${params.id}`,
           {
             method: 'PUT',
             body: JSON.stringify({
-              ...formData,
-              attribute_values: parsedAttributes,
+              variant_name: formData.variant_name,
+              variant_price: formData.variant_price,
+              stock: formData.stock,
+              is_active: formData.is_active,
               store_id: user?.store_id,
             }),
           },
@@ -190,7 +186,7 @@ export default function EditProductVariantPage() {
 
   return (
     <RoleGuard
-      requiredPermissions={['manage_products']}
+      allowedRoles={['admin', 'manager', 'staff']}
       fallback={
         <div className="p-6 text-center">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -199,42 +195,57 @@ export default function EditProductVariantPage() {
         </div>
       }
     >
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Product Variant</h1>
+      <div className={`p-6 min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        {/* Header */}
+        <div className="mb-6">
+          <button
+            onClick={() => router.push(`/products/${variant?.product_id || formData.product_id}`)}
+            className={`inline-flex items-center mb-4 ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}
+          >
+            <ArrowLeft size={20} className="mr-2" />
+            Back to Product
+          </button>
+          <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            Edit Product Variant
+          </h1>
+          {variant && (
+            <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Editing: {variant.variant_name}
+            </p>
+          )}
+        </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className={`mb-4 px-4 py-3 rounded ${isDarkMode ? 'bg-red-900/40 border border-red-700 text-red-300' : 'bg-red-100 border border-red-400 text-red-700'}`}>
             {error}
           </div>
         )}
 
         {variant ? (
-          <form onSubmit={handleSubmit} className="bg-white shadow sm:rounded-md">
+          <form onSubmit={handleSubmit} className={`shadow sm:rounded-md ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className="px-4 py-5 sm:p-6">
               <div className="grid grid-cols-6 gap-6">
+                {/* Product - Read-only display */}
                 <div className="col-span-6">
-                  <label htmlFor="product_id" className="block text-sm font-medium text-gray-700">
-                    Product *
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Product
                   </label>
-                  <select
-                    id="product_id"
-                    name="product_id"
-                    value={formData.product_id}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                  <div 
+                    className={`mt-1 px-3 py-2 rounded-md border ${
+                      isDarkMode 
+                        ? '!bg-gray-700 !text-gray-200 border-gray-600' 
+                        : 'bg-gray-100 text-gray-700 border-gray-300'
+                    }`}
                   >
-                    <option value="">Select a product</option>
-                    {products.map((product) => (
-                      <option key={product.product_id} value={product.product_id}>
-                        {product.product_name}
-                      </option>
-                    ))}
-                  </select>
+                    {products.find(p => p.product_id === formData.product_id)?.product_name || 'Loading...'}
+                  </div>
+                  <p className={`mt-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Product cannot be changed. Create a new variant if needed.
+                  </p>
                 </div>
 
                 <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="variant_name" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="variant_name" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Variant Name *
                   </label>
                   <input
@@ -244,12 +255,16 @@ export default function EditProductVariantPage() {
                     value={formData.variant_name}
                     onChange={handleChange}
                     required
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
                   />
                 </div>
 
                 <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="variant_price" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="variant_price" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Price (₹) *
                   </label>
                   <input
@@ -261,12 +276,16 @@ export default function EditProductVariantPage() {
                     required
                     min="0"
                     step="0.01"
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
                   />
                 </div>
 
                 <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="stock" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="stock" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Stock Quantity *
                   </label>
                   <input
@@ -277,56 +296,14 @@ export default function EditProductVariantPage() {
                     onChange={handleChange}
                     required
                     min="0"
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
                   />
                 </div>
 
-
-                <div className="col-span-6">
-                  <label htmlFor="variant_description" className="block text-sm font-medium text-gray-700">
-                    Description
-                  </label>
-                  <textarea
-                    id="variant_description"
-                    name="variant_description"
-                    value={formData.variant_description}
-                    onChange={handleChange}
-                    rows={3}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                  ></textarea>
-                </div>
-
-                <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="variant_image" className="block text-sm font-medium text-gray-700">
-                    Image URL
-                  </label>
-                  <input
-                    type="text"
-                    id="variant_image"
-                    name="variant_image"
-                    value={formData.variant_image}
-                    onChange={handleChange}
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                  />
-                </div>
-
-                <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="attribute_values" className="block text-sm font-medium text-gray-700">
-                    Attributes (JSON)
-                  </label>
-                  <textarea
-                    id="attribute_values"
-                    name="attribute_values"
-                    value={formData.attribute_values}
-                    onChange={handleChange}
-                    rows={2}
-                    placeholder='{"size": "large", "color": "red", "weight": "500g"}'
-                    className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                  ></textarea>
-                  <p className="mt-1 text-xs text-gray-500">
-                    JSON format for size, color, weight, or other distinguishing attributes
-                  </p>
-                </div>
 
                 <div className="col-span-6">
                   <div className="flex items-start">
@@ -335,27 +312,37 @@ export default function EditProductVariantPage() {
                         id="is_active"
                         name="is_active"
                         type="checkbox"
-                        checked={formData.is_active === 1}
-                        onChange={handleChange}
-                        className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                        checked={formData.is_active === 1 || formData.is_active === true}
+                        onChange={handleActiveToggle}
+                        className={`focus:ring-indigo-500 h-4 w-4 text-indigo-600 rounded ${
+                          isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300'
+                        }`}
                       />
                     </div>
                     <div className="ml-3 text-sm">
-                      <label htmlFor="is_active" className="font-medium text-gray-700">
+                      <label htmlFor="is_active" className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         Active
                       </label>
-                      <p className="text-gray-500">When checked, this variant will be available for purchase</p>
+                      <p className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
+                        When checked, this variant will be available for purchase
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="px-4 py-3 bg-gray-50 sm:px-6 flex justify-end space-x-3">
+            <div className={`px-4 py-3 sm:px-6 flex justify-end space-x-3 sticky bottom-0 ${
+              isDarkMode ? 'bg-gray-800 border-t border-gray-700' : 'bg-gray-50 border-t border-gray-200'
+            }`}>
               <button
                 type="button"
                 onClick={() => router.push(`/products/${variant.product_id}`)}
-                className="bg-white py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className={`py-2 px-4 border rounded-md text-sm font-medium ${
+                  isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
               >
                 Cancel
               </button>
@@ -369,8 +356,8 @@ export default function EditProductVariantPage() {
             </div>
           </form>
         ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Product variant not found</p>
+          <div className={`text-center py-8 ${isDarkMode ? 'bg-gray-800 rounded-md' : 'bg-white rounded-md shadow'}`}>
+            <p className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>Product variant not found</p>
             <button
               onClick={() => router.push('/products')}
               className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"

@@ -5,7 +5,12 @@ import { useRouter, useParams } from 'next/navigation';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleGuard } from '@/components/RoleGuard';
-import { ApiResponse, User } from '@/types';
+import { ApiResponse, User, Branch } from '@/types';
+
+interface Permission {
+  name: string;
+  description: string;
+}
 
 export default function EditUserPage() {
   const router = useRouter();
@@ -15,13 +20,71 @@ export default function EditUserPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadingPermissions, setLoadingPermissions] = useState(true);
+  const [availablePermissions, setAvailablePermissions] = useState<Permission[]>([]);
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [loadingBranches, setLoadingBranches] = useState(false);
   const [formData, setFormData] = useState({
     user_name: '',
     email: '',
     phone: '',
     role: '',
     status: '',
+    branch_id: null as number | null,
+    password: '',
+    confirmPassword: '',
   });
+  const [changePassword, setChangePassword] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoadingPermissions(true);
+        setLoadingBranches(true);
+
+        // Fetch permissions
+        const permissionsResponse: ApiResponse<Permission[]> = await makeAuthenticatedRequest(
+          '/users/permissions',
+          {},
+          true,
+          currentUser?.store_id,
+          currentUser?.branch_id || undefined
+        );
+
+        if (permissionsResponse.success && permissionsResponse.data) {
+          setAvailablePermissions(Array.isArray(permissionsResponse.data) ? permissionsResponse.data : []);
+        }
+
+        // Fetch branches
+        if (currentUser?.store_id) {
+          const branchesResponse: ApiResponse<{ data: Branch[] }> = await makeAuthenticatedRequest(
+            `/branches?store_id=${currentUser?.store_id}`,
+            {},
+            true,
+            currentUser?.store_id,
+            currentUser?.branch_id || undefined
+          );
+
+          if (branchesResponse.success) {
+            const branchesData = Array.isArray(branchesResponse.data.data) 
+              ? branchesResponse.data.data 
+              : branchesResponse.data.data || branchesResponse.data || [];
+            setBranches(branchesData);
+          }
+        }
+      } catch (err: any) {
+        console.error('Failed to load data:', err);
+      } finally {
+        setLoadingPermissions(false);
+        setLoadingBranches(false);
+      }
+    };
+
+    if (currentUser?.store_id) {
+      fetchData();
+    }
+  }, [currentUser?.store_id, currentUser?.branch_id]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -47,7 +110,12 @@ export default function EditUserPage() {
             phone: userData.phone,
             role: userData.role,
             status: userData.status,
+            branch_id: userData.branch_id || null,
           });
+          // Set permissions if available
+          if (userData.permissions && Array.isArray(userData.permissions)) {
+            setSelectedPermissions(userData.permissions);
+          }
         } else {
           throw new Error(response.message || 'Failed to fetch user');
         }
@@ -72,22 +140,45 @@ export default function EditUserPage() {
     }));
   };
 
+  const handlePermissionToggle = (permissionName: string) => {
+    setSelectedPermissions(prev => 
+      prev.includes(permissionName)
+        ? prev.filter(p => p !== permissionName)
+        : [...prev, permissionName]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSaving(true);
 
     try {
+      const submitData: any = {
+        ...formData,
+        store_id: currentUser?.store_id,
+        branch_id: formData.branch_id,
+        permissions: selectedPermissions,
+      };
+
+      // Only include password if user wants to change it
+      if (changePassword && formData.password) {
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+        submitData.password = formData.password;
+      } else {
+        // Remove password fields if not changing
+        delete submitData.password;
+        delete submitData.confirmPassword;
+      }
+
       const response: ApiResponse<{ data: User }> = 
         await makeAuthenticatedRequest(
           `/users/${params.id}`,
           {
             method: 'PUT',
-            body: JSON.stringify({
-              ...formData,
-              store_id: currentUser?.store_id,
-              branch_id: currentUser?.branch_id || null,
-            }),
+            body: JSON.stringify(submitData),
           },
           true, // auto-refresh token
           currentUser?.store_id,
@@ -169,8 +260,7 @@ export default function EditUserPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    disabled // Email might be immutable
-                    className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full max-w-lg sm:text-sm border-gray-300 rounded-md p-2 border bg-gray-100"
+                    className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full max-w-lg sm:text-sm border-gray-300 rounded-md p-2 border"
                   />
                 </div>
                 
@@ -188,6 +278,25 @@ export default function EditUserPage() {
                     className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full max-w-lg sm:text-sm border-gray-300 rounded-md p-2 border"
                   />
                 </div>
+
+                <div className="col-span-6 sm:col-span-3">
+                  <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                    Status *
+                  </label>
+                  <select
+                    id="status"
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full max-w-lg pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md border p-2"
+                  >
+                    <option value="">Select Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </div>
                 
                 <div className="col-span-6 sm:col-span-3">
                   <label htmlFor="role" className="block text-sm font-medium text-gray-700">
@@ -201,29 +310,145 @@ export default function EditUserPage() {
                     required
                     className="mt-1 block w-full max-w-lg pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md border p-2"
                   >
+                    <option value="">Select Role</option>
                     <option value="admin">Admin</option>
                     <option value="staff">Staff</option>
                     <option value="manager">Manager</option>
                     <option value="cashier">Cashier</option>
+                    <option value="delivery">Delivery</option>
                   </select>
                 </div>
-                
+
                 <div className="col-span-6 sm:col-span-3">
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                    Status *
+                  <label htmlFor="branch_id" className="block text-sm font-medium text-gray-700">
+                    Branch
                   </label>
                   <select
-                    id="status"
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    required
+                    id="branch_id"
+                    name="branch_id"
+                    value={formData.branch_id || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        branch_id: value ? parseInt(value) : null
+                      }));
+                    }}
                     className="mt-1 block w-full max-w-lg pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md border p-2"
                   >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="suspended">Suspended</option>
+                    <option value="">No branch assigned</option>
+                    {branches.map((branch) => (
+                      <option key={branch.branch_id} value={branch.branch_id}>
+                        {branch.branch_name}
+                      </option>
+                    ))}
                   </select>
+                </div>
+
+                <div className="col-span-6">
+                  <div className="flex items-center mb-2">
+                    <input
+                      type="checkbox"
+                      id="change_password"
+                      checked={changePassword}
+                      onChange={(e) => {
+                        setChangePassword(e.target.checked);
+                        if (!e.target.checked) {
+                          setFormData(prev => ({
+                            ...prev,
+                            password: '',
+                            confirmPassword: ''
+                          }));
+                        }
+                      }}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="change_password" className="ml-2 block text-sm font-medium text-gray-700">
+                      Change Password
+                    </label>
+                  </div>
+                  {changePassword && (
+                    <div className="grid grid-cols-2 gap-4 mt-2">
+                      <div>
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                          New Password *
+                        </label>
+                        <input
+                          type="password"
+                          id="password"
+                          name="password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          required={changePassword}
+                          minLength={6}
+                          className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                          placeholder="Enter new password"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                          Confirm Password *
+                        </label>
+                        <input
+                          type="password"
+                          id="confirmPassword"
+                          name="confirmPassword"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          required={changePassword}
+                          minLength={6}
+                          className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                          placeholder="Confirm new password"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="col-span-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Assigned Permissions
+                  </label>
+                  {loadingPermissions ? (
+                    <div className="text-sm text-gray-500">Loading permissions...</div>
+                  ) : (
+                    <div className="border border-gray-300 rounded-md p-4 max-h-64 overflow-y-auto">
+                      {availablePermissions.length === 0 ? (
+                        <div className="text-sm text-gray-500">No permissions available</div>
+                      ) : (
+                        <div className="space-y-2">
+                          {availablePermissions.map((permission) => (
+                            <label
+                              key={permission.name}
+                              className="flex items-start space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedPermissions.includes(permission.name)}
+                                onChange={() => handlePermissionToggle(permission.name)}
+                                className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                              />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {permission.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                </div>
+                                {permission.description && (
+                                  <div className="text-xs text-gray-500 mt-0.5">
+                                    {permission.description}
+                                  </div>
+                                )}
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {selectedPermissions.length > 0 && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      {selectedPermissions.length} permission{selectedPermissions.length !== 1 ? 's' : ''} selected
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

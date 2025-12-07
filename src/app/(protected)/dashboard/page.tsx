@@ -3,18 +3,22 @@
 import { useState, useEffect } from 'react';
 import ProtectedRouteWrapper from '@/components/ProtectedRouteWrapper';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { DashboardSummary, Branch, Store } from '@/types';
 import { LoadingWrapper } from '@/components/LoadingWrapper';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [dashboardData, setDashboardData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
   const [selectedStore, setSelectedStore] = useState<number | null>(null);
+  const [storeConfig, setStoreConfig] = useState<{ app_name: string; logo_url: string } | null>(null);
 
   const getSummaryIcon = (title: string, color: string) => {
     switch (title) {
@@ -66,6 +70,40 @@ export default function DashboardPage() {
       setError('No store assigned. Please contact an administrator.');
     }
   }, [user]);
+
+  // Fetch store config (app_name and logo)
+  useEffect(() => {
+    const fetchStoreConfig = async () => {
+      if (!user?.store_id) return;
+
+      try {
+        const response = await makeAuthenticatedRequest(
+          `/app-settings?store_id=${user.store_id}`,
+          {},
+          true,
+          user.store_id,
+          user.branch_id || undefined
+        );
+
+        if (response.success) {
+          const config = response.data.data || response.data;
+          setStoreConfig({
+            app_name: config.app_name || user.store_name || 'Store',
+            logo_url: config.logo_url || ''
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching store config:', err);
+        // Fallback to user.store_name if API fails
+        setStoreConfig({
+          app_name: user.store_name || 'Store',
+          logo_url: ''
+        });
+      }
+    };
+
+    fetchStoreConfig();
+  }, [user?.store_id, user?.store_name]);
 
   // Effect to fetch branches when store is selected
   useEffect(() => {
@@ -200,7 +238,7 @@ export default function DashboardPage() {
                     fontWeight: 'bold',
                     marginBottom: '12px'
                   }}>
-                    Hello, {user?.name || 'Admin'}! Welcome to Store Admin
+                    Hello, {user?.name || 'Admin'}! Welcome to {storeConfig?.app_name || user?.store_name || 'Store Admin'}
                   </h1>
                   <p style={{
                     color: 'rgba(255, 255, 255, 0.9)',
@@ -232,21 +270,55 @@ export default function DashboardPage() {
                   </button>
                 </div>
 
-                {/* Hero Image Placeholder */}
-                <div style={{
-                  width: '300px',
-                  height: '200px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginLeft: '32px'
-                }}>
-                  <span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '14px' }}>
-                    Dashboard Image
-                  </span>
-                </div>
+                {/* Store Logo */}
+                {storeConfig?.logo_url ? (
+                  <div style={{
+                    width: '300px',
+                    height: '200px',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginLeft: '32px',
+                    overflow: 'hidden',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    padding: '16px'
+                  }}>
+                    <img
+                      src={storeConfig.logo_url}
+                      alt={storeConfig.app_name || 'Store Logo'}
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                        objectFit: 'contain',
+                        borderRadius: '8px'
+                      }}
+                      onError={(e) => {
+                        // Fallback if image fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        if (target.parentElement) {
+                          target.parentElement.innerHTML = '<span style="color: rgba(255, 255, 255, 0.5); font-size: 14px;">Store Logo</span>';
+                        }
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div style={{
+                    width: '300px',
+                    height: '200px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginLeft: '32px'
+                  }}>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '14px' }}>
+                      {storeConfig?.app_name || 'Store'} Logo
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Quick Actions */}
@@ -254,7 +326,7 @@ export default function DashboardPage() {
                 fontSize: '20px',
                 fontWeight: '600',
                 marginBottom: '16px',
-                color: '#111827'
+                color: isDarkMode ? '#f8fafc' : '#111827'
               }}>
                 Today's Summary
               </h2>
@@ -265,29 +337,33 @@ export default function DashboardPage() {
                 marginBottom: '32px'
               }}>
                 {[
-                  { title: 'Total Orders', subtitle: `${dashboardData.summary.total_orders} orders`, color: '#3B82F6' },
+                  { title: 'Total Orders', subtitle: `${dashboardData.summary.total_orders} ${dashboardData.summary.total_orders === 1 ? 'order' : 'orders'}`, color: '#3B82F6' },
                   { title: 'Total Revenue', subtitle: `₹${dashboardData.summary.total_revenue.toLocaleString()}`, color: '#10B981' },
-                  { title: 'Total Customers', subtitle: `${dashboardData.summary.total_customers} customers`, color: '#8B5CF6' },
-                  { title: 'Active Branches', subtitle: `${dashboardData.summary.active_branches} branches`, color: '#F59E0B' }
+                  { title: 'Total Customers', subtitle: `${dashboardData.summary.total_customers} ${dashboardData.summary.total_customers === 1 ? 'customer' : 'customers'}`, color: '#8B5CF6' },
+                  { title: 'Active Branches', subtitle: `${dashboardData.summary.active_branches} ${dashboardData.summary.active_branches === 1 ? 'branch' : 'branches'}`, color: '#F59E0B' }
                 ].map((action, index) => (
               <div
                 key={index}
                 style={{
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: isDarkMode ? '#1e293b' : '#FFFFFF',
                   borderRadius: '12px',
                   padding: '20px',
-                  border: '1px solid #E5E7EB',
+                  border: isDarkMode ? '1px solid #334155' : '1px solid #E5E7EB',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                   borderLeft: `4px solid ${action.color}`
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
+                  e.currentTarget.style.boxShadow = isDarkMode 
+                    ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+                    : '0 4px 12px rgba(0, 0, 0, 0.08)';
                   e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#F9FAFB';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.boxShadow = 'none';
                   e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#FFFFFF';
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -295,14 +371,14 @@ export default function DashboardPage() {
                     <h3 style={{
                       fontSize: '16px',
                       fontWeight: '600',
-                      color: '#111827',
+                      color: isDarkMode ? '#f8fafc' : '#111827',
                       marginBottom: '4px'
                     }}>
                       {action.title}
                     </h3>
                     <p style={{
                       fontSize: '14px',
-                      color: '#6B7280'
+                      color: isDarkMode ? '#cbd5e1' : '#6B7280'
                     }}>
                       {action.subtitle}
                     </p>
@@ -330,47 +406,53 @@ export default function DashboardPage() {
                   fontWeight: '600',
                   marginTop: '32px',
                   marginBottom: '16px',
-                  color: '#111827'
+                  color: isDarkMode ? '#f8fafc' : '#111827'
                 }}>
                   Recent Orders
                 </h2>
                 <div style={{
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: isDarkMode ? '#1e293b' : '#FFFFFF',
                   borderRadius: '12px',
-                  border: '1px solid #E5E7EB',
+                  border: isDarkMode ? '1px solid #334155' : '1px solid #E5E7EB',
                   overflow: 'hidden',
                   marginBottom: '32px'
                 }}>
                   {dashboardData.recent_orders && dashboardData.recent_orders.length > 0 ? (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
-                        <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
-                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
+                        <tr style={{ 
+                          backgroundColor: isDarkMode ? '#334155' : '#F9FAFB', 
+                          borderBottom: isDarkMode ? '1px solid #475569' : '1px solid #E5E7EB' 
+                        }}>
+                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                             Order ID
                           </th>
-                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
+                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                             Customer
                           </th>
-                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
+                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                             Date
                           </th>
-                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
+                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                             Amount
                           </th>
-                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
+                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                             Payment
                           </th>
-                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
+                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                             Status
                           </th>
-                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
+                          <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                             Action
                           </th>
                         </tr>
                       </thead>
                       <tbody>
                         {dashboardData.recent_orders.map((order, index) => {
-                          const getStatusColor = (status: string) => {
+                          const getStatusColor = (status: string | undefined | null) => {
+                            if (!status) {
+                              return { bg: '#6B728020', color: '#6B7280' };
+                            }
                             switch (status.toLowerCase()) {
                               case 'completed':
                               case 'delivered':
@@ -395,40 +477,40 @@ export default function DashboardPage() {
                             <tr
                               key={index}
                               style={{
-                                borderBottom: '1px solid #F3F4F6',
+                                borderBottom: isDarkMode ? '1px solid #334155' : '1px solid #F3F4F6',
                                 transition: 'background-color 0.2s'
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#F9FAFB';
+                                e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#F9FAFB';
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = '#FFFFFF';
+                                e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#FFFFFF';
                               }}
                             >
-                              <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
+                              <td style={{ padding: '16px', fontSize: '14px', color: isDarkMode ? '#f8fafc' : '#111827', fontWeight: '600' }}>
                                 #{order.order_id}
                               </td>
-                              <td style={{ padding: '16px', fontSize: '14px', color: '#111827' }}>
+                              <td style={{ padding: '16px', fontSize: '14px', color: isDarkMode ? '#f8fafc' : '#111827' }}>
                                 <div>
                                   <div style={{ fontWeight: '500' }}>{order.customer_name}</div>
                                   {order.customer_email && (
-                                    <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>
+                                    <div style={{ fontSize: '12px', color: isDarkMode ? '#cbd5e1' : '#6B7280', marginTop: '2px' }}>
                                       {order.customer_email}
                                     </div>
                                   )}
                                 </div>
                               </td>
-                              <td style={{ padding: '16px', fontSize: '14px', color: '#6B7280' }}>
+                              <td style={{ padding: '16px', fontSize: '14px', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                                 {new Date(order.order_date).toLocaleDateString('en-IN', {
                                   day: 'numeric',
                                   month: 'short',
                                   year: 'numeric'
                                 })}
                               </td>
-                              <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
+                              <td style={{ padding: '16px', fontSize: '14px', color: isDarkMode ? '#f8fafc' : '#111827', fontWeight: '600' }}>
                                 ₹{order.total_amount.toLocaleString()}
                               </td>
-                              <td style={{ padding: '16px', fontSize: '14px', color: '#6B7280', textTransform: 'uppercase' }}>
+                              <td style={{ padding: '16px', fontSize: '14px', color: isDarkMode ? '#cbd5e1' : '#6B7280', textTransform: 'uppercase' }}>
                                 {order.payment_method || 'N/A'}
                               </td>
                               <td style={{ padding: '16px' }}>
@@ -441,7 +523,7 @@ export default function DashboardPage() {
                                   color: statusColors.color,
                                   textTransform: 'capitalize'
                                 }}>
-                                  {order.status.replace('_', ' ')}
+                                  {order.status ? order.status.replace(/_/g, ' ') : 'Unknown'}
                                 </span>
                               </td>
                               <td style={{ padding: '16px' }}>
@@ -450,20 +532,20 @@ export default function DashboardPage() {
                                   style={{
                                     padding: '6px 16px',
                                     borderRadius: '6px',
-                                    border: '1px solid #E5E7EB',
-                                    backgroundColor: '#FFFFFF',
+                                    border: isDarkMode ? '1px solid #475569' : '1px solid #E5E7EB',
+                                    backgroundColor: isDarkMode ? '#334155' : '#FFFFFF',
                                     fontSize: '13px',
-                                    color: '#6B7280',
+                                    color: isDarkMode ? '#cbd5e1' : '#6B7280',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '4px'
                                   }}
                                   onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#F9FAFB';
+                                    e.currentTarget.style.backgroundColor = isDarkMode ? '#475569' : '#F9FAFB';
                                   }}
                                   onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#FFFFFF';
+                                    e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#FFFFFF';
                                   }}
                                 >
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -520,36 +602,39 @@ export default function DashboardPage() {
                 fontSize: '20px',
                 fontWeight: '600',
                 marginBottom: '16px',
-                color: '#111827'
+                color: isDarkMode ? '#f8fafc' : '#111827'
               }}>
                 Top Products
               </h2>
               <div style={{
-                backgroundColor: '#FFFFFF',
+                backgroundColor: isDarkMode ? '#1e293b' : '#FFFFFF',
                 borderRadius: '12px',
-                border: '1px solid #E5E7EB',
+                border: isDarkMode ? '1px solid #334155' : '1px solid #E5E7EB',
                 overflow: 'hidden'
               }}>
                 {dashboardData.top_products && dashboardData.top_products.length > 0 ? (
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
-                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
-                          Product ID
+                      <tr style={{ 
+                        backgroundColor: isDarkMode ? '#334155' : '#F9FAFB', 
+                        borderBottom: isDarkMode ? '1px solid #475569' : '1px solid #E5E7EB' 
+                      }}>
+                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
+                          Image
                         </th>
-                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
+                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                           Product Name
                         </th>
-                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
+                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                           Total Sold
                         </th>
-                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
+                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                           Revenue
                         </th>
-                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
+                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                           Status
                         </th>
-                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#6B7280' }}>
+                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                           Action
                         </th>
                       </tr>
@@ -559,26 +644,61 @@ export default function DashboardPage() {
                       <tr
                         key={index}
                         style={{
-                          borderBottom: '1px solid #F3F4F6',
+                          borderBottom: isDarkMode ? '1px solid #334155' : '1px solid #F3F4F6',
                           transition: 'background-color 0.2s'
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#F9FAFB';
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#F9FAFB';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = '#FFFFFF';
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#FFFFFF';
                         }}
                       >
-                        <td style={{ padding: '16px', fontSize: '14px', color: '#111827' }}>
-                          {product.product_id}
+                        <td style={{ padding: '16px' }}>
+                          <div
+                            style={{
+                              width: '48px',
+                              height: '48px',
+                              borderRadius: '8px',
+                              overflow: 'hidden',
+                              backgroundColor: isDarkMode ? '#334155' : '#F3F4F6',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              border: isDarkMode ? '1px solid #334155' : '1px solid #E5E7EB'
+                            }}
+                          >
+                            {product.product_image ? (
+                              <img
+                                src={product.product_image}
+                                alt={product.product_name}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover'
+                                }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ) : null}
+                            {!product.product_image && (
+                              <span style={{
+                                color: isDarkMode ? '#6B7280' : '#9CA3AF',
+                                fontSize: '20px'
+                              }}>
+                                📦
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td style={{ padding: '16px', fontSize: '14px', color: '#111827' }}>
+                        <td style={{ padding: '16px', fontSize: '14px', color: isDarkMode ? '#f8fafc' : '#111827', fontWeight: '500' }}>
                           {product.product_name}
                         </td>
-                        <td style={{ padding: '16px', fontSize: '14px', color: '#6B7280' }}>
+                        <td style={{ padding: '16px', fontSize: '14px', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                           {product.total_sold}
                         </td>
-                        <td style={{ padding: '16px', fontSize: '14px', color: '#6B7280' }}>
+                        <td style={{ padding: '16px', fontSize: '14px', color: isDarkMode ? '#cbd5e1' : '#6B7280' }}>
                           ₹{product.revenue.toLocaleString()}
                         </td>
                         <td style={{ padding: '16px' }}>
@@ -599,20 +719,20 @@ export default function DashboardPage() {
                               style={{
                                 padding: '6px 16px',
                                 borderRadius: '6px',
-                                border: '1px solid #E5E7EB',
-                                backgroundColor: '#FFFFFF',
+                                border: isDarkMode ? '1px solid #475569' : '1px solid #E5E7EB',
+                                backgroundColor: isDarkMode ? '#334155' : '#FFFFFF',
                                 fontSize: '13px',
-                                color: '#6B7280',
+                                color: isDarkMode ? '#cbd5e1' : '#6B7280',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '4px'
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#F9FAFB';
+                                e.currentTarget.style.backgroundColor = isDarkMode ? '#475569' : '#F9FAFB';
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = '#FFFFFF';
+                                e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#FFFFFF';
                               }}
                             >
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

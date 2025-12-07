@@ -151,68 +151,82 @@ export const makeAuthenticatedRequest = async (
 
     if (!response.ok) {
       // Handle different error statuses appropriately
-      if (response.status >= 500) {
-        // Try to get more details from the response
-        let errorDetails = 'Server error occurred. Please try again later.';
-        try {
+      let errorDetails = `API request failed with status ${response.status}`;
+      
+      // Try to get error details from response
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
           const errorResponse = await response.json();
           if (errorResponse.message) {
             errorDetails = errorResponse.message;
+          } else if (errorResponse.error) {
+            errorDetails = errorResponse.error;
           }
-        } catch (e) {
-          // If we can't parse the error, use the default message
-        }
-        logApiCall({
-          level: 'error',
-          method: options.method || 'GET',
-          url: sanitizedEndpoint,
-          status: response.status,
-          error: errorDetails,
-        });
-        throw new Error(errorDetails || 'Server error occurred. Please try again later.');
-      } else if (response.status === 403) {
-        const error = 'Access forbidden. You don\'t have permission to perform this action.';
-        logApiCall({
-          level: 'error',
-          method: options.method || 'GET',
-          url: sanitizedEndpoint,
-          status: response.status,
-          error,
-        });
-        throw new Error(error);
-      } else if (response.status === 404) {
-        const error = 'Requested resource not found.';
-        logApiCall({
-          level: 'error',
-          method: options.method || 'GET',
-          url: sanitizedEndpoint,
-          status: response.status,
-          error,
-        });
-        throw new Error(error);
-      } else {
-        // Try to get error details from response
-        let errorDetails = `API request failed: ${response.status}`;
-        try {
-          const errorResponse = await response.json();
-          if (errorResponse.message) {
-            errorDetails = errorResponse.message;
+        } else {
+          // If not JSON, try to get text
+          const text = await response.text();
+          if (text) {
+            errorDetails = text;
           }
-        } catch (e) {
-          // If we can't parse error details, use the default message
         }
-        logApiCall({
-          level: 'error',
-          method: options.method || 'GET',
-          url: sanitizedEndpoint,
-          status: response.status,
-          error: errorDetails,
-        });
-        throw new Error(errorDetails);
+      } catch (parseError: any) {
+        // If we can't parse the error response, use status-based default messages
+        if (response.status >= 500) {
+          errorDetails = 'Server error occurred. Please try again later.';
+        } else if (response.status === 403) {
+          errorDetails = 'Access forbidden. You don\'t have permission to perform this action.';
+        } else if (response.status === 404) {
+          errorDetails = 'Requested resource not found.';
+        } else {
+          errorDetails = `API request failed: ${response.status}`;
+        }
       }
+      
+      // Provide user-friendly messages based on status
+      if (response.status >= 500) {
+        errorDetails = errorDetails || 'Server error occurred. Please try again later.';
+      } else if (response.status === 403) {
+        errorDetails = errorDetails || 'Access forbidden. You don\'t have permission to perform this action.';
+      } else if (response.status === 404) {
+        errorDetails = errorDetails || 'Requested resource not found.';
+      }
+      
+      logApiCall({
+        level: 'error',
+        method: options.method || 'GET',
+        url: sanitizedEndpoint,
+        status: response.status,
+        error: errorDetails,
+        duration,
+      });
+      throw new Error(errorDetails);
     }
 
-    const responseBody = await response.json();
+    // Parse response body as JSON
+    let responseBody;
+    try {
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        responseBody = await response.json();
+      } else {
+        // If not JSON, try to get text
+        const text = await response.text();
+        responseBody = text ? { message: text } : {};
+      }
+    } catch (parseError: any) {
+      // If JSON parsing fails, log detailed error
+      const errorMessage = `Failed to parse response as JSON: ${parseError.message}`;
+      logApiCall({
+        level: 'error',
+        method: options.method || 'GET',
+        url: sanitizedEndpoint,
+        status: response.status,
+        error: errorMessage,
+        duration: Date.now() - startTime,
+      });
+      throw new Error(errorMessage);
+    }
 
     // Log the response body separately to avoid duplicating it in the response log
     logApiCall({
@@ -240,11 +254,20 @@ export const makeAuthenticatedRequest = async (
       throw new Error(errorMessage);
     }
 
+    // Extract error message with more context
+    let errorMessage = error.message || String(error);
+    if (error.stack) {
+      // Include stack trace in development for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Full error stack:', error.stack);
+      }
+    }
+
     logApiCall({
       level: 'error',
       method: options.method || 'GET',
       url: sanitizedEndpoint,
-      error: error.message || String(error),
+      error: errorMessage,
       duration,
     });
 

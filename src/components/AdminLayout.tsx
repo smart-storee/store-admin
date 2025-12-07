@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, ReactNode } from 'react';
+import { useState, ReactNode, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { makeAuthenticatedRequest } from '@/utils/api';
 import DarkModeToggle from '@/components/DarkModeToggle';
 import StoreBranchSelector from '@/components/StoreBranchSelector';
 import { IoSettingsOutline, IoLogOutOutline } from 'react-icons/io5';
@@ -17,8 +19,55 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [dropdownTimer, setDropdownTimer] = useState<NodeJS.Timeout | null>(null);
+  const [storeName, setStoreName] = useState<string>('Store Admin');
+  const [storeLogo, setStoreLogo] = useState<string>('');
   const { user, logout } = useAuth();
+  const { theme } = useTheme();
   const pathname = usePathname();
+  const isDarkMode = theme === 'dark';
+
+  // Fetch store name and logo from app_config
+  useEffect(() => {
+    const fetchStoreConfig = async () => {
+      if (!user?.store_id) {
+        setStoreName(user?.store_name || 'Store Admin');
+        return;
+      }
+
+      try {
+        const response = await makeAuthenticatedRequest(
+          `/app-settings?store_id=${user.store_id}`,
+          {},
+          true,
+          user.store_id,
+          user.branch_id || undefined
+        );
+
+        if (response.success) {
+          const config = response.data.data || response.data;
+          setStoreName(config.app_name || user.store_name || 'Store Admin');
+          setStoreLogo(config.logo_url || '');
+        } else {
+          setStoreName(user.store_name || 'Store Admin');
+          setStoreLogo('');
+        }
+      } catch (err) {
+        console.error('Error fetching store config:', err);
+        setStoreName(user.store_name || 'Store Admin');
+        setStoreLogo('');
+      }
+    };
+
+    fetchStoreConfig();
+  }, [user?.store_id, user?.store_name]);
+
+  // Get first letter of store name for avatar fallback
+  const getStoreInitial = () => {
+    if (storeName && storeName !== 'Store Admin') {
+      return storeName.charAt(0).toUpperCase();
+    }
+    return 'S';
+  };
 
   const handleMouseEnterProfile = () => {
     if (dropdownTimer) {
@@ -42,20 +91,45 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   }
 
   // Navigation items based on permissions
-  const navigation: NavigationItem[] = [
+  const allNavigationItems: NavigationItem[] = [
     { name: 'Dashboard', href: '/dashboard', permission: 'view_dashboard' },
     { name: 'Branches', href: '/branches', permission: 'manage_branches' },
     { name: 'Setup Flow', href: '/setup-flow', permission: 'manage_categories' },
     // { name: 'Products', href: '/products', permission: 'manage_products' },
     // { name: 'Categories', href: '/categories', permission: 'manage_categories' },
     { name: 'Orders', href: '/orders', permission: 'manage_orders' },
+    { name: 'UPI Transactions', href: '/upi-transactions', permission: 'manage_orders' },
     { name: 'Customers', href: '/customers', permission: 'manage_customers' },
     { name: 'Employees', href: '/users', permission: 'manage_users' },
     { name: 'Notifications', href: '/notifications', permission: 'manage_notifications' },
+    { name: 'Home Config', href: '/home-config', permission: 'app_settings' },
     { name: 'Reports', href: '/reports', permission: 'view_reports' },
     { name: 'API Logs', href: '/api-logs', permission: 'view_dashboard' },
     { name: 'Settings', href: '/settings', permission: 'app_settings' },
   ];
+
+  // Filter navigation based on user permissions and role
+  // Owner role should only see Branches and Reports
+  const navigation = allNavigationItems.filter((item) => {
+    // If user is owner, only show branches and reports
+    if (user?.role === 'owner') {
+      return item.permission === 'manage_branches' || item.permission === 'view_reports';
+    }
+    
+    // For other roles, check if they have the required permission
+    // Admin role has all permissions, so show everything
+    if (user?.role === 'admin' || user?.role === 'super_admin') {
+      return true;
+    }
+    
+    // For other roles, check permissions
+    if (item.permission && user?.permissions) {
+      return user.permissions.includes(item.permission);
+    }
+    
+    // If no permission specified, show it (fallback)
+    return !item.permission;
+  });
 
   const isActive = (href: string) => pathname === href;
 
@@ -90,6 +164,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
             <line x1="3" y1="6" x2="21" y2="6"></line>
             <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+        );
+      case 'UPI Transactions':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
           </svg>
         );
       case 'Customers':
@@ -133,6 +213,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
         );
+      case 'Home Config':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+        );
       case 'Settings':
         return (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -149,41 +237,68 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div 
+      className="min-h-screen"
+      style={{
+        backgroundColor: isDarkMode ? '#0f172a' : '#F9FAFB'
+      }}
+    >
 
       {/* Mobile sidebar */}
       <div className="md:hidden">
-        {/* Mobile menu button */}
-        <button
-          type="button"
-          className="fixed bottom-4 right-4 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white z-50"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+        {/* Mobile header with theme toggle */}
+        <div 
+          className="fixed top-0 left-0 right-0 shadow-sm z-40 px-4 py-3 flex items-center justify-between"
+          style={{
+            backgroundColor: isDarkMode ? '#1e293b' : '#FFFFFF'
+          }}
         >
-          <span className="sr-only">Open main menu</span>
-          {sidebarOpen ? (
-            <svg
-              className="block h-6 w-6"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {pathname === '/dashboard' && 'Dashboard'}
+            {pathname === '/branches' && 'Branches'}
+            {pathname === '/orders' && 'Orders'}
+            {pathname === '/upi-transactions' && 'UPI Transactions'}
+            {pathname === '/customers' && 'Customers'}
+            {pathname === '/users' && 'Employees'}
+            {pathname === '/notifications' && 'Notifications'}
+            {pathname === '/reports' && 'Reports'}
+            {pathname === '/api-logs' && 'API Logs'}
+            {pathname === '/settings' && 'Settings'}
+          </h2>
+          <div className="flex items-center gap-3">
+            <DarkModeToggle />
+            <button
+              type="button"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <svg
-              className="block h-6 w-6"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          )}
-        </button>
+              <span className="sr-only">Open main menu</span>
+              {sidebarOpen ? (
+                <svg
+                  className="block h-6 w-6"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg
+                  className="block h-6 w-6"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
 
         {/* Mobile sidebar overlay */}
         {sidebarOpen && (
@@ -242,8 +357,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       <div
         className="hidden md:flex md:flex-col md:fixed md:inset-y-0 transition-all duration-300"
         style={{
-          backgroundColor: '#FFFFFF',
-          borderRight: '1px solid #E5E7EB',
+          backgroundColor: isDarkMode ? '#1e293b' : '#FFFFFF',
+          borderRight: isDarkMode ? '1px solid #334155' : '1px solid #E5E7EB',
           width: sidebarCollapsed ? '80px' : '256px'
         }}
       >
@@ -255,23 +370,57 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 style={{ justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}
               >
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  backgroundColor: '#4169E1',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#FFFFFF',
-                  fontSize: '20px',
-                  fontWeight: 'bold',
-                  flexShrink: 0
-                }}>
-                  S
-                </div>
+                {storeLogo ? (
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                    backgroundColor: '#4169E1',
+                    padding: '4px'
+                  }}>
+                    <img
+                      src={storeLogo}
+                      alt={storeName}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        borderRadius: '4px'
+                      }}
+                      onError={(e) => {
+                        // Fallback to initial if image fails
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        if (target.parentElement) {
+                          target.parentElement.innerHTML = `<span style="color: #FFFFFF; font-size: 20px; font-weight: bold;">${getStoreInitial()}</span>`;
+                        }
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    backgroundColor: '#4169E1',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#FFFFFF',
+                    fontSize: '20px',
+                    fontWeight: 'bold',
+                    flexShrink: 0
+                  }}>
+                    {getStoreInitial()}
+                  </div>
+                )}
                 {!sidebarCollapsed && (
-                  <h1 style={{ color: '#111827', fontSize: '18px', fontWeight: '700' }}>Store Admin</h1>
+                  <h1 style={{ color: isDarkMode ? '#f8fafc' : '#111827', fontSize: '18px', fontWeight: '700' }}>{storeName}</h1>
                 )}
               </div>
               {!sidebarCollapsed && (
@@ -285,11 +434,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#6B7280',
+                    color: isDarkMode ? '#cbd5e1' : '#6B7280',
                     borderRadius: '4px'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#F3F4F6';
+                    e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#F3F4F6';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = 'transparent';
@@ -316,8 +465,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     fontSize: '15px',
                     fontWeight: '500',
                     borderRadius: '8px',
-                    backgroundColor: isActive(item.href) ? '#4169E120' : 'transparent',
-                    color: isActive(item.href) ? '#4169E1' : '#6B7280',
+                    backgroundColor: isActive(item.href) 
+                      ? (isDarkMode ? 'rgba(65, 105, 225, 0.2)' : '#4169E120') 
+                      : 'transparent',
+                    color: isActive(item.href) 
+                      ? '#4169E1' 
+                      : (isDarkMode ? '#cbd5e1' : '#6B7280'),
                     borderLeft: isActive(item.href) ? '3px solid #4169E1' : '3px solid transparent',
                     marginLeft: isActive(item.href) ? '-3px' : '0',
                     transition: 'all 0.2s',
@@ -325,14 +478,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive(item.href)) {
-                      e.currentTarget.style.backgroundColor = '#F3F4F6';
-                      e.currentTarget.style.color = '#111827';
+                      e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#F3F4F6';
+                      e.currentTarget.style.color = isDarkMode ? '#f8fafc' : '#111827';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive(item.href)) {
                       e.currentTarget.style.backgroundColor = 'transparent';
-                      e.currentTarget.style.color = '#6B7280';
+                      e.currentTarget.style.color = isDarkMode ? '#cbd5e1' : '#6B7280';
                     }
                   }}
                 >
@@ -342,7 +495,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               ))}
             </nav>
           </div>
-          <div className="flex-shrink-0 p-4" style={{ borderTop: '1px solid #E5E7EB' }}>
+          <div className="flex-shrink-0 p-4" style={{ borderTop: isDarkMode ? '1px solid #334155' : '1px solid #E5E7EB' }}>
             <div style={{
               display: 'flex',
               flexDirection: sidebarCollapsed ? 'column' : 'row',
@@ -366,7 +519,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       >
         <div className="md:pr-4">
           {/* Top header with branch selector */}
-          <div className="bg-white dark:bg-gray-800 shadow-sm">
+          <div 
+            className="shadow-sm"
+            style={{
+              backgroundColor: isDarkMode ? '#1e293b' : '#FFFFFF'
+            }}
+          >
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
                 <div className="flex items-center">
@@ -376,9 +534,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     {/* {pathname === '/products' && 'Products Management'} */}
                     {/* {pathname === '/categories' && 'Categories Management'} */}
                     {pathname === '/orders' && 'Orders Management'}
+                    {pathname === '/upi-transactions' && 'UPI Transactions'}
                     {pathname === '/customers' && 'Customers Management'}
                     {pathname === '/users' && 'Employees Management'}
                     {pathname === '/notifications' && 'Notifications'}
+                    {pathname === '/home-config' && 'Home Screen Configuration'}
                     {pathname === '/reports' && 'Reports & Analytics'}
                     {pathname === '/api-logs' && 'API Logs'}
                     {pathname === '/settings' && 'App Settings'}
@@ -389,6 +549,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 {/* <StoreBranchSelector /> */}
                 <div className="flex items-center gap-4">
                   <span className="text-gray-700 dark:text-gray-300">Welcome, {user?.name || 'Admin'}</span>
+
+                  {/* Theme Toggle */}
+                  <div className="hidden md:block">
+                    <DarkModeToggle />
+                  </div>
 
                   {/* Profile Dropdown */}
                   <div
@@ -509,7 +674,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
 
         <main className="flex-1">
-          <div className="py-6">
+          <div className="py-6 md:pt-6 pt-20">
             <div className="px-4 sm:px-6 md:px-8">
               {children}
             </div>
