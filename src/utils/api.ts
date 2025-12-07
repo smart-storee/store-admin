@@ -6,6 +6,7 @@ import {
   logApiError,
   logApiCall
 } from '@/utils/apiLogger';
+import { API_URL, API_SERVER_URL } from '@/config/api.config';
 
 // Sanitize input to prevent XSS
 export const sanitizeInput = (input: string): string => {
@@ -78,7 +79,7 @@ export const makeAuthenticatedRequest = async (
   const startTime = Date.now();
 
   try {
-    const response = await fetch(`http://localhost:3000/api/v1/admin${sanitizedEndpoint}`, {
+    const response = await fetch(`${API_URL}${sanitizedEndpoint}`, {
       ...options,
       headers,
     });
@@ -111,7 +112,7 @@ export const makeAuthenticatedRequest = async (
           );
 
           const retryStartTime = Date.now();
-          const retryResponse = await fetch(`http://localhost:3000/api/v1/admin${sanitizedEndpoint}`, {
+          const retryResponse = await fetch(`${API_URL}${sanitizedEndpoint}`, {
             ...options,
             headers: {
               ...headers,
@@ -243,7 +244,7 @@ export const makeAuthenticatedRequest = async (
 
     if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
       // Network error - backend server might be down or unreachable
-      const errorMessage = 'Unable to connect to the server. Please ensure:\n1. The backend API server is running\n2. The server is accessible at http://localhost:3000\n3. Your internet/network connection is working properly';
+      const errorMessage = `Unable to connect to the server. Please ensure:\n1. The backend API server is running\n2. The server is accessible at ${API_SERVER_URL}\n3. Your internet/network connection is working properly`;
       logApiCall({
         level: 'error',
         method: options.method || 'GET',
@@ -295,7 +296,7 @@ export const refreshAuthToken = async (): Promise<boolean> => {
   const startTime = Date.now();
 
   try {
-    const response = await fetch('http://localhost:3000/api/v1/admin/auth/refresh-token', {
+    const response = await fetch(`${API_URL}/auth/refresh-token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -371,7 +372,7 @@ export const refreshAuthToken = async (): Promise<boolean> => {
 
     if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
       // Network error - backend server might be down or unreachable
-      const errorMessage = 'Unable to connect to the server for token refresh. Please ensure:\n1. The backend API server is running\n2. The server is accessible at http://localhost:3000\n3. Your internet/network connection is working properly';
+      const errorMessage = `Unable to connect to the server for token refresh. Please ensure:\n1. The backend API server is running\n2. The server is accessible at ${API_SERVER_URL}\n3. Your internet/network connection is working properly`;
 
       logApiCall({
         level: 'error',
@@ -430,7 +431,7 @@ export const loginRequest = async (email: string, password: string): Promise<any
   const startTime = Date.now();
 
   try {
-    const response = await fetch('http://localhost:3000/api/v1/admin/auth/login', {
+    const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -522,7 +523,7 @@ export const loginRequest = async (email: string, password: string): Promise<any
 
     if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
       // Network error - backend server might be down or unreachable
-      const errorMessage = 'Unable to connect to the server. Please ensure:\n1. The backend API server is running\n2. The server is accessible at http://localhost:3000\n3. Your internet/network connection is working properly';
+      const errorMessage = `Unable to connect to the server. Please ensure:\n1. The backend API server is running\n2. The server is accessible at ${API_SERVER_URL}\n3. Your internet/network connection is working properly`;
       logApiCall({
         level: 'error',
         method: 'POST',

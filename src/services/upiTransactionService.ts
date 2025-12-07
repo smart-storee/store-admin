@@ -1,4 +1,5 @@
 // src/services/upiTransactionService.ts
+import { API_URL } from '@/config/api.config';
 
 interface UpiTransaction {
   transaction_id: number;
@@ -61,7 +62,7 @@ class UpiTransactionService {
   private token: string | null;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1/admin';
+    this.baseUrl = API_URL;
     this.token = localStorage.getItem('authToken');
   }
 
