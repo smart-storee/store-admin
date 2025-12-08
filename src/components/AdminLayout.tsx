@@ -134,12 +134,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       permission: "manage_customers",
       feature: "customers_enabled",
     },
-    {
-      name: "Employees",
-      href: "/users",
-      permission: "manage_users",
-      feature: "employees_enabled",
-    },
+    // {
+    //   name: "Employees",
+    //   href: "/users",
+    //   permission: "manage_users",
+    //   feature: "employees_enabled",
+    // },
     {
       name: "Notifications",
       href: "/notifications",
@@ -164,13 +164,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       permission: "view_reports",
       feature: "reports_enabled",
     },
-    { name: "API Logs", href: "/api-logs", permission: "view_dashboard" },
-    {
-      name: "Billing",
-      href: "/billing",
-      permission: "view_reports",
-      feature: "billings_enabled",
-    },
+    // { name: "API Logs", href: "/api-logs", permission: "view_dashboard" },
+    // {
+    //   name: "Billing",
+    //   href: "/billing",
+    //   permission: "view_reports",
+    //   feature: "billings_enabled",
+    // },
     {
       name: "Settings",
       href: "/settings",
