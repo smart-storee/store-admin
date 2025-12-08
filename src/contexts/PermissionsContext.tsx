@@ -80,7 +80,7 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({
     if (!user?.store_id) return;
 
     try {
-      const response = await makeAuthenticatedRequest<Permission[]>(
+      const response = await makeAuthenticatedRequest(
         "/permissions",
         {},
         true,
@@ -107,7 +107,7 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const fetchUserPermissions = async () => {
-    const userId = user?.admin_id || user?.user_id;
+    const userId = user?.user_id;
     if (!userId || !user?.store_id) {
       console.log("Cannot fetch permissions - missing user ID or store ID", {
         userId,
@@ -121,9 +121,9 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({
       console.log("Fetching user permissions for:", {
         userId,
         store_id: user.store_id,
-        role_id: user.role_id,
+        role: user.role,
       });
-      const response = await makeAuthenticatedRequest<UserPermissions>(
+      const response = await makeAuthenticatedRequest(
         "/permissions/me",
         {},
         true,
@@ -154,7 +154,7 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({
     try {
       // Fetch store features from store endpoint
       // This should NOT be blocked by billing status - we need features to determine billing status
-      const response = await makeAuthenticatedRequest<any>(
+      const response = await makeAuthenticatedRequest(
         `/stores/${user.store_id}`,
         {},
         true,
@@ -259,7 +259,7 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({
         setLoading(false);
       });
     }
-  }, [user?.store_id, user?.admin_id]);
+  }, [user?.store_id, user?.user_id]);
 
   const hasPermission = (permissionCode: string): boolean => {
     return userPermissions.includes(permissionCode);
@@ -306,19 +306,18 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({
       return { hasAccess: false, reason: "Store features not loaded" };
     }
 
-    // If billing_status is explicitly 'active', trust it and allow access
-    // The billing_paid_until check is secondary and should only block if status is not active
-    if (storeFeatures.billing_status === "active") {
-      // Allow access if status is active, even if paid_until date has passed
-      // The backend should update billing_status to 'expired' if payment is overdue
-      return { hasAccess: true };
-    }
-
-    if (storeFeatures.billing_status !== "active") {
-      return {
-        hasAccess: false,
-        reason: `Billing status is ${storeFeatures.billing_status}. Please complete payment to access features.`,
-      };
+    // Check billing status
+    if (storeFeatures.billing_status) {
+      if (storeFeatures.billing_status === "active") {
+        // Allow access if status is active, even if paid_until date has passed
+        // The backend should update billing_status to 'expired' if payment is overdue
+        return { hasAccess: true };
+      } else {
+        return {
+          hasAccess: false,
+          reason: `Billing status is ${storeFeatures.billing_status}. Please complete payment to access features.`,
+        };
+      }
     }
 
     // Additional check: if billing_paid_until is set and in the past, warn but don't block if status is active
