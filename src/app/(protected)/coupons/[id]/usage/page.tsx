@@ -115,7 +115,7 @@ const CouponUsagePage = () => {
 
   if (loading) {
     return (
-      <RoleGuard allowedRoles={['super_admin', 'admin', 'manager']}>
+      <RoleGuard allowedRoles={['owner']}>
         <div className={`p-6 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} min-h-screen`}>
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -128,7 +128,7 @@ const CouponUsagePage = () => {
 
   if (error || !usageData) {
     return (
-      <RoleGuard allowedRoles={['super_admin', 'admin', 'manager']}>
+      <RoleGuard allowedRoles={['owner']}>
         <div className={`p-6 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} min-h-screen`}>
           <div className="max-w-7xl mx-auto">
             <button
@@ -147,7 +147,7 @@ const CouponUsagePage = () => {
   }
 
   return (
-    <RoleGuard allowedRoles={['super_admin', 'admin', 'manager']}>
+    <RoleGuard allowedRoles={['owner']}>
       <div className={`p-6 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} min-h-screen`}>
         <div className="max-w-7xl mx-auto">
           {/* Header */}

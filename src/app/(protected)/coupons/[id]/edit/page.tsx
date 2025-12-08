@@ -152,7 +152,7 @@ const EditCouponPage = () => {
   }
 
   return (
-    <RoleGuard allowedRoles={['super_admin', 'admin', 'manager']}>
+    <RoleGuard allowedRoles={['owner']}>
       <div className={`p-6 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} min-h-screen`}>
         <div className="max-w-3xl mx-auto">
           <div className="mb-6">

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleGuard } from '@/components/RoleGuard';
+import { FeatureGuard } from '@/components/FeatureGuard';
 import { ApiResponse, Category, Branch } from '@/types';
 import { Plus } from 'lucide-react';
 
@@ -132,7 +133,7 @@ export default function NewProductPage() {
         );
 
       if (response.success) {
-        router.push('/setup-flow'); // Redirect to products list
+        router.push('/business-setup-flow'); // Redirect to products list
       } else {
         throw new Error(response.message || 'Failed to create product');
       }
@@ -155,6 +156,18 @@ export default function NewProductPage() {
   }
 
   return (
+    <FeatureGuard
+      feature="products_enabled"
+      fallback={
+        <div className="p-6 text-center">
+          <div className="border rounded-lg px-4 py-3 mb-4">
+            <p className="text-yellow-700 dark:text-yellow-300">
+              Products feature is disabled for this store. Please contact support to enable it.
+            </p>
+          </div>
+        </div>
+      }
+    >
     <RoleGuard
       requiredPermissions={['manage_products']}
       fallback={
@@ -176,7 +189,7 @@ export default function NewProductPage() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => router.push('/setup-flow')}
+                onClick={() => router.push('/business-setup-flow')}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 Back to Setup
@@ -395,7 +408,7 @@ export default function NewProductPage() {
           <div className="px-4 py-5 sm:px-6 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 sticky bottom-0 z-10">
             <button
               type="button"
-              onClick={() => router.push('/setup-flow')}
+              onClick={() => router.push('/business-setup-flow')}
               className="bg-white py-2.5 px-6 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Cancel
@@ -412,5 +425,6 @@ export default function NewProductPage() {
         </div>
       </div>
     </RoleGuard>
+    </FeatureGuard>
   );
 }

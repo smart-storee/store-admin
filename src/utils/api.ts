@@ -1,5 +1,3 @@
-import { useAuth } from '@/contexts/AuthContext';
-import { useStore } from '@/contexts/StoreContext';
 import {
   logApiRequest,
   logApiResponse,

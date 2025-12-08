@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Define available roles
-type Role = 'admin' | 'staff' | 'delivery';
+type Role = 'owner' | 'manager';
 
 interface WithRoleAccessProps {
   allowedRoles: Role[];
@@ -38,10 +38,10 @@ export const useRoleAccess = (allowedRoles: Role[]) => {
 
 // Specific hook for admin access
 export const useAdminAccess = () => {
-  return useRoleAccess(['admin']);
+  return useRoleAccess(['owner']);
 };
 
 // Specific hook for staff access (includes admin)
 export const useStaffAccess = () => {
-  return useRoleAccess(['admin', 'staff']);
+  return useRoleAccess(['owner', 'manager']);
 };

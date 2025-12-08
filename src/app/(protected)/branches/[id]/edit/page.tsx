@@ -413,7 +413,7 @@ export default function EditBranchPage() {
                   />
                 </div>
 
-                <div className="col-span-6 sm:col-span-3">
+                {/* <div className="col-span-6 sm:col-span-3">
                   <label htmlFor="surge_fee" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                     Surge Fee (₹)
                   </label>
@@ -431,7 +431,7 @@ export default function EditBranchPage() {
                         : 'border-gray-300'
                     }`}
                   />
-                </div>
+                </div> */}
 
                 <div className="col-span-6">
                   <div className="flex items-start">

@@ -1,16 +1,15 @@
-import AdminLayout from '@/components/AdminLayout';
-import ProtectedRouteWrapper from '@/components/ProtectedRouteWrapper';
-import { StoreProvider } from '@/contexts/StoreContext';
+import AdminLayout from "@/components/AdminLayout";
+import ProtectedRouteWrapper from "@/components/ProtectedRouteWrapper";
+import { StoreProvider } from "@/contexts/StoreContext";
+import { PermissionsProvider } from "@/contexts/PermissionsContext";
 
-export default function Layout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRouteWrapper>
       <StoreProvider>
-        <AdminLayout>{children}</AdminLayout>
+        <PermissionsProvider>
+          <AdminLayout>{children}</AdminLayout>
+        </PermissionsProvider>
       </StoreProvider>
     </ProtectedRouteWrapper>
   );

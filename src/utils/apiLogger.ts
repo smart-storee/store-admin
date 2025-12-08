@@ -1,6 +1,3 @@
-// apiLogger.ts - Utility for logging API requests and responses
-import { ApiResponse } from '@/types';
-
 // Define log levels
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
