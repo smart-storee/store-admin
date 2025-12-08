@@ -88,7 +88,7 @@ export default function NewCategoryPage() {
         );
 
       if (response.success) {
-        router.push('/setup-flow');
+        router.push('/business-setup-flow');
       } else {
         throw new Error(response.message || 'Failed to create category');
       }
@@ -247,7 +247,7 @@ export default function NewCategoryPage() {
           <div className="px-4 py-5 sm:px-6 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 sticky bottom-0 z-10">
             <button
               type="button"
-              onClick={() => router.push('/setup-flow')}
+              onClick={() => router.push('/business-setup-flow')}
               className="bg-white py-2.5 px-6 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Cancel

@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginRequest, validateEmail } from '@/utils/api';
+import Image from 'next/image';
+import { validateEmail } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { LOGIN_CONSTANTS } from '@/constants/login';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -12,7 +14,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const router = useRouter();
   const { login } = useAuth();
 
   const validateForm = () => {
@@ -77,20 +78,20 @@ export default function LoginPage() {
                 fontWeight: 'var(--font-weight-bold)'
               }}
             >
-              S
+              {LOGIN_CONSTANTS.STORE_INITIAL}
             </div>
             <div>
               <h1
                 className="text-xl font-bold"
                 style={{ color: 'var(--text-primary)' }}
               >
-                Store Admin
+                {LOGIN_CONSTANTS.STORE_NAME}
               </h1>
               <p
                 className="text-xs"
                 style={{ color: 'var(--text-secondary)' }}
               >
-                Admin Portal
+                {LOGIN_CONSTANTS.PORTAL_NAME}
               </p>
             </div>
           </div>
@@ -267,23 +268,24 @@ export default function LoginPage() {
           padding: '48px'
         }}
       >
-        {/* Placeholder for Image Slider */}
+        {/* Image Slider */}
         <div
           className="flex items-center justify-center"
           style={{
             width: '100%',
             height: '500px',
-            border: '3px dashed rgba(255, 255, 255, 0.4)',
             borderRadius: '16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)'
+            position: 'relative',
+            overflow: 'hidden'
           }}
         >
-          <p
-            className="text-lg font-medium"
-            style={{ color: 'rgba(255, 255, 255, 0.6)' }}
-          >
-            Image Placeholder
-          </p>
+          <Image
+            src={LOGIN_CONSTANTS.LOGIN_IMAGE}
+            alt="Login"
+            fill
+            style={{ objectFit: 'contain' }}
+            priority
+          />
         </div>
       </div>
     </div>

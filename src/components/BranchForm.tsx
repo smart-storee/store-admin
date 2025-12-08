@@ -246,7 +246,7 @@ const BranchForm = ({ branch, isEditing = false, onSuccess, onError, onCancel }:
             </div>
           </div>
 
-          <div className="sm:col-span-3">
+          {/* <div className="sm:col-span-3">
             <label htmlFor="surge_fee" className="block text-sm font-medium text-gray-700">
               Surge Fee
             </label>
@@ -262,7 +262,7 @@ const BranchForm = ({ branch, isEditing = false, onSuccess, onError, onCancel }:
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               />
             </div>
-          </div>
+          </div> */}
 
           <div className="sm:col-span-6">
             <label htmlFor="is_active" className="block text-sm font-medium text-gray-700">

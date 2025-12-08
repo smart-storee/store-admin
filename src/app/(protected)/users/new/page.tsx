@@ -1,77 +1,93 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { makeAuthenticatedRequest } from '@/utils/api';
-import { useAuth } from '@/contexts/AuthContext';
-import { RoleGuard } from '@/components/RoleGuard';
-import { ApiResponse, Branch } from '@/types';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { makeAuthenticatedRequest } from "@/utils/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/contexts/PermissionsContext";
+import { RoleGuard } from "@/components/RoleGuard";
+import { ApiResponse, Branch } from "@/types";
 
 interface Permission {
-  name: string;
-  description: string;
+  permission_id: number;
+  permission_code: string;
+  permission_name: string;
+  permission_description: string;
+  feature_group: string;
+  store_enabled: number;
 }
 
 export default function NewUserPage() {
   const router = useRouter();
   const { user: currentUser } = useAuth();
+  const {
+    availablePermissions,
+    loading: loadingPermissions,
+    refreshPermissions,
+  } = usePermissions();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loadingPermissions, setLoadingPermissions] = useState(true);
-  const [availablePermissions, setAvailablePermissions] = useState<Permission[]>([]);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loadingBranches, setLoadingBranches] = useState(false);
+
+  // Permission templates
+  const permissionTemplates = {
+    manager: [
+      "view_dashboard",
+      "manage_products",
+      "manage_categories",
+      "manage_orders",
+      "view_reports",
+      "manage_branches",
+      "view_customers",
+    ],
+    cashier: [
+      "view_dashboard",
+      "manage_orders",
+      "view_products",
+      "view_customers",
+    ],
+    delivery: ["view_orders", "update_order_status"],
+    staff: ["view_dashboard", "view_products", "view_orders"],
+  };
   const [formData, setFormData] = useState({
-    user_name: '',
-    email: '',
-    phone: '',
-    password: '',
-    role: 'staff',
-    status: 'active',
+    user_name: "",
+    email: "",
+    phone: "",
+    password: "",
+    role: "staff",
+    status: "active",
     branch_id: null as number | null,
   });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoadingPermissions(true);
         setLoadingBranches(true);
-
-        // Fetch permissions
-        const permissionsResponse: ApiResponse<Permission[]> = await makeAuthenticatedRequest(
-          '/users/permissions',
-          {},
-          true,
-          currentUser?.store_id,
-          currentUser?.branch_id || undefined
-        );
-
-        if (permissionsResponse.success && permissionsResponse.data) {
-          setAvailablePermissions(Array.isArray(permissionsResponse.data) ? permissionsResponse.data : []);
-        }
+        refreshPermissions();
 
         // Fetch branches
         if (currentUser?.store_id) {
-          const branchesResponse: ApiResponse<{ data: Branch[] }> = await makeAuthenticatedRequest(
-            `/branches?store_id=${currentUser?.store_id}`,
-            {},
-            true,
-            currentUser?.store_id,
-            currentUser?.branch_id || undefined
-          );
+          const branchesResponse: ApiResponse<{ data: Branch[] }> =
+            await makeAuthenticatedRequest(
+              `/branches?store_id=${currentUser?.store_id}`,
+              {},
+              true,
+              currentUser?.store_id,
+              currentUser?.branch_id || undefined
+            );
 
           if (branchesResponse.success) {
-            const branchesData = Array.isArray(branchesResponse.data.data) 
-              ? branchesResponse.data.data 
+            const branchesData = Array.isArray(branchesResponse.data.data)
+              ? branchesResponse.data.data
               : branchesResponse.data.data || branchesResponse.data || [];
             setBranches(branchesData);
           }
         }
       } catch (err: any) {
-        console.error('Failed to load data:', err);
+        console.error("Failed to load data:", err);
       } finally {
-        setLoadingPermissions(false);
         setLoadingBranches(false);
       }
     };
@@ -79,21 +95,23 @@ export default function NewUserPage() {
     if (currentUser?.store_id) {
       fetchData();
     }
-  }, [currentUser?.store_id, currentUser?.branch_id]);
+  }, [currentUser?.store_id, currentUser?.branch_id, refreshPermissions]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-  const handlePermissionToggle = (permissionName: string) => {
-    setSelectedPermissions(prev => 
-      prev.includes(permissionName)
-        ? prev.filter(p => p !== permissionName)
-        : [...prev, permissionName]
+  const handlePermissionToggle = (permissionCode: string) => {
+    setSelectedPermissions((prev) =>
+      prev.includes(permissionCode)
+        ? prev.filter((p) => p !== permissionCode)
+        : [...prev, permissionCode]
     );
   };
 
@@ -103,11 +121,11 @@ export default function NewUserPage() {
     setSaving(true);
 
     try {
-      const response: ApiResponse<{ data: any }> = 
+      const response: ApiResponse<{ data: any }> =
         await makeAuthenticatedRequest(
-          '/users',
+          "/users",
           {
-            method: 'POST',
+            method: "POST",
             body: JSON.stringify({
               ...formData,
               store_id: currentUser?.store_id,
@@ -121,13 +139,13 @@ export default function NewUserPage() {
         );
 
       if (response.success) {
-        router.push('/users'); // Redirect to users list
+        router.push("/users"); // Redirect to users list
       } else {
-        throw new Error(response.message || 'Failed to create user');
+        throw new Error(response.message || "Failed to create user");
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to create user');
-      console.error('Create user error:', err);
+      setError(err.message || "Failed to create user");
+      console.error("Create user error:", err);
     } finally {
       setSaving(false);
     }
@@ -135,7 +153,7 @@ export default function NewUserPage() {
 
   return (
     <RoleGuard
-      requiredPermissions={['manage_users']}
+      requiredPermissions={["manage_users"]}
       fallback={
         <div className="p-6 text-center">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -146,18 +164,24 @@ export default function NewUserPage() {
     >
       <div className="p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Add New User</h1>
-        
+
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
-        
-        <form onSubmit={handleSubmit} className="bg-white shadow overflow-hidden sm:rounded-md max-w-3xl">
+
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white shadow overflow-hidden sm:rounded-md max-w-3xl"
+        >
           <div className="px-4 py-5 sm:p-6">
             <div className="grid grid-cols-6 gap-6">
               <div className="col-span-6">
-                <label htmlFor="user_name" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="user_name"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Full Name *
                 </label>
                 <input
@@ -170,9 +194,12 @@ export default function NewUserPage() {
                   className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full max-w-lg sm:text-sm border-gray-300 rounded-md p-2 border"
                 />
               </div>
-              
+
               <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Email *
                 </label>
                 <input
@@ -185,9 +212,12 @@ export default function NewUserPage() {
                   className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full max-w-lg sm:text-sm border-gray-300 rounded-md p-2 border"
                 />
               </div>
-              
+
               <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="phone"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Phone *
                 </label>
                 <input
@@ -200,9 +230,12 @@ export default function NewUserPage() {
                   className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full max-w-lg sm:text-sm border-gray-300 rounded-md p-2 border"
                 />
               </div>
-              
+
               <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Password *
                 </label>
                 <input
@@ -216,9 +249,12 @@ export default function NewUserPage() {
                   className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full max-w-lg sm:text-sm border-gray-300 rounded-md p-2 border"
                 />
               </div>
-              
+
               <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="role"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Role *
                 </label>
                 <select
@@ -235,9 +271,12 @@ export default function NewUserPage() {
                   <option value="cashier">Cashier</option>
                 </select>
               </div>
-              
+
               <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="status"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Status *
                 </label>
                 <select
@@ -255,18 +294,21 @@ export default function NewUserPage() {
               </div>
 
               <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="branch_id" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="branch_id"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Branch
                 </label>
                 <select
                   id="branch_id"
                   name="branch_id"
-                  value={formData.branch_id || ''}
+                  value={formData.branch_id || ""}
                   onChange={(e) => {
                     const value = e.target.value;
-                    setFormData(prev => ({
+                    setFormData((prev) => ({
                       ...prev,
-                      branch_id: value ? parseInt(value) : null
+                      branch_id: value ? parseInt(value) : null,
                     }));
                   }}
                   className="mt-1 block w-full max-w-lg pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md border p-2"
@@ -281,57 +323,99 @@ export default function NewUserPage() {
               </div>
 
               <div className="col-span-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Assigned Permissions
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Assigned Permissions
+                  </label>
+                  {formData.role &&
+                    permissionTemplates[
+                      formData.role as keyof typeof permissionTemplates
+                    ] && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const template =
+                            permissionTemplates[
+                              formData.role as keyof typeof permissionTemplates
+                            ];
+                          const availableCodes = availablePermissions
+                            .filter((p) => p.store_enabled === 1)
+                            .map((p) => p.permission_code);
+                          const validTemplate = template.filter((code) =>
+                            availableCodes.includes(code)
+                          );
+                          setSelectedPermissions(validTemplate);
+                        }}
+                        className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+                      >
+                        Apply {formData.role} template
+                      </button>
+                    )}
+                </div>
                 {loadingPermissions ? (
-                  <div className="text-sm text-gray-500">Loading permissions...</div>
+                  <div className="text-sm text-gray-500">
+                    Loading permissions...
+                  </div>
                 ) : (
                   <div className="border border-gray-300 rounded-md p-4 max-h-64 overflow-y-auto">
                     {availablePermissions.length === 0 ? (
-                      <div className="text-sm text-gray-500">No permissions available</div>
+                      <div className="text-sm text-gray-500">
+                        No permissions available for your store
+                      </div>
                     ) : (
                       <div className="space-y-2">
-                        {availablePermissions.map((permission) => (
-                          <label
-                            key={permission.name}
-                            className="flex items-start space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedPermissions.includes(permission.name)}
-                              onChange={() => handlePermissionToggle(permission.name)}
-                              className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                            />
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-900">
-                                {permission.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                              </div>
-                              {permission.description && (
-                                <div className="text-xs text-gray-500 mt-0.5">
-                                  {permission.description}
+                        {availablePermissions
+                          .filter((perm) => perm.store_enabled === 1)
+                          .map((permission) => (
+                            <label
+                              key={permission.permission_id}
+                              className="flex items-start space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedPermissions.includes(
+                                  permission.permission_code
+                                )}
+                                onChange={() =>
+                                  handlePermissionToggle(
+                                    permission.permission_code
+                                  )
+                                }
+                                className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                              />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {permission.permission_name}
                                 </div>
-                              )}
-                            </div>
-                          </label>
-                        ))}
+                                {permission.permission_description && (
+                                  <div className="text-xs text-gray-500 mt-0.5">
+                                    {permission.permission_description}
+                                  </div>
+                                )}
+                                <div className="text-xs text-gray-400 mt-0.5 font-mono">
+                                  {permission.permission_code}
+                                </div>
+                              </div>
+                            </label>
+                          ))}
                       </div>
                     )}
                   </div>
                 )}
                 {selectedPermissions.length > 0 && (
                   <div className="mt-2 text-sm text-gray-600">
-                    {selectedPermissions.length} permission{selectedPermissions.length !== 1 ? 's' : ''} selected
+                    {selectedPermissions.length} permission
+                    {selectedPermissions.length !== 1 ? "s" : ""} selected
                   </div>
                 )}
               </div>
             </div>
           </div>
-          
+
           <div className="px-4 py-3 bg-gray-50 text-right sm:px-6">
             <button
               type="button"
-              onClick={() => router.push('/users')}
+              onClick={() => router.push("/users")}
               className="bg-white py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3"
             >
               Cancel
@@ -341,7 +425,7 @@ export default function NewUserPage() {
               disabled={saving}
               className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              {saving ? 'Creating...' : 'Create User'}
+              {saving ? "Creating..." : "Create User"}
             </button>
           </div>
         </form>

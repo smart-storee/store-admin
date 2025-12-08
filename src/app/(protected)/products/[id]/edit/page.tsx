@@ -1,13 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { Edit2, Plus, ArrowLeft } from 'lucide-react';
-import { makeAuthenticatedRequest } from '@/utils/api';
-import { useAuth } from '@/contexts/AuthContext';
-import { RoleGuard } from '@/components/RoleGuard';
-import { useTheme } from '@/contexts/ThemeContext';
-import { ApiResponse, Product, Category, Branch, ProductVariant } from '@/types';
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Edit2, Plus, ArrowLeft } from "lucide-react";
+import { makeAuthenticatedRequest } from "@/utils/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { RoleGuard } from "@/components/RoleGuard";
+import { FeatureGuard } from "@/components/FeatureGuard";
+import { useTheme } from "@/contexts/ThemeContext";
+import {
+  ApiResponse,
+  Product,
+  Category,
+  Branch,
+  ProductVariant,
+} from "@/types";
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -22,13 +29,13 @@ export default function EditProductPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    product_name: '',
-    product_description: '',
+    product_name: "",
+    product_description: "",
     base_price: 0,
     category_id: 0,
     branch_id: 0,
     is_active: 1,
-    product_image: '',
+    product_image: "",
     serves_count: 1,
     is_vegetarian: 0,
     is_bestseller: 0,
@@ -51,10 +58,10 @@ export default function EditProductPage() {
           if (response.success) {
             setVariants(response.data.data || response.data);
           } else {
-            console.error('Failed to fetch variants:', response.message);
+            console.error("Failed to fetch variants:", response.message);
           }
         } catch (err) {
-          console.error('Variants fetch error:', err);
+          console.error("Variants fetch error:", err);
         }
       }
     };
@@ -71,7 +78,7 @@ export default function EditProductPage() {
         setError(null);
 
         // Fetch product details
-        const productResponse: ApiResponse<{ data: Product }> = 
+        const productResponse: ApiResponse<{ data: Product }> =
           await makeAuthenticatedRequest(
             `/products/${params.id}?store_id=${user?.store_id}`,
             {},
@@ -85,31 +92,43 @@ export default function EditProductPage() {
           setProduct(prod);
           setFormData({
             product_name: prod.product_name,
-            product_description: prod.product_description || '',
+            product_description: prod.product_description || "",
             base_price: prod.base_price,
             category_id: prod.category_id,
             branch_id: prod.branch_id || 0,
             is_active: prod.is_active,
-            product_image: prod.product_image || '',
+            product_image: prod.product_image || "",
             serves_count: prod.serves_count ?? 1,
             // Handle is_vegetarian: use 0 if null/undefined, otherwise use the actual value (0 or 1)
-            is_vegetarian: prod.is_vegetarian !== null && prod.is_vegetarian !== undefined ? Number(prod.is_vegetarian) : 0,
+            is_vegetarian:
+              prod.is_vegetarian !== null && prod.is_vegetarian !== undefined
+                ? Number(prod.is_vegetarian)
+                : 0,
             // Handle is_bestseller: use 0 if null/undefined, otherwise use the actual value (0 or 1)
-            is_bestseller: prod.is_bestseller !== null && prod.is_bestseller !== undefined ? Number(prod.is_bestseller) : 0,
+            is_bestseller:
+              prod.is_bestseller !== null && prod.is_bestseller !== undefined
+                ? Number(prod.is_bestseller)
+                : 0,
           });
-          
-          console.log('Loaded product data:', {
+
+          console.log("Loaded product data:", {
             is_vegetarian: prod.is_vegetarian,
             is_bestseller: prod.is_bestseller,
-            formData_veg: prod.is_vegetarian !== null && prod.is_vegetarian !== undefined ? Number(prod.is_vegetarian) : 0,
-            formData_best: prod.is_bestseller !== null && prod.is_bestseller !== undefined ? Number(prod.is_bestseller) : 0,
+            formData_veg:
+              prod.is_vegetarian !== null && prod.is_vegetarian !== undefined
+                ? Number(prod.is_vegetarian)
+                : 0,
+            formData_best:
+              prod.is_bestseller !== null && prod.is_bestseller !== undefined
+                ? Number(prod.is_bestseller)
+                : 0,
           });
         } else {
-          throw new Error(productResponse.message || 'Failed to fetch product');
+          throw new Error(productResponse.message || "Failed to fetch product");
         }
 
         // Fetch categories
-        const categoriesResponse: ApiResponse<{ data: Category[] }> = 
+        const categoriesResponse: ApiResponse<{ data: Category[] }> =
           await makeAuthenticatedRequest(
             `/categories?store_id=${user?.store_id}`,
             {},
@@ -119,13 +138,17 @@ export default function EditProductPage() {
           );
 
         if (categoriesResponse.success) {
-          setCategories(categoriesResponse.data.data || categoriesResponse.data);
+          setCategories(
+            categoriesResponse.data.data || categoriesResponse.data
+          );
         } else {
-          throw new Error(categoriesResponse.message || 'Failed to fetch categories');
+          throw new Error(
+            categoriesResponse.message || "Failed to fetch categories"
+          );
         }
 
         // Fetch branches
-        const branchesResponse: ApiResponse<{ data: Branch[] }> = 
+        const branchesResponse: ApiResponse<{ data: Branch[] }> =
           await makeAuthenticatedRequest(
             `/branches?store_id=${user?.store_id}`,
             {},
@@ -137,11 +160,13 @@ export default function EditProductPage() {
         if (branchesResponse.success) {
           setBranches(branchesResponse.data.data || branchesResponse.data);
         } else {
-          throw new Error(branchesResponse.message || 'Failed to fetch branches');
+          throw new Error(
+            branchesResponse.message || "Failed to fetch branches"
+          );
         }
       } catch (err: any) {
-        setError(err.message || 'Failed to load product data');
-        console.error('Product edit fetch error:', err);
+        setError(err.message || "Failed to load product data");
+        console.error("Product edit fetch error:", err);
       } finally {
         setLoading(false);
       }
@@ -152,25 +177,29 @@ export default function EditProductPage() {
     }
   }, [params.id, user?.store_id, user?.branch_id]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value, type } = e.target;
-    
-    if (type === 'checkbox') {
+
+    if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [name]: checked ? 1 : 0
+        [name]: checked ? 1 : 0,
       }));
-    } else if (name === 'base_price') {
+    } else if (name === "base_price") {
       const numericValue = parseFloat(value) || 0;
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [name]: numericValue
+        [name]: numericValue,
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [name]: value
+        [name]: value,
       }));
     }
   };
@@ -195,28 +224,27 @@ export default function EditProductPage() {
         store_id: user?.store_id,
       };
 
-      console.log('Submitting product update:', requestBody);
+      console.log("Submitting product update:", requestBody);
 
-      const response: ApiResponse<null> = 
-        await makeAuthenticatedRequest(
-          `/products/${params.id}`,
-          {
-            method: 'PUT',
-            body: JSON.stringify(requestBody),
-          },
-          true, // auto-refresh token
-          user?.store_id,
-          user?.branch_id || undefined
-        );
+      const response: ApiResponse<null> = await makeAuthenticatedRequest(
+        `/products/${params.id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(requestBody),
+        },
+        true, // auto-refresh token
+        user?.store_id,
+        user?.branch_id || undefined
+      );
 
       if (response.success) {
         router.push(`/products/${params.id}`); // Redirect to product detail
       } else {
-        throw new Error(response.message || 'Failed to update product');
+        throw new Error(response.message || "Failed to update product");
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to update product');
-      console.error('Update product error:', err);
+      setError(err.message || "Failed to update product");
+      console.error("Update product error:", err);
     } finally {
       setSaving(false);
     }
@@ -224,7 +252,11 @@ export default function EditProductPage() {
 
   if (loading) {
     return (
-      <div className={`p-6 text-center min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div
+        className={`p-6 text-center min-h-screen ${
+          theme === "dark" ? "bg-gray-900" : "bg-gray-50"
+        }`}
+      >
         <div className="flex justify-center">
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
         </div>
@@ -233,373 +265,560 @@ export default function EditProductPage() {
   }
 
   return (
-    <RoleGuard
-      requiredPermissions={['manage_products']}
+    <FeatureGuard
+      feature="products_enabled"
       fallback={
         <div className="p-6 text-center">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            Access denied. You do not have permission to manage products.
+          <div className="border rounded-lg px-4 py-3 mb-4">
+            <p className="text-yellow-700 dark:text-yellow-300">
+              Products feature is disabled for this store. Please contact
+              support to enable it.
+            </p>
           </div>
         </div>
       }
     >
-      <div className={`min-h-screen pb-20 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-        <div className="max-w-4xl mx-auto p-6">
-          {/* Header with action buttons */}
-          <div className="mb-6">
-            <button
-              onClick={() => router.push(`/products/${params.id}`)}
-              className={`inline-flex items-center mb-4 ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}
-            >
-              <ArrowLeft size={20} className="mr-2" />
-              Back to Product
-            </button>
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                  Edit Product
-                </h1>
-                <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {product?.product_name || 'Loading...'}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => router.push('/products/new')}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  <Plus size={16} />
-                  Add New Product
-                </button>
-              </div>
+      <RoleGuard
+        requiredPermissions={["manage_products"]}
+        fallback={
+          <div className="p-6 text-center">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              Access denied. You do not have permission to manage products.
             </div>
           </div>
-        
-          {error && (
-            <div className={`mb-4 px-4 py-3 rounded ${theme === 'dark' ? 'bg-red-900/40 border border-red-700 text-red-300' : 'bg-red-100 border border-red-400 text-red-700'}`}>
-              {error}
-            </div>
-          )}
-
-        <form onSubmit={handleSubmit} className={`shadow sm:rounded-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-          <div className="px-4 py-5 sm:p-6">
-            <div className="grid grid-cols-6 gap-6">
-              <div className="col-span-6">
-                <label htmlFor="product_name" className="block text-sm font-medium text-gray-700">
-                  Product Name *
-                </label>
-                <input
-                  type="text"
-                  id="product_name"
-                  name="product_name"
-                  value={formData.product_name}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                />
-              </div>
-              
-              <div className="col-span-6">
-                <label htmlFor="product_description" className="block text-sm font-medium text-gray-700">
-                  Description
-                </label>
-                <textarea
-                  id="product_description"
-                  name="product_description"
-                  value={formData.product_description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                ></textarea>
-              </div>
-              
-              <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="base_price" className="block text-sm font-medium text-gray-700">
-                  Base Price (₹) *
-                </label>
-                <input
-                  type="number"
-                  id="base_price"
-                  name="base_price"
-                  value={formData.base_price}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  step="0.01"
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                />
-              </div>
-              
-              <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">
-                  Category *
-                </label>
-                <select
-                  id="category_id"
-                  name="category_id"
-                  value={formData.category_id}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                >
-                  <option value="">Select a category</option>
-                  {categories.map((category) => (
-                    <option key={category.category_id} value={category.category_id}>
-                      {category.category_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="branch_id" className="block text-sm font-medium text-gray-700">
-                  Branch *
-                </label>
-                <select
-                  id="branch_id"
-                  name="branch_id"
-                  value={formData.branch_id}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                >
-                  <option value="">Select a branch</option>
-                  {branches.map((branch) => (
-                    <option key={branch.branch_id} value={branch.branch_id}>
-                      {branch.branch_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="col-span-6 sm:col-span-3">
-                <label htmlFor="product_image" className="block text-sm font-medium text-gray-700">
-                  Image URL
-                </label>
-                <input
-                  type="text"
-                  id="product_image"
-                  name="product_image"
-                  value={formData.product_image}
-                  onChange={handleChange}
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                />
-              </div>
-
-              <div className="col-span-6 sm:col-span-2">
-                <label htmlFor="serves_count" className="block text-sm font-medium text-gray-700">
-                  Serves Count
-                </label>
-                <input
-                  type="number"
-                  id="serves_count"
-                  name="serves_count"
-                  value={formData.serves_count}
-                  onChange={handleChange}
-                  min="1"
-                  className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                />
-              </div>
-
-              <div className="col-span-6 sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Options
-                </label>
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_vegetarian === 1}
-                      onChange={(e) => setFormData(prev => ({ ...prev, is_vegetarian: e.target.checked ? 1 : 0 }))}
-                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span className="text-sm text-gray-700">Vegetarian</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_bestseller === 1}
-                      onChange={(e) => setFormData(prev => ({ ...prev, is_bestseller: e.target.checked ? 1 : 0 }))}
-                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span className="text-sm text-gray-700">Bestseller</span>
-                  </label>
-                </div>
-              </div>
-              
-              <div className="col-span-6">
-                <div className="flex items-start">
-                  <div className="flex items-center h-5">
-                    <input
-                      id="is_active"
-                      name="is_active"
-                      type="checkbox"
-                      checked={formData.is_active === 1}
-                      onChange={handleChange}
-                      className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                    />
-                  </div>
-                  <div className="ml-3 text-sm">
-                    <label htmlFor="is_active" className="font-medium text-gray-700">
-                      Active
-                    </label>
-                    <p className="text-gray-500">When checked, this product will be available for purchase</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Product Variants Section */}
-          <div className={`border-t px-4 py-5 sm:px-6 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className={`text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                Product Variants
-              </h3>
+        }
+      >
+        <div
+          className={`min-h-screen pb-20 ${
+            theme === "dark" ? "bg-gray-900" : "bg-gray-50"
+          }`}
+        >
+          <div className="max-w-4xl mx-auto p-6">
+            {/* Header with action buttons */}
+            <div className="mb-6">
               <button
-                onClick={() => router.push(`/product-variants/new?product_id=${params.id}`)}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2"
+                onClick={() => router.push(`/products/${params.id}`)}
+                className={`inline-flex items-center mb-4 ${
+                  theme === "dark"
+                    ? "text-blue-400 hover:text-blue-300"
+                    : "text-blue-600 hover:text-blue-700"
+                }`}
               >
-                <Plus size={16} />
-                Add New Variant
+                <ArrowLeft size={20} className="mr-2" />
+                Back to Product
               </button>
-            </div>
-
-            {/* Variants List */}
-            <div id="variants-list" className="space-y-3">
-              {variants.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className={`min-w-full divide-y ${theme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                    <thead className={theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'}>
-                      <tr>
-                        <th scope="col" className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          theme === 'dark' ? 'text-gray-300' : 'text-gray-500'
-                        }`}>
-                          Variant Name
-                        </th>
-                        <th scope="col" className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          theme === 'dark' ? 'text-gray-300' : 'text-gray-500'
-                        }`}>
-                          Price
-                        </th>
-                        <th scope="col" className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          theme === 'dark' ? 'text-gray-300' : 'text-gray-500'
-                        }`}>
-                          Stock
-                        </th>
-                        <th scope="col" className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          theme === 'dark' ? 'text-gray-300' : 'text-gray-500'
-                        }`}>
-                          Status
-                        </th>
-                        <th scope="col" className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${
-                          theme === 'dark' ? 'text-gray-300' : 'text-gray-500'
-                        }`}>
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className={`divide-y ${theme === 'dark' ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'}`}>
-                      {variants.map((variant) => (
-                        <tr key={variant.variant_id} className={theme === 'dark' ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                              {variant.variant_name}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}>
-                              ₹{variant.variant_price}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}>
-                              {variant.stock || 0} units
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              variant.is_active === 1
-                                ? theme === 'dark'
-                                  ? 'bg-green-900/40 text-green-300'
-                                  : 'bg-green-100 text-green-800'
-                                : theme === 'dark'
-                                  ? 'bg-red-900/40 text-red-300'
-                                  : 'bg-red-100 text-red-800'
-                            }`}>
-                              {variant.is_active === 1 ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end gap-3">
-                              <button
-                                onClick={() => router.push(`/product-variants/${variant.variant_id}/edit`)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors ${
-                                  theme === 'dark'
-                                    ? 'text-indigo-400 hover:bg-indigo-900/40 border border-indigo-700'
-                                    : 'text-indigo-600 hover:bg-indigo-50 border border-indigo-200'
-                                }`}
-                                title="Edit Variant"
-                              >
-                                <Edit2 size={16} />
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => router.push(`/product-variants/${variant.variant_id}`)}
-                                className={`px-3 py-1.5 rounded-md transition-colors ${
-                                  theme === 'dark'
-                                    ? 'text-gray-400 hover:bg-gray-700'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                                }`}
-                              >
-                                View
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className={`text-center py-8 rounded-md ${
-                  theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-gray-50 border border-gray-200'
-                }`}>
-                  <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
-                    No variants found for this product.
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1
+                    className={`text-2xl font-bold ${
+                      theme === "dark" ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    Edit Product
+                  </h1>
+                  <p
+                    className={`text-sm mt-1 ${
+                      theme === "dark" ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
+                    {product?.product_name || "Loading..."}
                   </p>
+                </div>
+                <div className="flex items-center gap-3">
                   <button
-                    onClick={() => router.push(`/product-variants/new?product_id=${params.id}`)}
-                    className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2 mx-auto"
+                    type="button"
+                    onClick={() => router.push("/products/new")}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-2"
                   >
                     <Plus size={16} />
-                    Add First Variant
+                    Add New Product
                   </button>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
 
-          <div className="px-4 py-5 sm:px-6 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 sticky bottom-0 z-10">
-            <button
-              type="button"
-              onClick={() => router.push(`/products/${params.id}`)}
-              className="bg-white py-2.5 px-6 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            {error && (
+              <div
+                className={`mb-4 px-4 py-3 rounded ${
+                  theme === "dark"
+                    ? "bg-red-900/40 border border-red-700 text-red-300"
+                    : "bg-red-100 border border-red-400 text-red-700"
+                }`}
+              >
+                {error}
+              </div>
+            )}
+
+            <form
+              onSubmit={handleSubmit}
+              className={`shadow sm:rounded-md ${
+                theme === "dark" ? "bg-gray-800" : "bg-white"
+              }`}
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {saving ? 'Saving...' : 'Save Product'}
-            </button>
+              <div className="px-4 py-5 sm:p-6">
+                <div className="grid grid-cols-6 gap-6">
+                  <div className="col-span-6">
+                    <label
+                      htmlFor="product_name"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Product Name *
+                    </label>
+                    <input
+                      type="text"
+                      id="product_name"
+                      name="product_name"
+                      value={formData.product_name}
+                      onChange={handleChange}
+                      required
+                      className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    />
+                  </div>
+
+                  <div className="col-span-6">
+                    <label
+                      htmlFor="product_description"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Description
+                    </label>
+                    <textarea
+                      id="product_description"
+                      name="product_description"
+                      value={formData.product_description}
+                      onChange={handleChange}
+                      rows={3}
+                      className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    ></textarea>
+                  </div>
+
+                  <div className="col-span-6 sm:col-span-3">
+                    <label
+                      htmlFor="base_price"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Base Price (₹) *
+                    </label>
+                    <input
+                      type="number"
+                      id="base_price"
+                      name="base_price"
+                      value={formData.base_price}
+                      onChange={handleChange}
+                      required
+                      min="0"
+                      step="0.01"
+                      className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    />
+                  </div>
+
+                  <div className="col-span-6 sm:col-span-3">
+                    <label
+                      htmlFor="category_id"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Category *
+                    </label>
+                    <select
+                      id="category_id"
+                      name="category_id"
+                      value={formData.category_id}
+                      onChange={handleChange}
+                      required
+                      className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map((category) => (
+                        <option
+                          key={category.category_id}
+                          value={category.category_id}
+                        >
+                          {category.category_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="col-span-6 sm:col-span-3">
+                    <label
+                      htmlFor="branch_id"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Branch *
+                    </label>
+                    <select
+                      id="branch_id"
+                      name="branch_id"
+                      value={formData.branch_id}
+                      onChange={handleChange}
+                      required
+                      className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    >
+                      <option value="">Select a branch</option>
+                      {branches.map((branch) => (
+                        <option key={branch.branch_id} value={branch.branch_id}>
+                          {branch.branch_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="col-span-6 sm:col-span-3">
+                    <label
+                      htmlFor="product_image"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Image URL
+                    </label>
+                    <input
+                      type="text"
+                      id="product_image"
+                      name="product_image"
+                      value={formData.product_image}
+                      onChange={handleChange}
+                      className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    />
+                  </div>
+
+                  <div className="col-span-6 sm:col-span-2">
+                    <label
+                      htmlFor="serves_count"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Serves Count
+                    </label>
+                    <input
+                      type="number"
+                      id="serves_count"
+                      name="serves_count"
+                      value={formData.serves_count}
+                      onChange={handleChange}
+                      min="1"
+                      className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    />
+                  </div>
+
+                  <div className="col-span-6 sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Options
+                    </label>
+                    <div className="space-y-2">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.is_vegetarian === 1}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              is_vegetarian: e.target.checked ? 1 : 0,
+                            }))
+                          }
+                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-700">
+                          Vegetarian
+                        </span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.is_bestseller === 1}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              is_bestseller: e.target.checked ? 1 : 0,
+                            }))
+                          }
+                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-700">
+                          Bestseller
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="col-span-6">
+                    <div className="flex items-start">
+                      <div className="flex items-center h-5">
+                        <input
+                          id="is_active"
+                          name="is_active"
+                          type="checkbox"
+                          checked={formData.is_active == 1}
+                          onChange={handleChange}
+                          className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                        />
+                      </div>
+                      <div className="ml-3 text-sm">
+                        <label
+                          htmlFor="is_active"
+                          className="font-medium text-gray-700"
+                        >
+                          Active
+                        </label>
+                        <p className="text-gray-500">
+                          When checked, this product will be available for
+                          purchase
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Variants Section */}
+              <div
+                className={`border-t px-4 py-5 sm:px-6 ${
+                  theme === "dark" ? "border-gray-700" : "border-gray-200"
+                }`}
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h3
+                    className={`text-lg font-medium ${
+                      theme === "dark" ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    Product Variants
+                  </h3>
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/product-variants/new?product_id=${params.id}`
+                      )
+                    }
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2"
+                  >
+                    <Plus size={16} />
+                    Add New Variant
+                  </button>
+                </div>
+
+                {/* Variants List */}
+                <div id="variants-list" className="space-y-3">
+                  {variants.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table
+                        className={`min-w-full divide-y ${
+                          theme === "dark"
+                            ? "divide-gray-700"
+                            : "divide-gray-200"
+                        }`}
+                      >
+                        <thead
+                          className={
+                            theme === "dark" ? "bg-gray-800" : "bg-gray-50"
+                          }
+                        >
+                          <tr>
+                            <th
+                              scope="col"
+                              className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                                theme === "dark"
+                                  ? "text-gray-300"
+                                  : "text-gray-500"
+                              }`}
+                            >
+                              Variant Name
+                            </th>
+                            <th
+                              scope="col"
+                              className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                                theme === "dark"
+                                  ? "text-gray-300"
+                                  : "text-gray-500"
+                              }`}
+                            >
+                              Price
+                            </th>
+                            <th
+                              scope="col"
+                              className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                                theme === "dark"
+                                  ? "text-gray-300"
+                                  : "text-gray-500"
+                              }`}
+                            >
+                              Stock
+                            </th>
+                            <th
+                              scope="col"
+                              className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                                theme === "dark"
+                                  ? "text-gray-300"
+                                  : "text-gray-500"
+                              }`}
+                            >
+                              Status
+                            </th>
+                            <th
+                              scope="col"
+                              className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${
+                                theme === "dark"
+                                  ? "text-gray-300"
+                                  : "text-gray-500"
+                              }`}
+                            >
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody
+                          className={`divide-y ${
+                            theme === "dark"
+                              ? "bg-gray-800 divide-gray-700"
+                              : "bg-white divide-gray-200"
+                          }`}
+                        >
+                          {variants.map((variant) => (
+                            <tr
+                              key={variant.variant_id}
+                              className={
+                                theme === "dark"
+                                  ? "hover:bg-gray-700/50"
+                                  : "hover:bg-gray-50"
+                              }
+                            >
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div
+                                  className={`text-sm font-medium ${
+                                    theme === "dark"
+                                      ? "text-white"
+                                      : "text-gray-900"
+                                  }`}
+                                >
+                                  {variant.variant_name}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div
+                                  className={`text-sm ${
+                                    theme === "dark"
+                                      ? "text-gray-300"
+                                      : "text-gray-900"
+                                  }`}
+                                >
+                                  ₹{variant.variant_price}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div
+                                  className={`text-sm ${
+                                    theme === "dark"
+                                      ? "text-gray-300"
+                                      : "text-gray-900"
+                                  }`}
+                                >
+                                  {variant.stock || 0} units
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span
+                                  className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    variant.is_active == 1
+                                      ? theme === "dark"
+                                        ? "bg-green-900/40 text-green-300"
+                                        : "bg-green-100 text-green-800"
+                                      : theme === "dark"
+                                      ? "bg-red-900/40 text-red-300"
+                                      : "bg-red-100 text-red-800"
+                                  }`}
+                                >
+                                  {variant.is_active == 1
+                                    ? "Active"
+                                    : "Inactive"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div className="flex items-center justify-end gap-3">
+                                  <button
+                                    onClick={() =>
+                                      router.push(
+                                        `/product-variants/${variant.variant_id}/edit`
+                                      )
+                                    }
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors ${
+                                      theme === "dark"
+                                        ? "text-indigo-400 hover:bg-indigo-900/40 border border-indigo-700"
+                                        : "text-indigo-600 hover:bg-indigo-50 border border-indigo-200"
+                                    }`}
+                                    title="Edit Variant"
+                                  >
+                                    <Edit2 size={16} />
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      router.push(
+                                        `/product-variants/${variant.variant_id}`
+                                      )
+                                    }
+                                    className={`px-3 py-1.5 rounded-md transition-colors ${
+                                      theme === "dark"
+                                        ? "text-gray-400 hover:bg-gray-700"
+                                        : "text-gray-600 hover:bg-gray-100"
+                                    }`}
+                                  >
+                                    View
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div
+                      className={`text-center py-8 rounded-md ${
+                        theme === "dark"
+                          ? "bg-gray-800 border border-gray-700"
+                          : "bg-gray-50 border border-gray-200"
+                      }`}
+                    >
+                      <p
+                        className={
+                          theme === "dark" ? "text-gray-400" : "text-gray-500"
+                        }
+                      >
+                        No variants found for this product.
+                      </p>
+                      <button
+                        onClick={() =>
+                          router.push(
+                            `/product-variants/new?product_id=${params.id}`
+                          )
+                        }
+                        className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2 mx-auto"
+                      >
+                        <Plus size={16} />
+                        Add First Variant
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="px-4 py-5 sm:px-6 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 sticky bottom-0 z-10">
+                <button
+                  type="button"
+                  onClick={() => router.push(`/products/${params.id}`)}
+                  className="bg-white py-2.5 px-6 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {saving ? "Saving..." : "Save Product"}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
         </div>
-      </div>
-    </RoleGuard>
+      </RoleGuard>
+    </FeatureGuard>
   );
 }
