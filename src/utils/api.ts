@@ -326,7 +326,6 @@ export const refreshAuthToken = async (): Promise<boolean> => {
     );
 
     if (!response.ok) {
-      console.error(`Token refresh failed with status: ${response.status}`);
       logApiCall({
         level: 'error',
         method: 'POST',

@@ -432,7 +432,7 @@ export default function SettingsPage() {
                 { id: "splash", label: "Splash Screen", icon: "🖼️" },
                 { id: "payment", label: "Payment", icon: "💳" },
                 { id: "maintenance", label: "Maintenance", icon: "⚠️" },
-                { id: "features", label: "Features", icon: "🔧" },
+                // { id: "features", label: "Features", icon: "🔧" },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -1079,7 +1079,7 @@ export default function SettingsPage() {
             )}
 
             {/* Features Tab */}
-            {activeTab === "features" && (
+            {/* {activeTab === "features" && (
               <div className="p-6 sm:p-8 space-y-6">
                 <div
                   className={`${
@@ -1251,7 +1251,7 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Footer Actions - Only show for non-features tabs */}
             {activeTab !== "features" && (
