@@ -391,11 +391,10 @@ export default function SetupFlowPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className={`text-3xl font-bold ${headingClass} mb-2`}>
-                  Business Setup Flow
+                  My Products
                 </h1>
                 <p className={textClass}>
-                  Manage your business categories, products, and variants with
-                  branch-wise assignment
+                  Manage your products, categories, and variants with branch-wise assignment
                 </p>
               </div>
               <div className="flex items-center gap-3">

@@ -111,7 +111,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       feature: "branches_enabled",
     },
     {
-      name: "Business Setup Flow",
+      name: "My Products",
       href: "/business-setup-flow",
       permission: "manage_categories",
       feature: "categories_enabled", // Business setup flow requires categories
@@ -310,7 +310,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
           </svg>
         );
-      case "Business Setup Flow":
+      case "My Products":
         return (
           <svg
             width="20"
@@ -320,8 +320,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             stroke="currentColor"
             strokeWidth="2"
           >
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M12 1v6m0 6v6m5.2-15.8l-4.2 4.2m0 6l-4.2 4.2M23 12h-6m-6 0H1m20.8-5.2l-4.2 4.2m0 6l-4.2 4.2"></path>
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+            <path d="M9 13h6"></path>
+            <path d="M9 17h4"></path>
           </svg>
         );
       case "Orders":
@@ -497,9 +500,15 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           className="fixed top-0 left-0 right-0 shadow-sm z-40 px-4 py-3 flex items-center justify-between"
           style={{
             backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
+            borderBottom: isDarkMode ? "1px solid #334155" : "1px solid #E5E7EB",
           }}
         >
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 
+            className="text-base sm:text-lg font-semibold truncate flex-1 mr-2"
+            style={{
+              color: isDarkMode ? "#f8fafc" : "#111827",
+            }}
+          >
             {pathname === "/dashboard" && "Dashboard"}
             {pathname === "/branches" && "Branches"}
             {pathname === "/orders" && "Orders"}
@@ -511,13 +520,24 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             {pathname === "/reports" && "Reports"}
             {pathname === "/api-logs" && "API Logs"}
             {pathname === "/settings" && "Settings"}
+            {pathname === "/home-config" && "Home Config"}
+            {pathname === "/business-setup-flow" && "My Products"}
           </h2>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <DarkModeToggle />
             <button
               type="button"
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-md focus:outline-none transition-colors"
+              style={{
+                color: isDarkMode ? "#cbd5e1" : "#6B7280",
+              }}
               onClick={() => setSidebarOpen(!sidebarOpen)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#F3F4F6";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               <span className="sr-only">Open main menu</span>
               {sidebarOpen ? (
@@ -561,20 +581,42 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         {sidebarOpen && (
           <div className="fixed inset-0 z-40">
             <div
-              className="fixed inset-0 bg-gray-600 bg-opacity-75"
+              className="fixed inset-0 transition-opacity"
+              style={{
+                backgroundColor: isDarkMode ? "rgba(0, 0, 0, 0.75)" : "rgba(0, 0, 0, 0.5)",
+              }}
               onClick={() => setSidebarOpen(false)}
             ></div>
-            <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-white shadow-lg z-50">
+            <div 
+              className="fixed inset-y-0 left-0 max-w-xs w-full shadow-lg z-50 overflow-y-auto"
+              style={{
+                backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
+              }}
+            >
               <div className="h-full overflow-y-auto">
                 <div className="px-4 pt-5 pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="text-lg font-medium text-gray-900">
+                  <div className="flex items-center justify-between mb-4">
+                    <div 
+                      className="text-lg font-medium"
+                      style={{
+                        color: isDarkMode ? "#f8fafc" : "#111827",
+                      }}
+                    >
                       Menu
                     </div>
                     <button
                       type="button"
-                      className="text-gray-400 hover:text-gray-500"
+                      className="p-2 rounded-md transition-colors"
+                      style={{
+                        color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                      }}
                       onClick={() => setSidebarOpen(false)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#F3F4F6";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }}
                     >
                       <span className="sr-only">Close menu</span>
                       <svg
@@ -599,12 +641,30 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                         <Link
                           key={item.name}
                           href={item.href}
-                          className={`${
-                            isActive(item.href)
-                              ? "bg-gray-100 text-gray-900"
-                              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                          } group flex items-center px-2 py-2 text-base font-medium rounded-md`}
+                          onClick={() => setSidebarOpen(false)}
+                          className="group flex items-center px-3 py-2 text-base font-medium rounded-md transition-colors"
+                          style={{
+                            backgroundColor: isActive(item.href)
+                              ? isDarkMode ? "rgba(65, 105, 225, 0.2)" : "#4169E120"
+                              : "transparent",
+                            color: isActive(item.href)
+                              ? "#4169E1"
+                              : isDarkMode ? "#cbd5e1" : "#6B7280",
+                            borderLeft: isActive(item.href) ? "3px solid #4169E1" : "3px solid transparent",
+                            marginLeft: isActive(item.href) ? "-3px" : "0",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isActive(item.href)) {
+                              e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#F3F4F6";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isActive(item.href)) {
+                              e.currentTarget.style.backgroundColor = "transparent";
+                            }
+                          }}
                         >
+                          <span className="mr-3">{getIcon(item.name)}</span>
                           {item.name}
                         </Link>
                       ))}
@@ -823,7 +883,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
       {/* Main content */}
       <div
-        className="flex flex-col flex-1 transition-all duration-300"
+        className="flex flex-col flex-1 transition-all duration-300 md:pl-64"
         style={{
           paddingLeft: sidebarCollapsed ? "80px" : "256px",
         }}
@@ -831,15 +891,21 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         <div className="md:pr-4">
           {/* Top header with branch selector */}
           <div
-            className="shadow-sm"
+            className="shadow-sm hidden md:block"
             style={{
               backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
+              borderBottom: isDarkMode ? "1px solid #334155" : "1px solid #E5E7EB",
             }}
           >
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
-                <div className="flex items-center">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <div className="flex items-center flex-1 min-w-0">
+                  <h2 
+                    className="text-base sm:text-lg font-semibold truncate"
+                    style={{
+                      color: isDarkMode ? "#f8fafc" : "#111827",
+                    }}
+                  >
                     {pathname === "/dashboard" && "Dashboard"}
                     {pathname === "/branches" && "Branches Management"}
                     {pathname === "/orders" && "Orders Management"}
@@ -852,13 +918,19 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     {pathname === "/reports" && "Reports & Analytics"}
                     {pathname === "/api-logs" && "API Logs"}
                     {pathname === "/settings" && "App Settings"}
+                    {pathname === "/business-setup-flow" && "My Products"}
                   </h2>
                 </div>
 
                 {/* Store/Branch selector */}
                 {/* <StoreBranchSelector /> */}
-                <div className="flex items-center gap-4">
-                  <span className="text-gray-700 dark:text-gray-300">
+                <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                  <span 
+                    className="hidden sm:inline text-sm sm:text-base truncate max-w-[150px] sm:max-w-none"
+                    style={{
+                      color: isDarkMode ? "#cbd5e1" : "#374151",
+                    }}
+                  >
                     Welcome, {user?.name || "Admin"}
                   </span>
 
@@ -874,9 +946,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     onMouseLeave={handleMouseLeaveProfile}
                   >
                     <div
-                      className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white cursor-pointer hover:bg-indigo-600 transition-colors"
+                      className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white cursor-pointer hover:bg-indigo-600 transition-colors flex-shrink-0"
                       style={{
-                        fontSize: "16px",
+                        fontSize: "14px",
                         fontWeight: "600",
                       }}
                     >
@@ -892,11 +964,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                           right: 0,
                           marginTop: "8px",
                           width: "200px",
-                          backgroundColor: "#FFFFFF",
+                          backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
                           borderRadius: "8px",
                           boxShadow:
                             "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                          border: "1px solid #E5E7EB",
+                          border: isDarkMode ? "1px solid #334155" : "1px solid #E5E7EB",
                           zIndex: 50,
                           overflow: "hidden",
                         }}
@@ -907,15 +979,15 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                         <div
                           style={{
                             padding: "12px 16px",
-                            borderBottom: "1px solid #E5E7EB",
-                            backgroundColor: "#F9FAFB",
+                            borderBottom: isDarkMode ? "1px solid #334155" : "1px solid #E5E7EB",
+                            backgroundColor: isDarkMode ? "#334155" : "#F9FAFB",
                           }}
                         >
                           <p
                             style={{
                               fontSize: "14px",
                               fontWeight: "600",
-                              color: "#111827",
+                              color: isDarkMode ? "#f8fafc" : "#111827",
                               marginBottom: "2px",
                             }}
                           >
@@ -924,7 +996,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                           <p
                             style={{
                               fontSize: "12px",
-                              color: "#6B7280",
+                              color: isDarkMode ? "#cbd5e1" : "#6B7280",
                             }}
                           >
                             {user?.email || ""}
@@ -941,12 +1013,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                               gap: "12px",
                               padding: "10px 16px",
                               fontSize: "14px",
-                              color: "#374151",
+                              color: isDarkMode ? "#cbd5e1" : "#374151",
                               textDecoration: "none",
                               transition: "background-color 0.2s",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#F3F4F6";
+                              e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#F3F4F6";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.backgroundColor =
@@ -974,7 +1046,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                               textAlign: "left",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#FEF2F2";
+                              e.currentTarget.style.backgroundColor = isDarkMode ? "#7f1d1d" : "#FEF2F2";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.backgroundColor =
@@ -995,7 +1067,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
 
         <main className="flex-1">
-          <div className="py-6 md:pt-6 pt-20">
+          <div className="py-4 sm:py-6 md:pt-6 pt-20">
             <div className="px-4 sm:px-6 md:px-8">{children}</div>
           </div>
         </main>

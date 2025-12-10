@@ -470,7 +470,7 @@ export default function EditProductVariantPage() {
                 onClick={() => router.push("/business-setup-flow")}
                 className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
               >
-                Back to Business Setup Flow
+                Back to My Products
               </button>
             </div>
           )}

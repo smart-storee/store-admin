@@ -90,7 +90,7 @@ export default function ProductDetailPage() {
           onClick={() => router.push("/business-setup-flow")}
           className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
         >
-          Back to Business Setup Flow
+          Back to My Products
         </button>
       </div>
     );
@@ -145,7 +145,7 @@ export default function ProductDetailPage() {
                           ? "hover:bg-gray-700 text-gray-300"
                           : "hover:bg-gray-100 text-gray-600"
                       }`}
-                      title="Back to Business Setup Flow"
+                      title="Back to My Products"
                     >
                       <ArrowLeft size={20} />
                     </button>
@@ -171,16 +171,22 @@ export default function ProductDetailPage() {
                 </div>
               </div>
               <div className="px-4 py-5 sm:p-6">
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
                   {/* Product Image */}
-                  <div className="sm:col-span-1">
-                    <div className="aspect-w-1 aspect-h-1 w-max overflow-hidden rounded-lg bg-gray-200">
+                  <div className="lg:col-span-1 flex justify-center items-start">
+                    <div className={`w-full max-w-sm overflow-hidden rounded-lg ${
+                      theme === "dark" ? "bg-gray-700" : "bg-gray-200"
+                    }`}>
                       <img
                         src={
                           product.product_image || "/placeholder-product.jpg"
                         }
                         alt={product.product_name}
-                        className="h-200 w-180 object-cover object-center"
+                        className="w-full h-auto object-contain object-center"
+                        style={{
+                          maxHeight: '350px',
+                          display: 'block',
+                        }}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
                             "/placeholder-product.jpg";
@@ -190,178 +196,186 @@ export default function ProductDetailPage() {
                   </div>
 
                   {/* Product Details */}
-                  <div className="sm:col-span-1">
-                    <div className="mb-4">
-                      <h4
-                        className={`text-sm font-medium ${
-                          theme === "dark" ? "text-gray-300" : "text-gray-500"
-                        }`}
-                      >
-                        Product ID
-                      </h4>
-                      <p
-                        className={`mt-1 text-sm ${
-                          theme === "dark" ? "text-gray-200" : "text-gray-900"
-                        }`}
-                      >
-                        {product.product_id}
-                      </p>
+                  <div className="lg:col-span-1">
+                    <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                      {/* Left Column */}
+                      <div className="space-y-4">
+                        <div>
+                          <h4
+                            className={`text-xs font-medium uppercase tracking-wide ${
+                              theme === "dark" ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            Product ID
+                          </h4>
+                          <p
+                            className={`mt-1 text-sm font-medium ${
+                              theme === "dark" ? "text-gray-200" : "text-gray-900"
+                            }`}
+                          >
+                            {product.product_id}
+                          </p>
+                        </div>
+
+                        <div>
+                          <h4
+                            className={`text-xs font-medium uppercase tracking-wide ${
+                              theme === "dark" ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            Category
+                          </h4>
+                          <p
+                            className={`mt-1 text-sm font-medium ${
+                              theme === "dark" ? "text-gray-200" : "text-gray-900"
+                            }`}
+                          >
+                            {product.category_name}
+                          </p>
+                        </div>
+
+                        <div>
+                          <h4
+                            className={`text-xs font-medium uppercase tracking-wide ${
+                              theme === "dark" ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            Base Price
+                          </h4>
+                          <p
+                            className={`mt-1 text-lg font-semibold ${
+                              theme === "dark" ? "text-gray-100" : "text-gray-900"
+                            }`}
+                          >
+                            ₹{parseFloat(String(product.base_price || 0)).toFixed(2)}
+                          </p>
+                        </div>
+
+                        <div>
+                          <h4
+                            className={`text-xs font-medium uppercase tracking-wide ${
+                              theme === "dark" ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            Status
+                          </h4>
+                          <span
+                            className={`inline-flex mt-1 px-2 py-1 text-xs leading-5 font-semibold rounded-full ${
+                              product.is_active == 1
+                                ? theme === "dark"
+                                  ? "bg-green-900/40 text-green-300 border border-green-700"
+                                  : "bg-green-100 text-green-800"
+                                : theme === "dark"
+                                ? "bg-red-900/40 text-red-300 border border-red-700"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {product.is_active == 1 ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right Column */}
+                      <div className="space-y-4">
+                        <div>
+                          <h4
+                            className={`text-xs font-medium uppercase tracking-wide ${
+                              theme === "dark" ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            Stock
+                          </h4>
+                          <p
+                            className={`mt-1 text-sm font-medium ${
+                              theme === "dark" ? "text-gray-200" : "text-gray-900"
+                            }`}
+                          >
+                            {product.total_stock || 0} units
+                          </p>
+                        </div>
+
+                        <div>
+                          <h4
+                            className={`text-xs font-medium uppercase tracking-wide ${
+                              theme === "dark" ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            Total Sold
+                          </h4>
+                          <p
+                            className={`mt-1 text-sm font-medium ${
+                              theme === "dark" ? "text-gray-200" : "text-gray-900"
+                            }`}
+                          >
+                            {product.total_sold || 0} units
+                          </p>
+                        </div>
+
+                        <div>
+                          <h4
+                            className={`text-xs font-medium uppercase tracking-wide ${
+                              theme === "dark" ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            Branch
+                          </h4>
+                          <p
+                            className={`mt-1 text-sm font-medium ${
+                              theme === "dark" ? "text-gray-200" : "text-gray-900"
+                            }`}
+                          >
+                            {product.branch_name || "N/A"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <h4
+                            className={`text-xs font-medium uppercase tracking-wide ${
+                              theme === "dark" ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            Created At
+                          </h4>
+                          <p
+                            className={`mt-1 text-xs ${
+                              theme === "dark" ? "text-gray-300" : "text-gray-600"
+                            }`}
+                          >
+                            {product.created_at &&
+                            !isNaN(new Date(product.created_at).getTime())
+                              ? new Date(product.created_at).toLocaleDateString(
+                                  "en-IN",
+                                  {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                  }
+                                )
+                              : "N/A"}
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="mb-4">
-                      <h4
-                        className={`text-sm font-medium ${
-                          theme === "dark" ? "text-gray-300" : "text-gray-500"
-                        }`}
-                      >
-                        Category
-                      </h4>
-                      <p
-                        className={`mt-1 text-sm ${
-                          theme === "dark" ? "text-gray-200" : "text-gray-900"
-                        }`}
-                      >
-                        {product.category_name}
-                      </p>
-                    </div>
-
-                    <div className="mb-4">
-                      <h4
-                        className={`text-sm font-medium ${
-                          theme === "dark" ? "text-gray-300" : "text-gray-500"
-                        }`}
-                      >
-                        Description
-                      </h4>
-                      <p
-                        className={`mt-1 text-sm ${
-                          theme === "dark" ? "text-gray-200" : "text-gray-900"
-                        }`}
-                      >
-                        {product.product_description}
-                      </p>
-                    </div>
-
-                    <div className="mb-4">
-                      <h4
-                        className={`text-sm font-medium ${
-                          theme === "dark" ? "text-gray-300" : "text-gray-500"
-                        }`}
-                      >
-                        Base Price
-                      </h4>
-                      <p
-                        className={`mt-1 text-sm ${
-                          theme === "dark" ? "text-gray-200" : "text-gray-900"
-                        }`}
-                      >
-                        ₹
-                        {parseFloat(String(product.base_price || 0)).toFixed(2)}
-                      </p>
-                    </div>
-
-                    <div className="mb-4">
-                      <h4
-                        className={`text-sm font-medium ${
-                          theme === "dark" ? "text-gray-300" : "text-gray-500"
-                        }`}
-                      >
-                        Stock
-                      </h4>
-                      <p
-                        className={`mt-1 text-sm ${
-                          theme === "dark" ? "text-gray-200" : "text-gray-900"
-                        }`}
-                      >
-                        {product.total_stock || 0} units
-                      </p>
-                    </div>
-
-                    <div className="mb-4">
-                      <h4
-                        className={`text-sm font-medium ${
-                          theme === "dark" ? "text-gray-300" : "text-gray-500"
-                        }`}
-                      >
-                        Total Sold
-                      </h4>
-                      <p
-                        className={`mt-1 text-sm ${
-                          theme === "dark" ? "text-gray-200" : "text-gray-900"
-                        }`}
-                      >
-                        {product.total_sold || 0} units
-                      </p>
-                    </div>
-
-                    <div className="mb-4">
-                      <h4
-                        className={`text-sm font-medium ${
-                          theme === "dark" ? "text-gray-300" : "text-gray-500"
-                        }`}
-                      >
-                        Status
-                      </h4>
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full ${
-                          product.is_active == 1
-                            ? theme === "dark"
-                              ? "bg-green-900/40 text-green-300 border border-green-700"
-                              : "bg-green-100 text-green-800"
-                            : theme === "dark"
-                            ? "bg-red-900/40 text-red-300 border border-red-700"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {product.is_active == 1 ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-
-                    <div className="mb-4">
-                      <h4
-                        className={`text-sm font-medium ${
-                          theme === "dark" ? "text-gray-300" : "text-gray-500"
-                        }`}
-                      >
-                        Created At
-                      </h4>
-                      <p
-                        className={`mt-1 text-sm ${
-                          theme === "dark" ? "text-gray-200" : "text-gray-900"
-                        }`}
-                      >
-                        {product.created_at &&
-                        !isNaN(new Date(product.created_at).getTime())
-                          ? new Date(product.created_at).toLocaleDateString(
-                              "en-IN",
-                              {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )
-                          : "N/A"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4
-                        className={`text-sm font-medium ${
-                          theme === "dark" ? "text-gray-300" : "text-gray-500"
-                        }`}
-                      >
-                        Branch
-                      </h4>
-                      <p
-                        className={`mt-1 text-sm ${
-                          theme === "dark" ? "text-gray-200" : "text-gray-900"
-                        }`}
-                      >
-                        {product.branch_name || "N/A"}
-                      </p>
-                    </div>
+                    {/* Description - Full Width */}
+                    {product.product_description && (
+                      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h4
+                          className={`text-xs font-medium uppercase tracking-wide mb-2 ${
+                            theme === "dark" ? "text-gray-400" : "text-gray-500"
+                          }`}
+                        >
+                          Description
+                        </h4>
+                        <p
+                          className={`text-sm leading-relaxed ${
+                            theme === "dark" ? "text-gray-300" : "text-gray-700"
+                          }`}
+                        >
+                          {product.product_description}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
