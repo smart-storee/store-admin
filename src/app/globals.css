@@ -201,6 +201,153 @@ textarea::placeholder {
   color: #9ca3af;
 }
 
+/* Input and form elements dark mode support */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+  background-color: #ffffff;
+  color: #111827;
+  border-color: #d1d5db;
+}
+
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="number"],
+.dark input[type="tel"],
+.dark input[type="url"],
+.dark input[type="search"],
+.dark input[type="date"],
+.dark input[type="time"],
+.dark input[type="datetime-local"],
+.dark textarea,
+.dark select {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border-color: #475569;
+}
+
+.dark input[type="text"]:focus,
+.dark input[type="email"]:focus,
+.dark input[type="password"]:focus,
+.dark input[type="number"]:focus,
+.dark input[type="tel"]:focus,
+.dark input[type="url"]:focus,
+.dark input[type="search"]:focus,
+.dark input[type="date"]:focus,
+.dark input[type="time"]:focus,
+.dark input[type="datetime-local"]:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #818cf8;
+  outline-color: #818cf8;
+}
+
+/* Common form input patterns - auto dark mode */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+  transition: all 0.2s;
+}
+
+/* Form containers */
+form.bg-white,
+.bg-white.shadow {
+  background-color: #ffffff;
+  border-color: #e5e7eb;
+}
+
+.dark form.bg-white,
+.dark .bg-white.shadow {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+/* Labels */
+label.block.text-sm.font-medium.text-gray-700 {
+  color: #374151;
+}
+
+.dark label.block.text-sm.font-medium.text-gray-700 {
+  color: #cbd5e1;
+}
+
+/* Buttons with border-gray-300 */
+button.border-gray-300,
+a.border-gray-300 {
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.dark button.border-gray-300,
+.dark a.border-gray-300 {
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
+.dark button.border-gray-300:hover,
+.dark a.border-gray-300:hover {
+  background-color: #334155;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .md\:pl-64 {
+    padding-left: 0 !important;
+  }
+  
+  /* Make forms more mobile-friendly */
+  .grid.grid-cols-6 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  .col-span-6.sm\:col-span-3,
+  .col-span-6.sm\:col-span-2 {
+    grid-column: span 1 / span 1;
+  }
+  
+  /* Remove max-width constraints on mobile */
+  input.max-w-lg,
+  textarea.max-w-lg,
+  select.max-w-lg {
+    max-width: 100%;
+  }
+}
+
+/* Ensure tables are scrollable on mobile */
+@media (max-width: 640px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  /* Stack form elements on very small screens */
+  .flex.items-center.gap-4 {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+}
+
 /* Animations */
 @keyframes fadeIn {
   from {
