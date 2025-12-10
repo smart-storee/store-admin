@@ -232,7 +232,8 @@ export interface Order {
   branch_name: string;
   order_status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled';
   payment_method: string;
-  payment_status: 'pending' | 'completed' | 'failed';
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  payment_reference?: string | null; // PayU transaction ID
   delivery_address: string;
   delivery_landmark?: string;
   delivery_notes?: string;
@@ -287,6 +288,57 @@ export interface CreateCouponRequest {
   is_active?: number;
 }
 
+export interface ScheduledOrder {
+  scheduled_order_id: number;
+  order_number?: string;
+  user_id: number;
+  cust_id?: string;
+  store_id: number;
+  branch_id: number;
+  branch_name?: string;
+  original_order_id?: number;
+  delivery_address: string;
+  frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom';
+  frequency_value?: number;
+  start_date: string;
+  end_date?: string;
+  next_delivery_date: string;
+  delivery_time?: string;
+  delivery_day?: number;
+  delivery_date_of_month?: number;
+  status: 'active' | 'paused' | 'cancelled' | 'completed';
+  order_status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled';
+  payment_method: string;
+  delivery_notes?: string;
+  subtotal: number;
+  delivery_charge: number;
+  is_free_delivery?: boolean;
+  free_delivery_reason?: string;
+  platform_fee: number;
+  discount_amount: number;
+  total_amount: number;
+  edit_deadline_days: number;
+  last_edited_at?: string;
+  created_at: string;
+  updated_at: string;
+  customer_name?: string;
+  customer_phone?: string;
+  customer_email?: string;
+  items?: ScheduledOrderItem[];
+}
+
+export interface ScheduledOrderItem {
+  scheduled_order_item_id: number;
+  scheduled_order_id: number;
+  product_id: number;
+  product_variant_id: number;
+  product_name: string;
+  variant_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+}
+
 export interface OrderDetail {
   order_id: number;
   order_number: string;
@@ -300,7 +352,8 @@ export interface OrderDetail {
   branch_name: string;
   order_status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled';
   payment_method: string;
-  payment_status: 'pending' | 'completed' | 'failed';
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  payment_reference?: string | null; // PayU transaction ID
   items: Array<{
     product_name: string;
     variant_name: string;

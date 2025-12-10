@@ -364,10 +364,12 @@ export default function OrderDetailPage() {
                         <div>
                           <span
                             className={`inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full ${
-                              order.payment_status === "completed"
+                              order.payment_status === "paid"
                                 ? "bg-green-100 text-green-800"
                                 : order.payment_status === "failed"
                                 ? "bg-red-100 text-red-800"
+                                : order.payment_status === "refunded"
+                                ? "bg-orange-100 text-orange-800"
                                 : "bg-yellow-100 text-yellow-800"
                             }`}
                           >
@@ -378,7 +380,37 @@ export default function OrderDetailPage() {
                               : "N/A"}
                           </span>
                         </div>
+
+                        {order.payment_reference && (
+                          <>
+                            <div>
+                              <span className="text-sm text-gray-500">
+                                Payment Reference:
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-sm text-gray-900 font-mono">
+                                {order.payment_reference}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
+                      {order.payment_method === "online" && (
+                        <div className="mt-3">
+                          <button
+                            onClick={() =>
+                              router.push(
+                                `/payment-logs?order_id=${order.order_id}`
+                              )
+                            }
+                            className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            View Payment Logs
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="bg-gray-50 p-4 rounded-lg">

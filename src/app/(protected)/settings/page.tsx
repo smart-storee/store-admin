@@ -16,6 +16,263 @@ interface ExtendedAppSettings extends AppSettings {
   free_delivery_threshold?: number | null;
 }
 
+// PayU Configuration Component
+function PayUConfigurationSection({
+  user,
+  isDarkMode,
+  textPrimary,
+  textSecondary,
+  textTertiary,
+  inputBgClass,
+  cardBgClass,
+}: {
+  user: any;
+  isDarkMode: boolean;
+  textPrimary: string;
+  textSecondary: string;
+  textTertiary: string;
+  inputBgClass: string;
+  cardBgClass: string;
+}) {
+  const [payuConfig, setPayuConfig] = useState({
+    merchant_key: "",
+    merchant_salt: "",
+    secret_key: "",
+    environment: "0",
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [branchId, setBranchId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchPayUConfig = async () => {
+      try {
+        setLoading(true);
+        const queryParams = branchId ? `?branch_id=${branchId}` : "";
+        const response: ApiResponse<{ data: any }> =
+          await makeAuthenticatedRequest(
+            `/payu-config${queryParams}`,
+            {},
+            true,
+            user?.store_id,
+            branchId || undefined
+          );
+
+        if (response.success) {
+          const data = response.data.data || response.data;
+          setPayuConfig({
+            merchant_key: data.merchantKey || "",
+            merchant_salt: data.merchantSalt || "",
+            secret_key: data.secretKey || "",
+            environment: data.environment || "0",
+          });
+        }
+      } catch (err: any) {
+        console.error("Load PayU config error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.store_id) {
+      fetchPayUConfig();
+    }
+  }, [user?.store_id, branchId]);
+
+  const handlePayUSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+
+    try {
+      const payload = {
+        merchant_key: payuConfig.merchant_key,
+        merchant_salt: payuConfig.merchant_salt,
+        secret_key: payuConfig.secret_key,
+        environment: payuConfig.environment,
+        branch_id: branchId,
+      };
+
+      const response: ApiResponse<null> = await makeAuthenticatedRequest(
+        `/payu-config`,
+        {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        },
+        true,
+        user?.store_id,
+        branchId || undefined
+      );
+
+      if (response.success) {
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      } else {
+        throw new Error(response.message || "Failed to update PayU config");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to update PayU configuration");
+      console.error("Update PayU config error:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-4">
+        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`mt-6 border-t ${
+        isDarkMode ? "border-slate-700" : "border-gray-200"
+      } pt-6`}
+    >
+      <h3
+        className={`text-lg font-semibold ${textPrimary} mb-4 flex items-center gap-2`}
+      >
+        <span>💳</span>
+        PayU Configuration
+      </h3>
+
+      {error && (
+        <div
+          className={`mb-4 border rounded-lg px-4 py-3 ${
+            isDarkMode
+              ? "bg-red-950 border-red-900 text-red-200"
+              : "bg-red-50 border-red-200 text-red-700"
+          }`}
+        >
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+
+      {success && (
+        <div
+          className={`mb-4 border rounded-lg px-4 py-3 ${
+            isDarkMode
+              ? "bg-green-950 border-green-900 text-green-200"
+              : "bg-green-50 border-green-200 text-green-700"
+          }`}
+        >
+          <p className="text-sm">PayU configuration saved successfully!</p>
+        </div>
+      )}
+
+      <form onSubmit={handlePayUSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label
+              className={`block text-sm font-semibold ${textPrimary} mb-2`}
+            >
+              Merchant Key
+            </label>
+            <input
+              type="text"
+              value={payuConfig.merchant_key}
+              onChange={(e) =>
+                setPayuConfig({ ...payuConfig, merchant_key: e.target.value })
+              }
+              placeholder="Enter PayU Merchant Key"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+            />
+          </div>
+
+          <div>
+            <label
+              className={`block text-sm font-semibold ${textPrimary} mb-2`}
+            >
+              Merchant Salt
+            </label>
+            <input
+              type="text"
+              value={payuConfig.merchant_salt}
+              onChange={(e) =>
+                setPayuConfig({ ...payuConfig, merchant_salt: e.target.value })
+              }
+              placeholder="Enter PayU Merchant Salt"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+            />
+          </div>
+
+          <div>
+            <label
+              className={`block text-sm font-semibold ${textPrimary} mb-2`}
+            >
+              Secret Key
+            </label>
+            <input
+              type="password"
+              value={payuConfig.secret_key}
+              onChange={(e) =>
+                setPayuConfig({ ...payuConfig, secret_key: e.target.value })
+              }
+              placeholder="Enter PayU Secret Key"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+            />
+          </div>
+
+          <div>
+            <label
+              className={`block text-sm font-semibold ${textPrimary} mb-2`}
+            >
+              Environment
+            </label>
+            <select
+              value={payuConfig.environment}
+              onChange={(e) =>
+                setPayuConfig({ ...payuConfig, environment: e.target.value })
+              }
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+            >
+              <option value="0">Production</option>
+              <option value="1">Test/Sandbox</option>
+            </select>
+            <p className={`text-xs ${textTertiary} mt-1`}>
+              Use Test mode for development, Production for live payments
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={saving}
+            className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? "Saving..." : "Save PayU Configuration"}
+          </button>
+        </div>
+      </form>
+
+      <div
+        className={`mt-4 ${
+          isDarkMode
+            ? "bg-yellow-950 border-yellow-900"
+            : "bg-yellow-50 border-yellow-200"
+        } border rounded-lg p-4`}
+      >
+        <p
+          className={`text-sm ${
+            isDarkMode ? "text-yellow-200" : "text-yellow-900"
+          }`}
+        >
+          <span className="font-semibold">⚠️ Security Note:</span> PayU
+          credentials are stored securely. Never share these credentials
+          publicly. Branch-level configuration will override store-level
+          settings.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { user } = useAuth();
   const { features } = useStore();
@@ -968,6 +1225,19 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* PayU Configuration - Only show if online payment is enabled */}
+                {settings.is_online_payment_enabled === 1 && (
+                  <PayUConfigurationSection
+                    user={user}
+                    isDarkMode={isDarkMode}
+                    textPrimary={textPrimary}
+                    textSecondary={textSecondary}
+                    textTertiary={textTertiary}
+                    inputBgClass={inputBgClass}
+                    cardBgClass={cardBgClass}
+                  />
+                )}
 
                 {/* Info Box */}
                 <div
