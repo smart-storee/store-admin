@@ -1,5 +1,5 @@
 // Define log levels
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = "debug" | "info" | "warn" | "error";
 
 // Log entry interface
 export interface LogEntry {
@@ -29,7 +29,7 @@ interface LoggerConfig {
 
 let config: LoggerConfig = {
   enabled: true,
-  logLevel: 'debug',
+  logLevel: "debug",
   logToConsole: true,
   logToFile: false, // We'll store logs in memory for this implementation
   maxLogSize: 10, // 10MB
@@ -57,62 +57,65 @@ const isLogLevelEnabled = (level: LogLevel): boolean => {
 const formatLogMessage = (entry: LogEntry): string => {
   const timestamp = new Date(entry.timestamp).toISOString();
   const method = entry.method.padEnd(6);
-  const status = entry.status ? entry.status.toString().padEnd(3) : '---';
-  const duration = entry.duration ? `${entry.duration}ms` : '---';
-  
-  return `[${timestamp}] ${entry.level.toUpperCase()} | ${method} | ${status} | ${duration} | ${entry.url}`;
+  const status = entry.status ? entry.status.toString().padEnd(3) : "---";
+  const duration = entry.duration ? `${entry.duration}ms` : "---";
+
+  return `[${timestamp}] ${entry.level.toUpperCase()} | ${method} | ${status} | ${duration} | ${
+    entry.url
+  }`;
 };
 
 // Log to console
 const logToConsole = (entry: LogEntry) => {
   if (!isLogLevelEnabled(entry.level)) return;
-  
+
   const formattedMessage = formatLogMessage(entry);
-  
+
   switch (entry.level) {
-    case 'debug':
+    case "debug":
       console.debug(`${formattedMessage}`);
       break;
-    case 'info':
+    case "info":
       console.info(`${formattedMessage}`);
       break;
-    case 'warn':
+    case "warn":
       console.warn(`${formattedMessage}`);
       break;
-    case 'error':
+    case "error":
       console.error(`${formattedMessage}`);
       break;
   }
-  
+
   // Log additional details
   if (entry.requestBody) {
-    console.log('Request Body:', entry.requestBody);
+    console.log("Request Body:", entry.requestBody);
   }
   if (entry.responseBody) {
-    console.log('Response Body:', entry.responseBody);
+    console.log("Response Body:", entry.responseBody);
   }
   if (entry.error) {
-    console.error('Error:', entry.error);
+    console.error("Error:", entry.error);
   }
 };
 
 // Add log entry
-export const logApiCall = (entry: Omit<LogEntry, 'timestamp'>) => {
+export const logApiCall = (entry: Omit<LogEntry, "timestamp">) => {
   if (!config.enabled) return;
-  
+
   const logEntry: LogEntry = {
     ...entry,
     timestamp: new Date().toISOString(),
   };
-  
+
   // Add to logs array
   logs.push(logEntry);
-  
+
   // Keep logs under max size by removing oldest entries
-  if (logs.length > config.maxLogSize * 100) { // Rough estimate, 100 entries per MB
+  if (logs.length > config.maxLogSize * 100) {
+    // Rough estimate, 100 entries per MB
     logs = logs.slice(-config.maxLogSize * 100);
   }
-  
+
   // Log to console if enabled
   if (config.logToConsole) {
     logToConsole(logEntry);
@@ -126,7 +129,7 @@ export const getLogs = (): LogEntry[] => {
 
 // Get logs by level
 export const getLogsByLevel = (level: LogLevel): LogEntry[] => {
-  return logs.filter(log => log.level === level);
+  return logs.filter((log) => log.level === level);
 };
 
 // Clear logs
@@ -154,7 +157,7 @@ export const logApiRequest = (
   sessionId?: string
 ) => {
   logApiCall({
-    level: 'info',
+    level: "info",
     method,
     url,
     requestHeaders: headers,
@@ -176,7 +179,7 @@ export const logApiResponse = (
   sessionId?: string
 ) => {
   logApiCall({
-    level: status >= 400 ? 'error' : status >= 300 ? 'warn' : 'info',
+    level: status >= 400 ? "error" : status >= 300 ? "warn" : "info",
     method,
     url,
     status,
@@ -197,7 +200,7 @@ export const logApiError = (
   sessionId?: string
 ) => {
   logApiCall({
-    level: 'error',
+    level: "error",
     method,
     url,
     error,

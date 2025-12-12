@@ -271,7 +271,7 @@ export default function SettingsPage() {
   // Check if app settings are enabled (wait for features to load)
   if (features !== null && features && !features.app_settings_enabled) {
     return (
-      <RoleGuard allowedRoles={["super_admin", "admin", "manager"]}>
+      <RoleGuard allowedRoles={["owner", "manager"]}>
         <div
           className={`p-6 ${
             isDarkMode ? "bg-gray-900" : "bg-gray-50"
@@ -323,7 +323,7 @@ export default function SettingsPage() {
               ></div>
             </div>
           </div>
-          <p className={`text-sm ${textSecondary}`}>Loading settings...</p>
+          <p className={`text-sm ${textSecondary}`}>Loading your settings...</p>
         </div>
       </div>
     );

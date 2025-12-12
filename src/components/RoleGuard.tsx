@@ -4,7 +4,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 
 interface RoleGuardProps {
-  allowedRoles?: ("admin" | "staff" | "delivery" | "super_admin" | "manager" | "owner")[];
+  allowedRoles?: (
+    | "manager"
+    | "owner"
+  )[];
   requiredPermissions?: string[];
   fallback?: ReactNode;
   children: ReactNode;

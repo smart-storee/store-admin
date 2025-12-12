@@ -500,13 +500,15 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           className="fixed top-0 left-0 right-0 shadow-sm z-40 px-4 py-3 flex items-center justify-between"
           style={{
             backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
-            borderBottom: isDarkMode ? "1px solid #334155" : "1px solid #E5E7EB",
+            borderBottom: isDarkMode
+              ? "1px solid #334155"
+              : "1px solid #E5E7EB",
             height: "56px",
             backdropFilter: "blur(10px)",
             WebkitBackdropFilter: "blur(10px)",
           }}
         >
-          <h2 
+          <h2
             className="text-base sm:text-lg font-semibold truncate flex-1 mr-2"
             style={{
               color: isDarkMode ? "#f8fafc" : "#111827",
@@ -539,7 +541,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               }}
               onClick={() => setSidebarOpen(!sidebarOpen)}
               onTouchStart={(e) => {
-                e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#F3F4F6";
+                e.currentTarget.style.backgroundColor = isDarkMode
+                  ? "#334155"
+                  : "#F3F4F6";
               }}
               onTouchEnd={(e) => {
                 setTimeout(() => {
@@ -591,12 +595,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <div
               className="fixed inset-0 transition-opacity animate-fade-in"
               style={{
-                backgroundColor: isDarkMode ? "rgba(0, 0, 0, 0.75)" : "rgba(0, 0, 0, 0.5)",
+                backgroundColor: isDarkMode
+                  ? "rgba(0, 0, 0, 0.75)"
+                  : "rgba(0, 0, 0, 0.5)",
                 animation: "fadeIn 0.2s ease-out",
               }}
               onClick={() => setSidebarOpen(false)}
             ></div>
-            <div 
+            <div
               className="fixed inset-y-0 left-0 max-w-xs w-full shadow-lg z-50 overflow-y-auto animate-slide-in-left"
               style={{
                 backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
@@ -607,7 +613,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               <div className="h-full overflow-y-auto">
                 <div className="px-4 pt-5 pb-3">
                   <div className="flex items-center justify-between mb-4">
-                    <div 
+                    <div
                       className="text-lg font-medium"
                       style={{
                         color: isDarkMode ? "#f8fafc" : "#111827",
@@ -623,7 +629,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       }}
                       onClick={() => setSidebarOpen(false)}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#F3F4F6";
+                        e.currentTarget.style.backgroundColor = isDarkMode
+                          ? "#334155"
+                          : "#F3F4F6";
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = "transparent";
@@ -656,12 +664,18 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                           className="group flex items-center px-4 py-3 text-base font-medium rounded-lg transition-all active:scale-95"
                           style={{
                             backgroundColor: isActive(item.href)
-                              ? isDarkMode ? "rgba(65, 105, 225, 0.2)" : "#4169E120"
+                              ? isDarkMode
+                                ? "rgba(65, 105, 225, 0.2)"
+                                : "#4169E120"
                               : "transparent",
                             color: isActive(item.href)
                               ? "#4169E1"
-                              : isDarkMode ? "#cbd5e1" : "#6B7280",
-                            borderLeft: isActive(item.href) ? "4px solid #4169E1" : "4px solid transparent",
+                              : isDarkMode
+                              ? "#cbd5e1"
+                              : "#6B7280",
+                            borderLeft: isActive(item.href)
+                              ? "4px solid #4169E1"
+                              : "4px solid transparent",
                             marginLeft: isActive(item.href) ? "-4px" : "0",
                             minHeight: "48px",
                             animationDelay: `${index * 0.03}s`,
@@ -669,18 +683,23 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                           }}
                           onTouchStart={(e) => {
                             if (!isActive(item.href)) {
-                              e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#F3F4F6";
+                              e.currentTarget.style.backgroundColor = isDarkMode
+                                ? "#334155"
+                                : "#F3F4F6";
                             }
                           }}
                           onTouchEnd={(e) => {
                             setTimeout(() => {
                               if (!isActive(item.href)) {
-                                e.currentTarget.style.backgroundColor = "transparent";
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
                               }
                             }, 150);
                           }}
                         >
-                          <span className="mr-3 flex-shrink-0">{getIcon(item.name)}</span>
+                          <span className="mr-3 flex-shrink-0">
+                            {getIcon(item.name)}
+                          </span>
                           <span className="truncate">{item.name}</span>
                         </Link>
                       ))}
@@ -850,7 +869,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     marginLeft: isActive(item.href) ? "-3px" : "0",
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                     position: "relative",
-                    transform: isActive(item.href) ? "translateX(2px)" : "translateX(0)",
+                    transform: isActive(item.href)
+                      ? "translateX(2px)"
+                      : "translateX(0)",
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive(item.href)) {
@@ -876,7 +897,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                   <span
                     style={{
                       transition: "transform 0.2s",
-                      transform: isActive(item.href) ? "scale(1.1)" : "scale(1)",
+                      transform: isActive(item.href)
+                        ? "scale(1.1)"
+                        : "scale(1)",
                     }}
                   >
                     {getIcon(item.name)}
@@ -930,13 +953,15 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             className="shadow-sm hidden md:block"
             style={{
               backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
-              borderBottom: isDarkMode ? "1px solid #334155" : "1px solid #E5E7EB",
+              borderBottom: isDarkMode
+                ? "1px solid #334155"
+                : "1px solid #E5E7EB",
             }}
           >
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
                 <div className="flex items-center flex-1 min-w-0">
-                  <h2 
+                  <h2
                     className="text-base sm:text-lg font-semibold truncate"
                     style={{
                       color: isDarkMode ? "#f8fafc" : "#111827",
@@ -958,10 +983,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                   </h2>
                 </div>
 
-                {/* Store/Branch selector */}
-                {/* <StoreBranchSelector /> */}
                 <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-                  <span 
+                  <span
                     className="hidden sm:inline text-sm sm:text-base truncate max-w-[150px] sm:max-w-none"
                     style={{
                       color: isDarkMode ? "#cbd5e1" : "#374151",
@@ -1005,7 +1028,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                           borderRadius: "12px",
                           boxShadow:
                             "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                          border: isDarkMode ? "1px solid #334155" : "1px solid #E5E7EB",
+                          border: isDarkMode
+                            ? "1px solid #334155"
+                            : "1px solid #E5E7EB",
                           zIndex: 50,
                           overflow: "hidden",
                           animation: "slideUp 0.2s ease-out",
@@ -1017,7 +1042,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                         <div
                           style={{
                             padding: "12px 16px",
-                            borderBottom: isDarkMode ? "1px solid #334155" : "1px solid #E5E7EB",
+                            borderBottom: isDarkMode
+                              ? "1px solid #334155"
+                              : "1px solid #E5E7EB",
                             backgroundColor: isDarkMode ? "#334155" : "#F9FAFB",
                           }}
                         >
@@ -1056,7 +1083,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                               transition: "background-color 0.2s",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#F3F4F6";
+                              e.currentTarget.style.backgroundColor = isDarkMode
+                                ? "#334155"
+                                : "#F3F4F6";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.backgroundColor =
@@ -1084,7 +1113,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                               textAlign: "left",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = isDarkMode ? "#7f1d1d" : "#FEF2F2";
+                              e.currentTarget.style.backgroundColor = isDarkMode
+                                ? "#7f1d1d"
+                                : "#FEF2F2";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.backgroundColor =

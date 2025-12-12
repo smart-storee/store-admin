@@ -1,8 +1,8 @@
-import { ReactNode } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { ReactNode } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Define available roles
-type Role = 'owner' | 'manager';
+type Role = "owner" | "manager";
 
 interface WithRoleAccessProps {
   allowedRoles: Role[];
@@ -11,7 +11,11 @@ interface WithRoleAccessProps {
 }
 
 // Higher-order component for role-based access
-export const WithRoleAccess = ({ allowedRoles, fallback = null, children }: WithRoleAccessProps) => {
+export const WithRoleAccess = ({
+  allowedRoles,
+  fallback = null,
+  children,
+}: WithRoleAccessProps) => {
   const { user } = useAuth();
 
   if (!user) {
@@ -38,10 +42,10 @@ export const useRoleAccess = (allowedRoles: Role[]) => {
 
 // Specific hook for admin access
 export const useAdminAccess = () => {
-  return useRoleAccess(['owner']);
+  return useRoleAccess(["owner"]);
 };
 
 // Specific hook for staff access (includes admin)
 export const useStaffAccess = () => {
-  return useRoleAccess(['owner', 'manager']);
+  return useRoleAccess(["owner", "manager"]);
 };

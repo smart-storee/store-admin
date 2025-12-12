@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode } from "react";
 
 // Next.js page with layout type
 export type NextPageWithLayout<P = {}, IP = P> = React.FC<P> & {
@@ -93,12 +93,12 @@ export interface Branch {
   store_id: number;
   surge_fee: number;
   delivery_charge: number;
-  
+
   // Manager information
   manager_name?: string;
   manager_phone?: string;
   manager_email?: string;
-  
+
   // Additional properties that might be used in the form
   [key: string]: any; // This allows for any additional properties that might be needed
 }
@@ -126,13 +126,13 @@ export interface Category {
   is_active: number;
   sort_order: number;
   created_at: string;
-  
+
   // Additional properties for display
   store_id?: number;
   store_name?: string;
   branch_id?: number;
   branch_name?: string;
-  
+
   // Allow for any additional properties that might come from the API
   [key: string]: any;
 }
@@ -215,7 +215,7 @@ export interface OrderItem {
   price: number;
   total: number;
   total_price?: number; // Alias for total
-  unit_price?: number;  // Alias for price
+  unit_price?: number; // Alias for price
   notes?: string;
   created_at: string;
 }
@@ -230,9 +230,16 @@ export interface Order {
   customer_email?: string;
   branch_id: number;
   branch_name: string;
-  order_status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled';
+  order_status:
+    | "pending"
+    | "confirmed"
+    | "preparing"
+    | "ready"
+    | "out_for_delivery"
+    | "delivered"
+    | "cancelled";
   payment_method: string;
-  payment_status: 'pending' | 'completed' | 'failed';
+  payment_status: "pending" | "completed" | "failed";
   delivery_address: string;
   delivery_landmark?: string;
   delivery_notes?: string;
@@ -258,7 +265,7 @@ export interface Coupon {
   branch_id: number | null;
   branch_name?: string;
   coupon_code: string;
-  coupon_type: 'percentage' | 'fixed';
+  coupon_type: "percentage" | "fixed";
   discount_value: number;
   min_order_amount: number;
   max_discount_amount: number | null;
@@ -276,7 +283,7 @@ export interface CreateCouponRequest {
   store_id: number;
   branch_id?: number | null;
   coupon_code: string;
-  coupon_type: 'percentage' | 'fixed';
+  coupon_type: "percentage" | "fixed";
   discount_value: number;
   min_order_amount?: number;
   max_discount_amount?: number | null;
@@ -298,9 +305,16 @@ export interface OrderDetail {
   };
   branch_id: number;
   branch_name: string;
-  order_status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled';
+  order_status:
+    | "pending"
+    | "confirmed"
+    | "preparing"
+    | "ready"
+    | "out_for_delivery"
+    | "delivered"
+    | "cancelled";
   payment_method: string;
-  payment_status: 'pending' | 'completed' | 'failed';
+  payment_status: "pending" | "completed" | "failed";
   items: Array<{
     product_name: string;
     variant_name: string;
@@ -332,13 +346,13 @@ export interface Customer {
   total_spent: number;
   profile_picture: string | null;
   created_at: string;
-  
+
   // Additional contact information
   address?: string;
   city?: string;
   state?: string;
   pincode?: string;
-  
+
   // Allow for any additional properties that might come from the API
   [key: string]: any;
 }

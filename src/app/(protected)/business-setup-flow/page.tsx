@@ -357,7 +357,7 @@ export default function SetupFlowPage() {
       >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mx-auto"></div>
-          <p className={`mt-4 font-medium ${textClass}`}>Loading setup...</p>
+          <p className={`mt-4 font-medium ${textClass}`}>Loading your products...</p>
         </div>
       </div>
     );

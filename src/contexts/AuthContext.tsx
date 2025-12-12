@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { useRouter } from "next/navigation";
 
 // Import types from shared types file
-import { AdminUser } from '@/types';
-import { API_BASE_URL_WITH_VERSION, isNgrokUrl } from '@/config/api.config';
+import { AdminUser } from "@/types";
+import { API_BASE_URL_WITH_VERSION, isNgrokUrl } from "@/config/api.config";
 
 interface AuthContextType {
   user: AdminUser | null;
@@ -37,9 +43,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Check for existing auth data on initial load
   useEffect(() => {
-    const storedUser = localStorage.getItem('adminUser');
-    const storedToken = localStorage.getItem('authToken');
-    const storedRefreshToken = localStorage.getItem('refreshToken');
+    const storedUser = localStorage.getItem("adminUser");
+    const storedToken = localStorage.getItem("authToken");
+    const storedRefreshToken = localStorage.getItem("refreshToken");
 
     if (storedUser && storedToken && storedRefreshToken) {
       const parsedUser = JSON.parse(storedUser);
@@ -56,19 +62,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     try {
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
 
       // Add ngrok bypass header if using ngrok
       if (isNgrokUrl()) {
-        headers['ngrok-skip-browser-warning'] = 'true';
+        headers["ngrok-skip-browser-warning"] = "true";
       }
 
-      const response = await fetch(`${API_BASE_URL_WITH_VERSION}/admin/auth/login`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL_WITH_VERSION}/admin/auth/login`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       const data = await response.json();
 
@@ -80,16 +89,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setRefreshToken(refresh_token);
         setStoreName(admin.store_name || null);
 
-        localStorage.setItem('adminUser', JSON.stringify(admin));
-        localStorage.setItem('authToken', auth_token);
-        localStorage.setItem('refreshToken', refresh_token);
+        localStorage.setItem("adminUser", JSON.stringify(admin));
+        localStorage.setItem("authToken", auth_token);
+        localStorage.setItem("refreshToken", refresh_token);
 
-        router.push('/dashboard');
+        router.push("/dashboard");
       } else {
-        throw new Error(data.message || 'Login failed');
+        throw new Error(data.message || "Login failed");
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       throw error;
     }
   };
@@ -101,11 +110,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setRefreshToken(null);
     setStoreName(null);
 
-    localStorage.removeItem('adminUser');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('refreshToken');
+    localStorage.removeItem("adminUser");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("refreshToken");
 
-    router.push('/login');
+    router.push("/login");
   };
 
   // Refresh auth token
@@ -116,33 +125,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
 
       // Add ngrok bypass header if using ngrok
       if (isNgrokUrl()) {
-        headers['ngrok-skip-browser-warning'] = 'true';
+        headers["ngrok-skip-browser-warning"] = "true";
       }
 
-      const response = await fetch(`${API_BASE_URL_WITH_VERSION}/admin/auth/refresh-token`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL_WITH_VERSION}/admin/auth/refresh-token`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        }
+      );
 
       const data = await response.json();
 
       if (data.success) {
         const { auth_token } = data.data;
         setToken(auth_token);
-        localStorage.setItem('authToken', auth_token);
+        localStorage.setItem("authToken", auth_token);
         return true;
       } else {
         logout();
         return false;
       }
     } catch (error) {
-      console.error('Token refresh error:', error);
+      console.error("Token refresh error:", error);
       logout();
       return false;
     }
@@ -174,7 +186,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

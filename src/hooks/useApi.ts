@@ -1,7 +1,7 @@
 "use client";
 
-import { useStore } from '@/contexts/StoreContext';
-import { makeAuthenticatedRequest } from '@/utils/api';
+import { useStore } from "@/contexts/StoreContext";
+import { makeAuthenticatedRequest } from "@/utils/api";
 
 export const useApi = () => {
   const { selectedStore, selectedBranch } = useStore();
