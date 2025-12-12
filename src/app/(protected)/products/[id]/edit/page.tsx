@@ -40,6 +40,8 @@ export default function EditProductPage() {
     is_vegetarian: 0,
     is_bestseller: 0,
   });
+  const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
+  const [selectAllBranches, setSelectAllBranches] = useState(false);
 
   // Fetch product variants when product loads
   useEffect(() => {
@@ -158,7 +160,44 @@ export default function EditProductPage() {
           );
 
         if (branchesResponse.success) {
-          setBranches(branchesResponse.data.data || branchesResponse.data);
+          const branchesData =
+            branchesResponse.data.data || branchesResponse.data;
+          setBranches(branchesData);
+
+          // Fetch product branch assignments
+          try {
+            const branchAssignmentsResponse: ApiResponse<{ data: any[] }> =
+              await makeAuthenticatedRequest(
+                `/products/${params.id}/branches?store_id=${user?.store_id}`,
+                {},
+                true,
+                user?.store_id
+              );
+
+            if (branchAssignmentsResponse.success) {
+              const assignments =
+                branchAssignmentsResponse.data.data ||
+                branchAssignmentsResponse.data ||
+                [];
+              // Get branch IDs that are assigned (is_available = true)
+              const assignedBranchIds = assignments
+                .filter(
+                  (a: any) => a.is_available === true || a.is_available === 1
+                )
+                .map((a: any) => a.branch_id);
+              setSelectedBranches(assignedBranchIds);
+              setSelectAllBranches(
+                assignedBranchIds.length === branchesData.length &&
+                  branchesData.length > 0
+              );
+            }
+          } catch (err) {
+            console.error("Failed to fetch branch assignments:", err);
+            // If no assignments found, use the branch_id from product
+            if (product?.branch_id) {
+              setSelectedBranches([product?.branch_id]);
+            }
+          }
         } else {
           throw new Error(
             branchesResponse.message || "Failed to fetch branches"
@@ -209,6 +248,13 @@ export default function EditProductPage() {
     setError(null);
     setSaving(true);
 
+    // Validate that at least one branch is selected
+    if (selectedBranches.length === 0) {
+      setError("Please select at least one branch");
+      setSaving(false);
+      return;
+    }
+
     try {
       // Prepare the request body with all fields including vegetarian and bestseller
       const requestBody = {
@@ -221,6 +267,7 @@ export default function EditProductPage() {
         serves_count: formData.serves_count,
         is_vegetarian: formData.is_vegetarian, // Explicitly include
         is_bestseller: formData.is_bestseller, // Explicitly include
+        branch_ids: selectedBranches,
         store_id: user?.store_id,
       };
 
@@ -439,28 +486,82 @@ export default function EditProductPage() {
                     </select>
                   </div>
 
-                  <div className="col-span-6 sm:col-span-3">
-                    <label
-                      htmlFor="branch_id"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Branch *
+                  <div className="col-span-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Branches *
                     </label>
-                    <select
-                      id="branch_id"
-                      name="branch_id"
-                      value={formData.branch_id}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                    >
-                      <option value="">Select a branch</option>
+                    <p className="text-sm text-gray-500 mb-3">
+                      Select which branches this product should be available in.
+                    </p>
+                    <div className="mb-3">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectAllBranches}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setSelectAllBranches(checked);
+                            if (checked) {
+                              setSelectedBranches(
+                                branches.map((b) => b.branch_id)
+                              );
+                            } else {
+                              setSelectedBranches([]);
+                            }
+                          }}
+                          className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <span className="text-sm font-medium text-gray-700">
+                          Select All Branches
+                        </span>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-48 overflow-y-auto border rounded-md p-3">
                       {branches.map((branch) => (
-                        <option key={branch.branch_id} value={branch.branch_id}>
-                          {branch.branch_name}
-                        </option>
+                        <label
+                          key={branch.branch_id}
+                          className="flex items-center"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedBranches.includes(
+                              branch.branch_id
+                            )}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              if (checked) {
+                                setSelectedBranches([
+                                  ...selectedBranches,
+                                  branch.branch_id,
+                                ]);
+                                if (
+                                  selectedBranches.length + 1 ===
+                                  branches.length
+                                ) {
+                                  setSelectAllBranches(true);
+                                }
+                              } else {
+                                setSelectedBranches(
+                                  selectedBranches.filter(
+                                    (id) => id !== branch.branch_id
+                                  )
+                                );
+                                setSelectAllBranches(false);
+                              }
+                            }}
+                            className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                          />
+                          <span className="text-sm text-gray-700">
+                            {branch.branch_name}
+                          </span>
+                        </label>
                       ))}
-                    </select>
+                    </div>
+                    {selectedBranches.length === 0 && (
+                      <p className="text-sm text-red-600 mt-2">
+                        Please select at least one branch
+                      </p>
+                    )}
                   </div>
 
                   <div className="col-span-6 sm:col-span-3">

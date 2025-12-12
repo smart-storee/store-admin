@@ -121,6 +121,41 @@ const ProductsPage = () => {
     setCurrentPage(1);
   };
 
+  const handleToggleActive = async (
+    productId: number,
+    currentStatus: number
+  ) => {
+    const newStatus = currentStatus === 1 ? 0 : 1;
+    const action = newStatus === 1 ? "activate" : "deactivate";
+
+    if (!confirm(`Are you sure you want to ${action} this product?`)) return;
+
+    try {
+      const response = await makeAuthenticatedRequest(
+        `/products/${productId}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            is_active: newStatus,
+            store_id: user?.store_id,
+          }),
+        },
+        true,
+        user?.store_id
+      );
+
+      if (response.success) {
+        alert(`Product ${action}d successfully`);
+        fetchProducts();
+      } else {
+        alert(response.message || `Failed to ${action} product`);
+      }
+    } catch (err: any) {
+      console.error(`Toggle product active error:`, err);
+      alert(err.message || `Failed to ${action} product`);
+    }
+  };
+
   const handleDeleteProduct = async (productId: number) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
@@ -380,6 +415,27 @@ const ProductsPage = () => {
                                 }`}
                               >
                                 Edit
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleToggleActive(
+                                    product.product_id,
+                                    product.is_active
+                                  )
+                                }
+                                className={`${
+                                  theme === "dark"
+                                    ? product.is_active === 1
+                                      ? "text-yellow-400 hover:text-yellow-300"
+                                      : "text-green-400 hover:text-green-300"
+                                    : product.is_active === 1
+                                    ? "text-yellow-600 hover:text-yellow-900"
+                                    : "text-green-600 hover:text-green-900"
+                                }`}
+                              >
+                                {product.is_active === 1
+                                  ? "Deactivate"
+                                  : "Activate"}
                               </button>
                               <button
                                 onClick={() =>
