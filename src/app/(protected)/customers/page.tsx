@@ -179,7 +179,7 @@ export default function CustomersPage() {
     0
   );
   const totalRevenue = customers.reduce(
-    (sum, c) => sum + (c.total_spent || 0),
+    (sum, c) => sum + (Number(c.total_spent) || 0),
     0
   );
 
@@ -480,13 +480,12 @@ export default function CustomersPage() {
                                 }`}
                               >
                                 Spent ₹
-                                {(customer.total_spent || 0).toLocaleString(
-                                  "en-IN",
-                                  {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  }
-                                )}
+                                {(
+                                  Number(customer.total_spent) || 0
+                                ).toLocaleString("en-IN", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
                               </p>
                             </div>
                             <span
