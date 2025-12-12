@@ -27,7 +27,7 @@ export default function NewProductVariantPage() {
     variant_price: 0,
     stock: 0,
     is_active: 1,
-    branch_id: user?.branch_id,
+    branch_ids: user?.branch_id ? [user.branch_id] : [],
   });
 
   // Fetch products and branches on initial load
@@ -121,6 +121,11 @@ export default function NewProductVariantPage() {
         ...prev,
         [name]: numericValue,
       }));
+    } else if (name === "product_id") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parseInt(value) || 0,
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -134,6 +139,13 @@ export default function NewProductVariantPage() {
     setError(null);
     setSaving(true);
 
+    // Validate that at least one branch is selected
+    if (formData.branch_ids.length === 0) {
+      setError("Please select at least one branch");
+      setSaving(false);
+      return;
+    }
+
     try {
       const response: ApiResponse<{ data: ProductVariant }> =
         await makeAuthenticatedRequest(
@@ -146,12 +158,12 @@ export default function NewProductVariantPage() {
               stock: formData.stock || 0,
               is_active: formData.is_active,
               store_id: user?.store_id,
-              branch_id: formData.branch_id || 1,
+              branch_ids: formData.branch_ids,
             }),
           },
           true, // auto-refresh token
           user?.store_id,
-          formData.branch_id || undefined
+          formData.branch_ids[0] || undefined
         );
 
       if (response.success) {
@@ -239,7 +251,7 @@ export default function NewProductVariantPage() {
           >
             <div className="px-4 py-5 sm:p-6">
               <div className="grid grid-cols-6 gap-6">
-                <div className="col-span-6">
+                <div className="col-span-6 sm:col-span-3">
                   <label
                     htmlFor="product_id"
                     className={`block text-sm font-medium ${
@@ -271,6 +283,70 @@ export default function NewProductVariantPage() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="col-span-6">
+                  <label
+                    className={`block text-sm font-medium mb-2 ${
+                      theme === "dark" ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
+                    Branches * (Select one or more)
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {branches.map((branch) => (
+                      <label
+                        key={branch.branch_id}
+                        className={`flex items-center space-x-2 p-2 border rounded-lg cursor-pointer transition-colors ${
+                          theme === "dark"
+                            ? "border-gray-600 hover:bg-gray-700"
+                            : "border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.branch_ids.includes(
+                            branch.branch_id
+                          )}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                branch_ids: [
+                                  ...prev.branch_ids,
+                                  branch.branch_id,
+                                ],
+                              }));
+                            } else {
+                              setFormData((prev) => ({
+                                ...prev,
+                                branch_ids: prev.branch_ids.filter(
+                                  (id) => id !== branch.branch_id
+                                ),
+                              }));
+                            }
+                          }}
+                          className={`rounded border-gray-300 dark:border-gray-600 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 bg-white dark:bg-gray-700 transition-colors`}
+                        />
+                        <span
+                          className={`text-sm ${
+                            theme === "dark" ? "text-gray-300" : "text-gray-700"
+                          }`}
+                        >
+                          {branch.branch_name}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {formData.branch_ids.length === 0 && (
+                    <p
+                      className={`text-xs mt-2 ${
+                        theme === "dark" ? "text-red-400" : "text-red-600"
+                      }`}
+                    >
+                      Please select at least one branch
+                    </p>
+                  )}
                 </div>
 
                 <div className="col-span-6 sm:col-span-3">

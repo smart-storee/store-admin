@@ -28,6 +28,7 @@ export default function EditProductVariantPage() {
     variant_price: 0,
     stock: 0,
     is_active: 1,
+    branch_ids: [] as number[],
   });
 
   // Fetch initial data (products and branches) and the variant to edit
@@ -85,12 +86,22 @@ export default function EditProductVariantPage() {
         if (variantResponse.success) {
           const v = variantResponse.data.data || variantResponse.data;
           setVariant(v);
+          // Get branch_ids from variant (if available) or use branch_id as fallback
+          const branchIds =
+            (v as any).branch_ids && Array.isArray((v as any).branch_ids)
+              ? (v as any).branch_ids
+              : (v as any).branch_id
+              ? [(v as any).branch_id]
+              : user?.branch_id
+              ? [user.branch_id]
+              : [];
           setFormData({
             product_id: v.product_id,
             variant_name: v.variant_name,
             variant_price: parseFloat(String(v.variant_price || 0)),
             stock: parseFloat(String(v.stock || 0)),
             is_active: v.is_active || 1,
+            branch_ids: branchIds,
           });
         } else {
           throw new Error(variantResponse.message || "Failed to fetch variant");
@@ -132,6 +143,11 @@ export default function EditProductVariantPage() {
         ...prev,
         [name]: numericValue,
       }));
+    } else if (name === "product_id") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parseInt(value) || 0,
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -153,6 +169,13 @@ export default function EditProductVariantPage() {
     setError(null);
     setSaving(true);
 
+    // Validate that at least one branch is selected
+    if (formData.branch_ids.length === 0) {
+      setError("Please select at least one branch");
+      setSaving(false);
+      return;
+    }
+
     try {
       // Only send fields that exist in the database
       const response: ApiResponse<{ data: ProductVariant }> =
@@ -166,11 +189,12 @@ export default function EditProductVariantPage() {
               stock: formData.stock,
               is_active: formData.is_active,
               store_id: user?.store_id,
+              branch_ids: formData.branch_ids,
             }),
           },
           true, // auto-refresh token
           user?.store_id,
-          user?.branch_id || undefined
+          formData.branch_ids[0] || undefined
         );
 
       if (response.success) {
@@ -286,7 +310,7 @@ export default function EditProductVariantPage() {
               <div className="px-4 py-5 sm:p-6">
                 <div className="grid grid-cols-6 gap-6">
                   {/* Product - Read-only display */}
-                  <div className="col-span-6">
+                  <div className="col-span-6 sm:col-span-3">
                     <label
                       className={`block text-sm font-medium ${
                         isDarkMode ? "text-gray-300" : "text-gray-700"
@@ -312,6 +336,70 @@ export default function EditProductVariantPage() {
                     >
                       Product cannot be changed. Create a new variant if needed.
                     </p>
+                  </div>
+
+                  <div className="col-span-6">
+                    <label
+                      className={`block text-sm font-medium mb-2 ${
+                        isDarkMode ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      Branches * (Select one or more)
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {branches.map((branch) => (
+                        <label
+                          key={branch.branch_id}
+                          className={`flex items-center space-x-2 p-2 border rounded-lg cursor-pointer transition-colors ${
+                            isDarkMode
+                              ? "border-gray-600 hover:bg-gray-700"
+                              : "border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.branch_ids.includes(
+                              branch.branch_id
+                            )}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  branch_ids: [
+                                    ...prev.branch_ids,
+                                    branch.branch_id,
+                                  ],
+                                }));
+                              } else {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  branch_ids: prev.branch_ids.filter(
+                                    (id) => id !== branch.branch_id
+                                  ),
+                                }));
+                              }
+                            }}
+                            className={`rounded border-gray-300 dark:border-gray-600 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 bg-white dark:bg-gray-700 transition-colors`}
+                          />
+                          <span
+                            className={`text-sm ${
+                              isDarkMode ? "text-gray-300" : "text-gray-700"
+                            }`}
+                          >
+                            {branch.branch_name}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    {formData.branch_ids.length === 0 && (
+                      <p
+                        className={`text-xs mt-2 ${
+                          isDarkMode ? "text-red-400" : "text-red-600"
+                        }`}
+                      >
+                        Please select at least one branch
+                      </p>
+                    )}
                   </div>
 
                   <div className="col-span-6 sm:col-span-3">
