@@ -501,12 +501,16 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           style={{
             backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
             borderBottom: isDarkMode ? "1px solid #334155" : "1px solid #E5E7EB",
+            height: "56px",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
           }}
         >
           <h2 
             className="text-base sm:text-lg font-semibold truncate flex-1 mr-2"
             style={{
               color: isDarkMode ? "#f8fafc" : "#111827",
+              lineHeight: "1.5",
             }}
           >
             {pathname === "/dashboard" && "Dashboard"}
@@ -527,16 +531,20 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <DarkModeToggle />
             <button
               type="button"
-              className="inline-flex items-center justify-center p-2 rounded-md focus:outline-none transition-colors"
+              className="inline-flex items-center justify-center p-2.5 rounded-lg focus:outline-none transition-all active:scale-95 touch-manipulation"
               style={{
                 color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                minWidth: "44px",
+                minHeight: "44px",
               }}
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              onMouseEnter={(e) => {
+              onTouchStart={(e) => {
                 e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#F3F4F6";
               }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
+              onTouchEnd={(e) => {
+                setTimeout(() => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }, 150);
               }}
             >
               <span className="sr-only">Open main menu</span>
@@ -581,16 +589,19 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         {sidebarOpen && (
           <div className="fixed inset-0 z-40">
             <div
-              className="fixed inset-0 transition-opacity"
+              className="fixed inset-0 transition-opacity animate-fade-in"
               style={{
                 backgroundColor: isDarkMode ? "rgba(0, 0, 0, 0.75)" : "rgba(0, 0, 0, 0.5)",
+                animation: "fadeIn 0.2s ease-out",
               }}
               onClick={() => setSidebarOpen(false)}
             ></div>
             <div 
-              className="fixed inset-y-0 left-0 max-w-xs w-full shadow-lg z-50 overflow-y-auto"
+              className="fixed inset-y-0 left-0 max-w-xs w-full shadow-lg z-50 overflow-y-auto animate-slide-in-left"
               style={{
                 backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
+                animation: "slideInFromLeft 0.3s ease-out",
+                WebkitOverflowScrolling: "touch",
               }}
             >
               <div className="h-full overflow-y-auto">
@@ -636,13 +647,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     </button>
                   </div>
                   <nav className="mt-5">
-                    <div className="space-y-1">
-                      {navigation.map((item) => (
+                    <div className="space-y-2">
+                      {navigation.map((item, index) => (
                         <Link
                           key={item.name}
                           href={item.href}
                           onClick={() => setSidebarOpen(false)}
-                          className="group flex items-center px-3 py-2 text-base font-medium rounded-md transition-colors"
+                          className="group flex items-center px-4 py-3 text-base font-medium rounded-lg transition-all active:scale-95"
                           style={{
                             backgroundColor: isActive(item.href)
                               ? isDarkMode ? "rgba(65, 105, 225, 0.2)" : "#4169E120"
@@ -650,22 +661,27 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                             color: isActive(item.href)
                               ? "#4169E1"
                               : isDarkMode ? "#cbd5e1" : "#6B7280",
-                            borderLeft: isActive(item.href) ? "3px solid #4169E1" : "3px solid transparent",
-                            marginLeft: isActive(item.href) ? "-3px" : "0",
+                            borderLeft: isActive(item.href) ? "4px solid #4169E1" : "4px solid transparent",
+                            marginLeft: isActive(item.href) ? "-4px" : "0",
+                            minHeight: "48px",
+                            animationDelay: `${index * 0.03}s`,
+                            animation: "slideInFromLeft 0.2s ease-out both",
                           }}
-                          onMouseEnter={(e) => {
+                          onTouchStart={(e) => {
                             if (!isActive(item.href)) {
                               e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#F3F4F6";
                             }
                           }}
-                          onMouseLeave={(e) => {
-                            if (!isActive(item.href)) {
-                              e.currentTarget.style.backgroundColor = "transparent";
-                            }
+                          onTouchEnd={(e) => {
+                            setTimeout(() => {
+                              if (!isActive(item.href)) {
+                                e.currentTarget.style.backgroundColor = "transparent";
+                              }
+                            }, 150);
                           }}
                         >
-                          <span className="mr-3">{getIcon(item.name)}</span>
-                          {item.name}
+                          <span className="mr-3 flex-shrink-0">{getIcon(item.name)}</span>
+                          <span className="truncate">{item.name}</span>
                         </Link>
                       ))}
                     </div>
@@ -808,6 +824,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                   key={item.name}
                   href={item.href}
                   title={sidebarCollapsed ? item.name : ""}
+                  className="group"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -816,7 +833,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     padding: sidebarCollapsed ? "12px" : "12px 16px",
                     fontSize: "15px",
                     fontWeight: "500",
-                    borderRadius: "8px",
+                    borderRadius: "10px",
                     backgroundColor: isActive(item.href)
                       ? isDarkMode
                         ? "rgba(65, 105, 225, 0.2)"
@@ -831,8 +848,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       ? "3px solid #4169E1"
                       : "3px solid transparent",
                     marginLeft: isActive(item.href) ? "-3px" : "0",
-                    transition: "all 0.2s",
+                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                     position: "relative",
+                    transform: isActive(item.href) ? "translateX(2px)" : "translateX(0)",
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive(item.href)) {
@@ -842,6 +860,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       e.currentTarget.style.color = isDarkMode
                         ? "#f8fafc"
                         : "#111827";
+                      e.currentTarget.style.transform = "translateX(4px)";
                     }
                   }}
                   onMouseLeave={(e) => {
@@ -850,11 +869,28 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       e.currentTarget.style.color = isDarkMode
                         ? "#cbd5e1"
                         : "#6B7280";
+                      e.currentTarget.style.transform = "translateX(0)";
                     }
                   }}
                 >
-                  {getIcon(item.name)}
-                  {!sidebarCollapsed && <span>{item.name}</span>}
+                  <span
+                    style={{
+                      transition: "transform 0.2s",
+                      transform: isActive(item.href) ? "scale(1.1)" : "scale(1)",
+                    }}
+                  >
+                    {getIcon(item.name)}
+                  </span>
+                  {!sidebarCollapsed && (
+                    <span
+                      style={{
+                        transition: "font-weight 0.2s",
+                        fontWeight: isActive(item.href) ? "600" : "500",
+                      }}
+                    >
+                      {item.name}
+                    </span>
+                  )}
                 </Link>
               ))}
             </nav>
@@ -946,7 +982,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     onMouseLeave={handleMouseLeaveProfile}
                   >
                     <div
-                      className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white cursor-pointer hover:bg-indigo-600 transition-colors flex-shrink-0"
+                      className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gradient-to-br from-[#4169E1] to-[#6366F1] flex items-center justify-center text-white cursor-pointer hover:from-[#3457C0] hover:to-[#4F46E5] transition-all duration-200 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
                       style={{
                         fontSize: "14px",
                         fontWeight: "600",
@@ -958,6 +994,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     {/* Dropdown Menu */}
                     {profileDropdownOpen && (
                       <div
+                        className="animate-slide-up"
                         style={{
                           position: "absolute",
                           top: "100%",
@@ -965,12 +1002,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                           marginTop: "8px",
                           width: "200px",
                           backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
-                          borderRadius: "8px",
+                          borderRadius: "12px",
                           boxShadow:
                             "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
                           border: isDarkMode ? "1px solid #334155" : "1px solid #E5E7EB",
                           zIndex: 50,
                           overflow: "hidden",
+                          animation: "slideUp 0.2s ease-out",
                         }}
                         onMouseEnter={handleMouseEnterProfile}
                         onMouseLeave={handleMouseLeaveProfile}
@@ -1067,7 +1105,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
 
         <main className="flex-1">
-          <div className="py-4 sm:py-6 md:pt-6 pt-20">
+          <div className="py-4 sm:py-6 md:pt-6" style={{ paddingTop: "72px" }}>
             <div className="px-4 sm:px-6 md:px-8">{children}</div>
           </div>
         </main>

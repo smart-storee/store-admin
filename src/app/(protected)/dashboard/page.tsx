@@ -314,59 +314,70 @@ export default function DashboardPage() {
             <>
               {/* Hero Banner */}
               <div
+                className="animate-slide-up flex flex-col sm:flex-row sm:items-center sm:justify-between"
                 style={{
                   background:
                     "linear-gradient(135deg, #3B82F6 0%, #6366F1 50%, #8B5CF6 100%)",
                   borderRadius: "16px",
                   padding: "20px",
-                  marginBottom: "32px",
+                  marginBottom: "24px",
                   position: "relative",
                   overflow: "hidden",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
+                  boxShadow:
+                    "0 10px 25px -5px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.2)",
                 }}
               >
-                <div style={{ zIndex: 1, flex: 1 }}>
+                <div style={{ zIndex: 1, flex: 1, width: "100%" }}>
                   <h1
+                    className="text-2xl sm:text-3xl"
                     style={{
                       color: "#FFFFFF",
-                      fontSize: "32px",
                       fontWeight: "bold",
                       marginBottom: "12px",
+                      lineHeight: "1.3",
                     }}
                   >
                     Hello, {user?.name || "Admin"}! Welcome to{" "}
                     {storeConfig?.app_name || user?.store_name || "Store Admin"}
                   </h1>
                   <p
+                    className="text-sm sm:text-base"
                     style={{
                       color: "rgba(255, 255, 255, 0.9)",
-                      fontSize: "16px",
                       marginBottom: "24px",
                       maxWidth: "600px",
+                      lineHeight: "1.5",
                     }}
                   >
                     Track your store's orders, manage inventory, and monitor
                     your business performance in real-time.
                   </p>
                   <button
+                    className="w-full sm:w-auto"
                     style={{
                       backgroundColor: "#FFFFFF",
                       color: "#4169E1",
                       padding: "12px 24px",
-                      borderRadius: "8px",
+                      borderRadius: "10px",
                       border: "none",
                       fontSize: "16px",
                       fontWeight: "600",
                       cursor: "pointer",
+                      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                      minHeight: "44px",
                     }}
-                    onMouseEnter={(e) => {
+                    onTouchStart={(e) => {
                       e.currentTarget.style.backgroundColor = "#F3F4F6";
+                      e.currentTarget.style.transform = "scale(0.98)";
                     }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#FFFFFF";
+                    onTouchEnd={(e) => {
+                      setTimeout(() => {
+                        e.currentTarget.style.backgroundColor = "#FFFFFF";
+                        e.currentTarget.style.transform = "scale(1)";
+                      }, 150);
                     }}
+                    onClick={() => (window.location.href = "/orders")}
                   >
                     View All Orders
                   </button>
@@ -375,17 +386,15 @@ export default function DashboardPage() {
                 {/* Store Logo */}
                 {storeConfig?.logo_url ? (
                   <div
+                    className="hidden sm:flex sm:ml-8 lg:w-[300px] lg:h-[200px] sm:w-[200px] sm:h-[150px] mt-4 sm:mt-0"
                     style={{
-                      width: "300px",
-                      height: "200px",
                       borderRadius: "12px",
-                      display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      marginLeft: "32px",
                       overflow: "hidden",
                       backgroundColor: "rgba(255, 255, 255, 0.1)",
                       padding: "16px",
+                      flexShrink: 0,
                     }}
                   >
                     <img
@@ -435,8 +444,8 @@ export default function DashboardPage() {
 
               {/* Quick Actions */}
               <h2
+                className="text-lg sm:text-xl"
                 style={{
-                  fontSize: "20px",
                   fontWeight: "600",
                   marginBottom: "16px",
                   color: isDarkMode ? "#f8fafc" : "#111827",
@@ -444,14 +453,7 @@ export default function DashboardPage() {
               >
                 Today's Summary
               </h2>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                  gap: "16px",
-                  marginBottom: "32px",
-                }}
-              >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
                 {[
                   {
                     title: "Total Orders",
@@ -515,32 +517,33 @@ export default function DashboardPage() {
                 ].map((action, index) => (
                   <div
                     key={index}
+                    className="animate-slide-up p-4 sm:p-6 rounded-xl sm:rounded-2xl cursor-pointer active:scale-95"
                     style={{
                       backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
-                      borderRadius: "12px",
-                      padding: "20px",
                       border: isDarkMode
                         ? "1px solid #334155"
                         : "1px solid #E5E7EB",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                       borderLeft: `4px solid ${action.color}`,
+                      animationDelay: `${index * 0.05}s`,
+                      boxShadow: isDarkMode
+                        ? "0 2px 4px rgba(0, 0, 0, 0.1)"
+                        : "0 1px 3px rgba(0, 0, 0, 0.05)",
+                      WebkitTapHighlightColor: "transparent",
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.boxShadow = isDarkMode
-                        ? "0 4px 12px rgba(0, 0, 0, 0.3)"
-                        : "0 4px 12px rgba(0, 0, 0, 0.08)";
-                      e.currentTarget.style.transform = "translateY(-2px)";
+                    onTouchStart={(e) => {
+                      e.currentTarget.style.transform = "scale(0.98)";
                       e.currentTarget.style.backgroundColor = isDarkMode
                         ? "#334155"
                         : "#F9FAFB";
                     }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = "none";
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.backgroundColor = isDarkMode
-                        ? "#1e293b"
-                        : "#FFFFFF";
+                    onTouchEnd={(e) => {
+                      setTimeout(() => {
+                        e.currentTarget.style.transform = "scale(1)";
+                        e.currentTarget.style.backgroundColor = isDarkMode
+                          ? "#1e293b"
+                          : "#FFFFFF";
+                      }, 150);
                     }}
                   >
                     <div
@@ -550,10 +553,10 @@ export default function DashboardPage() {
                         alignItems: "center",
                       }}
                     >
-                      <div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <h3
+                          className="text-sm sm:text-base"
                           style={{
-                            fontSize: "16px",
                             fontWeight: "600",
                             color: isDarkMode ? "#f8fafc" : "#111827",
                             marginBottom: "4px",
@@ -562,23 +565,24 @@ export default function DashboardPage() {
                           {action.title}
                         </h3>
                         <p
+                          className="text-xs sm:text-sm"
                           style={{
-                            fontSize: "14px",
                             color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                            wordBreak: "break-word",
                           }}
                         >
                           {action.subtitle}
                         </p>
                       </div>
                       <div
+                        className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0"
                         style={{
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "8px",
+                          borderRadius: "12px",
                           backgroundColor: `${action.color}20`,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
+                          transition: "all 0.3s",
                         }}
                       >
                         {getSummaryIcon(action.title, action.color)}
@@ -591,10 +595,9 @@ export default function DashboardPage() {
               {/* Recent Orders Section */}
               <>
                 <h2
+                  className="text-lg sm:text-xl mt-6 sm:mt-8"
                   style={{
-                    fontSize: "20px",
                     fontWeight: "600",
-                    marginTop: "32px",
                     marginBottom: "16px",
                     color: isDarkMode ? "#f8fafc" : "#111827",
                   }}
@@ -602,293 +605,308 @@ export default function DashboardPage() {
                   Recent Orders
                 </h2>
                 <div
+                  className="animate-slide-up rounded-xl sm:rounded-2xl overflow-auto mb-6 sm:mb-8"
                   style={{
                     backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
-                    borderRadius: "12px",
                     border: isDarkMode
                       ? "1px solid #334155"
                       : "1px solid #E5E7EB",
-                    overflow: "hidden",
-                    marginBottom: "32px",
+                    boxShadow: isDarkMode
+                      ? "0 2px 4px rgba(0, 0, 0, 0.1)"
+                      : "0 1px 3px rgba(0, 0, 0, 0.05)",
+                    transition: "all 0.2s",
+                    WebkitOverflowScrolling: "touch",
                   }}
                 >
                   {dashboardData.recent_orders &&
                   dashboardData.recent_orders.length > 0 ? (
-                    <table
-                      style={{ width: "100%", borderCollapse: "collapse" }}
+                    <div
+                      className="overflow-x-auto"
+                      style={{ minWidth: "100%" }}
                     >
-                      <thead>
-                        <tr
-                          style={{
-                            backgroundColor: isDarkMode ? "#334155" : "#F9FAFB",
-                            borderBottom: isDarkMode
-                              ? "1px solid #475569"
-                              : "1px solid #E5E7EB",
-                          }}
-                        >
-                          <th
+                      <table
+                        className="min-w-full sm:min-w-0"
+                        style={{
+                          width: "100%",
+                          borderCollapse: "collapse",
+                        }}
+                      >
+                        <thead>
+                          <tr
                             style={{
-                              padding: "16px",
-                              textAlign: "left",
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                              backgroundColor: isDarkMode
+                                ? "#334155"
+                                : "#F9FAFB",
+                              borderBottom: isDarkMode
+                                ? "1px solid #475569"
+                                : "1px solid #E5E7EB",
                             }}
                           >
-                            Order ID
-                          </th>
-                          <th
-                            style={{
-                              padding: "16px",
-                              textAlign: "left",
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: isDarkMode ? "#cbd5e1" : "#6B7280",
-                            }}
-                          >
-                            Customer
-                          </th>
-                          <th
-                            style={{
-                              padding: "16px",
-                              textAlign: "left",
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: isDarkMode ? "#cbd5e1" : "#6B7280",
-                            }}
-                          >
-                            Date
-                          </th>
-                          <th
-                            style={{
-                              padding: "16px",
-                              textAlign: "left",
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: isDarkMode ? "#cbd5e1" : "#6B7280",
-                            }}
-                          >
-                            Amount
-                          </th>
-                          <th
-                            style={{
-                              padding: "16px",
-                              textAlign: "left",
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: isDarkMode ? "#cbd5e1" : "#6B7280",
-                            }}
-                          >
-                            Payment
-                          </th>
-                          <th
-                            style={{
-                              padding: "16px",
-                              textAlign: "left",
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: isDarkMode ? "#cbd5e1" : "#6B7280",
-                            }}
-                          >
-                            Status
-                          </th>
-                          <th
-                            style={{
-                              padding: "16px",
-                              textAlign: "left",
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: isDarkMode ? "#cbd5e1" : "#6B7280",
-                            }}
-                          >
-                            Action
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dashboardData.recent_orders.map((order, index) => {
-                          const getStatusColor = (
-                            status: string | undefined | null
-                          ) => {
-                            if (!status) {
-                              return { bg: "#6B728020", color: "#6B7280" };
-                            }
-                            switch (status.toLowerCase()) {
-                              case "completed":
-                              case "delivered":
-                                return { bg: "#10B98120", color: "#10B981" };
-                              case "pending":
-                                return { bg: "#F59E0B20", color: "#F59E0B" };
-                              case "confirmed":
-                              case "preparing":
-                              case "ready":
-                                return { bg: "#3B82F620", color: "#3B82F6" };
-                              case "cancelled":
-                                return { bg: "#EF444420", color: "#EF4444" };
-                              case "out_for_delivery":
-                                return { bg: "#8B5CF620", color: "#8B5CF6" };
-                              default:
-                                return { bg: "#6B728020", color: "#6B7280" };
-                            }
-                          };
-                          const statusColors = getStatusColor(order.status);
-
-                          return (
-                            <tr
-                              key={index}
+                            <th
+                              className="px-2 sm:px-4 py-3 text-xs sm:text-sm whitespace-nowrap"
                               style={{
-                                borderBottom: isDarkMode
-                                  ? "1px solid #334155"
-                                  : "1px solid #F3F4F6",
-                                transition: "background-color 0.2s",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  isDarkMode ? "#334155" : "#F9FAFB";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  isDarkMode ? "#1e293b" : "#FFFFFF";
+                                textAlign: "left",
+                                fontWeight: "600",
+                                color: isDarkMode ? "#cbd5e1" : "#6B7280",
                               }}
                             >
-                              <td
+                              Order ID
+                            </th>
+                            <th
+                              className="px-2 sm:px-4 py-3 text-xs sm:text-sm whitespace-nowrap"
+                              style={{
+                                textAlign: "left",
+                                fontWeight: "600",
+                                color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                              }}
+                            >
+                              Customer
+                            </th>
+                            <th
+                              className="px-2 sm:px-4 py-3 text-xs sm:text-sm whitespace-nowrap"
+                              style={{
+                                textAlign: "left",
+                                fontWeight: "600",
+                                color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                              }}
+                            >
+                              Date
+                            </th>
+                            <th
+                              className="px-2 sm:px-4 py-3 text-xs sm:text-sm whitespace-nowrap"
+                              style={{
+                                textAlign: "left",
+                                fontWeight: "600",
+                                color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                              }}
+                            >
+                              Amount
+                            </th>
+                            <th
+                              className="px-2 sm:px-4 py-3 text-xs sm:text-sm whitespace-nowrap"
+                              style={{
+                                textAlign: "left",
+                                fontWeight: "600",
+                                color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                              }}
+                            >
+                              Payment
+                            </th>
+                            <th
+                              className="px-2 sm:px-4 py-3 text-xs sm:text-sm whitespace-nowrap"
+                              style={{
+                                textAlign: "left",
+                                fontWeight: "600",
+                                color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                              }}
+                            >
+                              Status
+                            </th>
+                            <th
+                              className="px-2 sm:px-4 py-3 text-xs sm:text-sm whitespace-nowrap"
+                              style={{
+                                textAlign: "left",
+                                fontWeight: "600",
+                                color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                              }}
+                            >
+                              Action
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dashboardData.recent_orders.map((order, index) => {
+                            const getStatusColor = (
+                              status: string | undefined | null
+                            ) => {
+                              if (!status) {
+                                return { bg: "#6B728020", color: "#6B7280" };
+                              }
+                              switch (status.toLowerCase()) {
+                                case "completed":
+                                case "delivered":
+                                  return { bg: "#10B98120", color: "#10B981" };
+                                case "pending":
+                                  return { bg: "#F59E0B20", color: "#F59E0B" };
+                                case "confirmed":
+                                case "preparing":
+                                case "ready":
+                                  return { bg: "#3B82F620", color: "#3B82F6" };
+                                case "cancelled":
+                                  return { bg: "#EF444420", color: "#EF4444" };
+                                case "out_for_delivery":
+                                  return { bg: "#8B5CF620", color: "#8B5CF6" };
+                                default:
+                                  return { bg: "#6B728020", color: "#6B7280" };
+                              }
+                            };
+                            const statusColors = getStatusColor(order.status);
+
+                            return (
+                              <tr
+                                key={index}
                                 style={{
-                                  padding: "16px",
-                                  fontSize: "14px",
-                                  color: isDarkMode ? "#f8fafc" : "#111827",
-                                  fontWeight: "600",
+                                  borderBottom: isDarkMode
+                                    ? "1px solid #334155"
+                                    : "1px solid #F3F4F6",
+                                  transition: "background-color 0.2s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    isDarkMode ? "#334155" : "#F9FAFB";
+                                  e.currentTarget.style.transform =
+                                    "scale(1.01)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    isDarkMode ? "#1e293b" : "#FFFFFF";
+                                  e.currentTarget.style.transform = "scale(1)";
                                 }}
                               >
-                                #{order.order_id}
-                              </td>
-                              <td
-                                style={{
-                                  padding: "16px",
-                                  fontSize: "14px",
-                                  color: isDarkMode ? "#f8fafc" : "#111827",
-                                }}
-                              >
-                                <div>
-                                  <div style={{ fontWeight: "500" }}>
-                                    {order.customer_name}
-                                  </div>
-                                  {order.customer_email && (
-                                    <div
-                                      style={{
-                                        fontSize: "12px",
-                                        color: isDarkMode
-                                          ? "#cbd5e1"
-                                          : "#6B7280",
-                                        marginTop: "2px",
-                                      }}
-                                    >
-                                      {order.customer_email}
+                                <td
+                                  className="px-2 sm:px-4 py-3 text-xs sm:text-sm"
+                                  style={{
+                                    color: isDarkMode ? "#f8fafc" : "#111827",
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  #{order.order_id}
+                                </td>
+                                <td
+                                  style={{
+                                    padding: "16px",
+                                    fontSize: "14px",
+                                    color: isDarkMode ? "#f8fafc" : "#111827",
+                                  }}
+                                >
+                                  <div>
+                                    <div style={{ fontWeight: "500" }}>
+                                      {order.customer_name}
                                     </div>
-                                  )}
-                                </div>
-                              </td>
-                              <td
-                                style={{
-                                  padding: "16px",
-                                  fontSize: "14px",
-                                  color: isDarkMode ? "#cbd5e1" : "#6B7280",
-                                }}
-                              >
-                                {new Date(order.order_date).toLocaleDateString(
-                                  "en-IN",
-                                  {
+                                    {order.customer_email && (
+                                      <div
+                                        style={{
+                                          fontSize: "12px",
+                                          color: isDarkMode
+                                            ? "#cbd5e1"
+                                            : "#6B7280",
+                                          marginTop: "2px",
+                                        }}
+                                      >
+                                        {order.customer_email}
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td
+                                  style={{
+                                    padding: "16px",
+                                    fontSize: "14px",
+                                    color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                                  }}
+                                >
+                                  {new Date(
+                                    order.order_date
+                                  ).toLocaleDateString("en-IN", {
                                     day: "numeric",
                                     month: "short",
                                     year: "numeric",
-                                  }
-                                )}
-                              </td>
-                              <td
-                                style={{
-                                  padding: "16px",
-                                  fontSize: "14px",
-                                  color: isDarkMode ? "#f8fafc" : "#111827",
-                                  fontWeight: "600",
-                                }}
-                              >
-                                ₹{order.total_amount.toLocaleString()}
-                              </td>
-                              <td
-                                style={{
-                                  padding: "16px",
-                                  fontSize: "14px",
-                                  color: isDarkMode ? "#cbd5e1" : "#6B7280",
-                                  textTransform: "uppercase",
-                                }}
-                              >
-                                {order.payment_method || "N/A"}
-                              </td>
-                              <td style={{ padding: "16px" }}>
-                                <span
+                                  })}
+                                </td>
+                                <td
+                                  className="px-2 sm:px-4 py-3 text-xs sm:text-sm"
                                   style={{
-                                    padding: "4px 12px",
-                                    borderRadius: "12px",
-                                    fontSize: "13px",
-                                    fontWeight: "500",
-                                    backgroundColor: statusColors.bg,
-                                    color: statusColors.color,
-                                    textTransform: "capitalize",
+                                    color: isDarkMode ? "#f8fafc" : "#111827",
+                                    fontWeight: "600",
                                   }}
                                 >
-                                  {order.status
-                                    ? order.status.replace(/_/g, " ")
-                                    : "Unknown"}
-                                </span>
-                              </td>
-                              <td style={{ padding: "16px" }}>
-                                <button
-                                  onClick={() =>
-                                    (window.location.href = `/orders/${order.order_id}`)
-                                  }
+                                  ₹{order.total_amount.toLocaleString()}
+                                </td>
+                                <td
                                   style={{
-                                    padding: "6px 16px",
-                                    borderRadius: "6px",
-                                    border: isDarkMode
-                                      ? "1px solid #475569"
-                                      : "1px solid #E5E7EB",
-                                    backgroundColor: isDarkMode
-                                      ? "#334155"
-                                      : "#FFFFFF",
-                                    fontSize: "13px",
+                                    padding: "16px",
+                                    fontSize: "14px",
                                     color: isDarkMode ? "#cbd5e1" : "#6B7280",
-                                    cursor: "pointer",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "4px",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor =
-                                      isDarkMode ? "#475569" : "#F9FAFB";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor =
-                                      isDarkMode ? "#334155" : "#FFFFFF";
+                                    textTransform: "uppercase",
                                   }}
                                 >
-                                  <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
+                                  {order.payment_method || "N/A"}
+                                </td>
+                                <td style={{ padding: "16px" }}>
+                                  <span
+                                    style={{
+                                      padding: "4px 12px",
+                                      borderRadius: "12px",
+                                      fontSize: "13px",
+                                      fontWeight: "500",
+                                      backgroundColor: statusColors.bg,
+                                      color: statusColors.color,
+                                      textTransform: "capitalize",
+                                    }}
                                   >
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                  </svg>
-                                  View
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                                    {order.status
+                                      ? order.status.replace(/_/g, " ")
+                                      : "Unknown"}
+                                  </span>
+                                </td>
+                                <td style={{ padding: "16px" }}>
+                                  <button
+                                    onClick={() =>
+                                      (window.location.href = `/orders/${order.order_id}`)
+                                    }
+                                    style={{
+                                      padding: "6px 16px",
+                                      borderRadius: "8px",
+                                      border: isDarkMode
+                                        ? "1px solid #475569"
+                                        : "1px solid #E5E7EB",
+                                      backgroundColor: isDarkMode
+                                        ? "#334155"
+                                        : "#FFFFFF",
+                                      fontSize: "13px",
+                                      color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                                      cursor: "pointer",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "4px",
+                                      transition: "all 0.2s",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor =
+                                        isDarkMode ? "#475569" : "#F9FAFB";
+                                      e.currentTarget.style.transform =
+                                        "translateY(-1px)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 2px 4px rgba(0, 0, 0, 0.1)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor =
+                                        isDarkMode ? "#334155" : "#FFFFFF";
+                                      e.currentTarget.style.transform =
+                                        "translateY(0)";
+                                      e.currentTarget.style.boxShadow = "none";
+                                    }}
+                                  >
+                                    <svg
+                                      width="16"
+                                      height="16"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                    >
+                                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                      <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    View
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   ) : (
                     <div
                       style={{

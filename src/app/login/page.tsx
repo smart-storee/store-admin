@@ -60,22 +60,32 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="min-h-screen flex animate-fade-in" style={{ backgroundColor: '#F5F5F5' }}>
       {/* Left Column - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-xl">
+        <div className="w-full max-w-xl animate-slide-in-left">
           {/* Logo and Store Name */}
           <div className="flex items-center gap-3 mb-16">
             <div
-              className="flex items-center justify-center"
+              className="flex items-center justify-center animate-scale-in"
               style={{
                 width: '48px',
                 height: '48px',
-                backgroundColor: '#4169E1',
+                background: 'linear-gradient(135deg, #4169E1 0%, #6366F1 100%)',
                 borderRadius: '12px',
                 color: 'var(--text-white)',
                 fontSize: 'var(--font-size-2xl)',
-                fontWeight: 'var(--font-weight-bold)'
+                fontWeight: 'var(--font-weight-bold)',
+                boxShadow: '0 4px 6px rgba(65, 105, 225, 0.3)',
+                transition: 'all 0.3s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1) rotate(5deg)';
+                e.currentTarget.style.boxShadow = '0 6px 12px rgba(65, 105, 225, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
+                e.currentTarget.style.boxShadow = '0 4px 6px rgba(65, 105, 225, 0.3)';
               }}
             >
               {LOGIN_CONSTANTS.STORE_INITIAL}
@@ -98,11 +108,13 @@ export default function LoginPage() {
 
           {/* Login Form Card */}
           <div
+            className="animate-scale-in"
             style={{
               backgroundColor: 'var(--bg-white)',
-              borderRadius: 'var(--radius-xl)',
+              borderRadius: '20px',
               padding: '48px',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+              transition: 'all 0.3s',
             }}
           >
             <h2
@@ -187,23 +199,28 @@ export default function LoginPage() {
                       setPasswordError('');
                     }
                   }}
-                  className="appearance-none block w-full transition-all"
+                  className="appearance-none block w-full transition-all duration-200"
                   style={{
                     padding: '14px 16px',
                     border: '1px solid #E5E7EB',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     backgroundColor: '#F9FAFB',
                     color: 'var(--text-primary)',
                     fontSize: '15px',
-                    outline: 'none'
+                    outline: 'none',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                   onFocus={(e) => {
                     e.target.style.backgroundColor = '#FFFFFF';
                     e.target.style.borderColor = '#4169E1';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(65, 105, 225, 0.1)';
+                    e.target.style.transform = 'translateY(-1px)';
                   }}
                   onBlur={(e) => {
                     e.target.style.backgroundColor = '#F9FAFB';
                     e.target.style.borderColor = '#E5E7EB';
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.transform = 'translateY(0)';
                   }}
                   placeholder="Enter your password"
                 />
@@ -230,29 +247,59 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full flex justify-center items-center font-semibold transition-all"
+                  className="w-full flex justify-center items-center font-semibold transition-all duration-200 hover-lift active:scale-95"
                   style={{
                     padding: '14px 24px',
                     backgroundColor: isLoading ? '#9CA3AF' : '#4169E1',
                     color: '#FFFFFF',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     border: 'none',
                     fontSize: '16px',
                     cursor: isLoading ? 'not-allowed' : 'pointer',
-                    opacity: isLoading ? 0.7 : 1
+                    opacity: isLoading ? 0.7 : 1,
+                    boxShadow: isLoading ? 'none' : '0 4px 6px rgba(65, 105, 225, 0.2)',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                   onMouseEnter={(e) => {
                     if (!isLoading) {
                       e.currentTarget.style.backgroundColor = '#3457C0';
+                      e.currentTarget.style.boxShadow = '0 6px 12px rgba(65, 105, 225, 0.3)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isLoading) {
                       e.currentTarget.style.backgroundColor = '#4169E1';
+                      e.currentTarget.style.boxShadow = '0 4px 6px rgba(65, 105, 225, 0.2)';
                     }
                   }}
                 >
-                  {isLoading ? 'Signing in...' : 'Sign in'}
+                  {isLoading ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Signing in...
+                    </>
+                  ) : (
+                    'Sign in'
+                  )}
                 </button>
               </div>
             </form>
@@ -262,21 +309,36 @@ export default function LoginPage() {
 
       {/* Right Column - Image Slider */}
       <div
-        className="hidden lg:flex lg:w-1/2 items-center justify-center"
+        className="hidden lg:flex lg:w-1/2 items-center justify-center animate-slide-in-right"
         style={{
-          backgroundColor: '#4169E1',
-          padding: '48px'
+          background: 'linear-gradient(135deg, #4169E1 0%, #6366F1 50%, #8B5CF6 100%)',
+          padding: '48px',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
+        {/* Decorative elements */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '-50%',
+            right: '-50%',
+            width: '200%',
+            height: '200%',
+            background: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
+            animation: 'pulse 4s ease-in-out infinite',
+          }}
+        />
         {/* Image Slider */}
         <div
-          className="flex items-center justify-center"
+          className="flex items-center justify-center animate-scale-in"
           style={{
             width: '100%',
             height: '500px',
-            borderRadius: '16px',
+            borderRadius: '20px',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            zIndex: 1,
           }}
         >
           <Image
