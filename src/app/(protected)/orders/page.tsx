@@ -25,6 +25,13 @@ import {
   Truck,
   ChefHat,
   ShoppingBag,
+  Loader2,
+  RefreshCw,
+  ArrowUpRight,
+  Download,
+  ArrowUp,
+  ArrowDown,
+  ChevronsUpDown,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -49,6 +56,11 @@ export default function OrdersPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("created_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [itemsPerPage, setItemsPerPage] = useState<number>(20);
   const [orderStats, setOrderStats] = useState<OrderStats>({
     total: 0,
     pending: 0,
@@ -59,6 +71,11 @@ export default function OrdersPage() {
     cancelled: 0,
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportingDelivery, setExportingDelivery] = useState(false);
   const { user } = useAuth();
   const { theme } = useTheme();
   const isDarkMode = theme === "dark";
@@ -85,7 +102,39 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [currentPage, searchTerm, statusFilter, selectedBranch]);
+  }, [currentPage, searchTerm, statusFilter, selectedBranch, dateFrom, dateTo, sortBy, sortOrder, itemsPerPage]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in inputs
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+
+      // Refresh on 'R' key
+      if ((e.key === 'r' || e.key === 'R') && !loading && !refreshing) {
+        e.preventDefault();
+        setRefreshing(true);
+        fetchOrders().finally(() => {
+          setTimeout(() => setRefreshing(false), 500);
+        });
+      }
+
+      // Toggle filters on 'F' key
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        setShowFilters((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [loading, refreshing]);
 
   const fetchOrders = async () => {
     try {
@@ -100,7 +149,7 @@ export default function OrdersPage() {
 
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: "20",
+        limit: itemsPerPage.toString(),
         store_id: user.store_id.toString(),
       });
 
@@ -114,6 +163,19 @@ export default function OrdersPage() {
 
       if (selectedBranch) {
         params.append("branch_id", selectedBranch.toString());
+      }
+
+      if (dateFrom) {
+        params.append("date_from", dateFrom);
+      }
+
+      if (dateTo) {
+        params.append("date_to", dateTo);
+      }
+
+      if (sortBy) {
+        params.append("sort_by", sortBy);
+        params.append("sort_order", sortOrder);
       }
 
       const response: ApiResponse<{ data: Order[]; pagination: Pagination }> =
@@ -131,7 +193,7 @@ export default function OrdersPage() {
 
         if (response.pagination) {
           setTotalPages(
-            Math.ceil(response.pagination.total / response.pagination.limit)
+            Math.ceil(response.pagination.total / itemsPerPage)
           );
           setTotalCount(response.pagination.total);
         }
@@ -168,17 +230,8 @@ export default function OrdersPage() {
   };
 
   const handleStatusUpdate = async (orderId: number, newStatus: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to update this order status to ${newStatus.replace(
-          "_",
-          " "
-        )}?`
-      )
-    ) {
-      return;
-    }
-
+    setUpdatingOrderId(orderId);
+    
     try {
       const response: ApiResponse<null> = await makeAuthenticatedRequest(
         `/orders/${orderId}/status`,
@@ -189,7 +242,10 @@ export default function OrdersPage() {
       );
 
       if (response.success) {
-        fetchOrders();
+        const statusLabel = newStatus.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+        setSuccessMessage(`Order status updated to ${statusLabel}`);
+        setTimeout(() => setSuccessMessage(null), 3000);
+        await fetchOrders();
       } else {
         alert(response.message || "Failed to update order status");
       }
@@ -198,7 +254,52 @@ export default function OrdersPage() {
       alert(
         err instanceof Error ? err.message : "Failed to update order status"
       );
+    } finally {
+      setUpdatingOrderId(null);
     }
+  };
+
+  const handleQuickAction = async (orderId: number, currentStatus: string) => {
+    const nextStatusMap: Record<string, string> = {
+      pending: "confirmed",
+      confirmed: "preparing",
+      preparing: "ready",
+      ready: "out_for_delivery",
+      out_for_delivery: "delivered",
+    };
+    
+    const nextStatus = nextStatusMap[currentStatus];
+    if (nextStatus) {
+      await handleStatusUpdate(orderId, nextStatus);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchOrders();
+    setTimeout(() => setRefreshing(false), 500);
+  };
+
+  const getNextStatus = (currentStatus: string): string | null => {
+    const nextStatusMap: Record<string, string> = {
+      pending: "confirmed",
+      confirmed: "preparing",
+      preparing: "ready",
+      ready: "out_for_delivery",
+      out_for_delivery: "delivered",
+    };
+    return nextStatusMap[currentStatus] || null;
+  };
+
+  const getQuickActionLabel = (currentStatus: string): string => {
+    const labelMap: Record<string, string> = {
+      pending: "Confirm",
+      confirmed: "Start Preparing",
+      preparing: "Mark Ready",
+      ready: "Out for Delivery",
+      out_for_delivery: "Mark Delivered",
+    };
+    return labelMap[currentStatus] || "";
   };
 
   const handlePageChange = (newPage: number) => {
@@ -276,11 +377,300 @@ export default function OrdersPage() {
     setSearchTerm("");
     setStatusFilter("all");
     setSelectedBranch(null);
+    setDateFrom("");
+    setDateTo("");
     setCurrentPage(1);
   };
 
   const hasActiveFilters =
-    searchTerm || statusFilter !== "all" || selectedBranch;
+    searchTerm || statusFilter !== "all" || selectedBranch || dateFrom || dateTo;
+
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortOrder("desc");
+    }
+    setCurrentPage(1);
+  };
+
+  const getSortIcon = (column: string) => {
+    if (sortBy !== column) {
+      return <ChevronsUpDown size={14} className="opacity-50" />;
+    }
+    return sortOrder === "asc" ? (
+      <ArrowUp size={14} />
+    ) : (
+      <ArrowDown size={14} />
+    );
+  };
+
+  const setDatePreset = (preset: string) => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const last7Days = new Date(today);
+    last7Days.setDate(last7Days.getDate() - 7);
+    const last30Days = new Date(today);
+    last30Days.setDate(last30Days.getDate() - 30);
+    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+    switch (preset) {
+      case "today":
+        setDateFrom(formatDate(today));
+        setDateTo(formatDate(today));
+        break;
+      case "yesterday":
+        setDateFrom(formatDate(yesterday));
+        setDateTo(formatDate(yesterday));
+        break;
+      case "last7days":
+        setDateFrom(formatDate(last7Days));
+        setDateTo(formatDate(today));
+        break;
+      case "last30days":
+        setDateFrom(formatDate(last30Days));
+        setDateTo(formatDate(today));
+        break;
+      case "thisMonth":
+        setDateFrom(formatDate(thisMonth));
+        setDateTo(formatDate(today));
+        break;
+      case "lastMonth":
+        setDateFrom(formatDate(lastMonth));
+        setDateTo(formatDate(lastMonthEnd));
+        break;
+      default:
+        break;
+    }
+    setCurrentPage(1);
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({
+        store_id: user?.store_id?.toString() || "",
+        limit: "10000", // Export all
+      });
+
+      if (searchTerm) params.append("search", searchTerm);
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (selectedBranch) params.append("branch_id", selectedBranch.toString());
+      if (dateFrom) params.append("date_from", dateFrom);
+      if (dateTo) params.append("date_to", dateTo);
+      if (sortBy) {
+        params.append("sort_by", sortBy);
+        params.append("sort_order", sortOrder);
+      }
+
+      const response: ApiResponse<{ data: Order[] }> =
+        await makeAuthenticatedRequest(
+          `/orders?${params.toString()}`,
+          { method: "GET" },
+          true,
+          user?.store_id,
+          selectedBranch || undefined
+        );
+
+      if (response.success) {
+        const ordersData = response.data.data || response.data;
+        const csv = convertToCSV(ordersData);
+        downloadCSV(csv, `orders-${new Date().toISOString().split('T')[0]}.csv`);
+        setSuccessMessage("Orders exported successfully");
+        setTimeout(() => setSuccessMessage(null), 3000);
+      }
+    } catch (err) {
+      console.error("Export error:", err);
+      alert("Failed to export orders");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDeliveryExport = async () => {
+    setExportingDelivery(true);
+    try {
+      const params = new URLSearchParams({
+        store_id: user?.store_id?.toString() || "",
+        limit: "10000",
+      });
+
+      if (searchTerm) params.append("search", searchTerm);
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (selectedBranch) params.append("branch_id", selectedBranch.toString());
+      if (dateFrom) params.append("date_from", dateFrom);
+      if (dateTo) params.append("date_to", dateTo);
+      if (sortBy) {
+        params.append("sort_by", sortBy);
+        params.append("sort_order", sortOrder);
+      }
+
+      const response: ApiResponse<{ data: Order[] }> =
+        await makeAuthenticatedRequest(
+          `/orders?${params.toString()}`,
+          { method: "GET" },
+          true,
+          user?.store_id,
+          selectedBranch || undefined
+        );
+
+      if (response.success) {
+        const ordersData = response.data.data || response.data;
+        
+        // Fetch full order details with items for each order
+        const ordersWithItems = await Promise.all(
+          ordersData.map(async (order) => {
+            try {
+              const detailResponse: ApiResponse<{ data: Order }> =
+                await makeAuthenticatedRequest(
+                  `/orders/${order.order_id}?store_id=${user?.store_id}`,
+                  { method: "GET" },
+                  true,
+                  user?.store_id,
+                  order.branch_id
+                );
+              if (detailResponse.success) {
+                return detailResponse.data.data || detailResponse.data;
+              }
+              return order;
+            } catch (err) {
+              console.error(`Failed to fetch order ${order.order_id}:`, err);
+              return order;
+            }
+          })
+        );
+
+        const csv = convertToDeliveryCSV(ordersWithItems);
+        downloadCSV(csv, `delivery-orders-${new Date().toISOString().split('T')[0]}.csv`);
+        setSuccessMessage("Delivery orders exported successfully");
+        setTimeout(() => setSuccessMessage(null), 3000);
+      }
+    } catch (err) {
+      console.error("Delivery export error:", err);
+      alert("Failed to export delivery orders");
+    } finally {
+      setExportingDelivery(false);
+    }
+  };
+
+  const convertToCSV = (orders: Order[]): string => {
+    const headers = [
+      "Order Number",
+      "Customer Name",
+      "Customer Phone",
+      "Branch",
+      "Status",
+      "Items Count",
+      "Total Amount",
+      "Payment Method",
+      "Created At",
+    ];
+
+    const rows = orders.map((order) => [
+      order.order_number || "",
+      order.customer_name || "",
+      order.customer_phone || "",
+      order.branch_name || "",
+      order.order_status || "",
+      order.items_count?.toString() || "0",
+      order.total_amount?.toString() || "0",
+      order.payment_method || "",
+      order.created_at
+        ? new Date(order.created_at).toLocaleString("en-IN")
+        : "",
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      ),
+    ].join("\n");
+
+    return csvContent;
+  };
+
+  const convertToDeliveryCSV = (orders: Order[]): string => {
+    const headers = [
+      "Order Number",
+      "Customer Name",
+      "Customer Phone",
+      "Delivery Address",
+      "Landmark",
+      "Delivery Notes",
+      "Items List",
+      "Item Quantities",
+      "Subtotal",
+      "Delivery Charge",
+      "Total Amount",
+      "Payment Method",
+      "Branch Name",
+      "Branch Phone",
+      "Order Status",
+      "Created At",
+    ];
+
+    const rows = orders.map((order) => {
+      const itemsList = (order.items || [])
+        .map(
+          (item) =>
+            `${item.product_name}${item.variant_name ? ` (${item.variant_name})` : ""}`
+        )
+        .join("; ");
+      
+      const quantities = (order.items || [])
+        .map((item) => `${item.product_name}: ${item.quantity}`)
+        .join("; ");
+
+      return [
+        order.order_number || "",
+        order.customer_name || "",
+        order.customer_phone || "",
+        order.delivery_address || "",
+        order.delivery_landmark || "",
+        order.delivery_notes || "",
+        itemsList || "N/A",
+        quantities || "N/A",
+        order.subtotal?.toString() || "0",
+        order.delivery_charge?.toString() || "0",
+        order.total_amount?.toString() || "0",
+        order.payment_method || "",
+        order.branch_name || "",
+        order.branch_phone || "",
+        order.order_status || "",
+        order.created_at
+          ? new Date(order.created_at).toLocaleString("en-IN")
+          : "",
+      ];
+    });
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      ),
+    ].join("\n");
+
+    return csvContent;
+  };
+
+  const downloadCSV = (csv: string, filename: string) => {
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <FeatureGuard
@@ -321,8 +711,8 @@ export default function OrdersPage() {
                 : "bg-white border-gray-200"
             } border-b sticky top-0 z-40 backdrop-blur-xl transition-all duration-300`}
           >
-            <div className="px-6 py-4">
-              <div className="flex items-center justify-between">
+            <div className="px-3 sm:px-6 py-3 sm:py-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                   <h1
                     className={`text-2xl font-bold ${
@@ -339,32 +729,70 @@ export default function OrdersPage() {
                     Manage and track all customer orders
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <button
+                    onClick={handleExport}
+                    disabled={exporting || loading || orders.length === 0}
+                    className={`flex items-center justify-center gap-2 px-4 py-2 h-10 text-sm font-medium rounded-lg border transition-all duration-200 ${
+                      isDarkMode
+                        ? "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    }`}
+                    title="Export orders to CSV"
+                  >
+                    <Download size={16} className={exporting ? "animate-pulse" : ""} />
+                    <span className="hidden sm:inline">Export</span>
+                  </button>
+                  <button
+                    onClick={handleDeliveryExport}
+                    disabled={exportingDelivery || loading || orders.length === 0}
+                    className={`flex items-center justify-center gap-2 px-4 py-2 h-10 text-sm font-medium rounded-lg border transition-all duration-200 ${
+                      isDarkMode
+                        ? "bg-green-700 border-green-600 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        : "bg-green-600 border-green-500 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    }`}
+                    title="Export for delivery partner (includes customer, address, items, price)"
+                  >
+                    <Truck size={16} className={exportingDelivery ? "animate-pulse" : ""} />
+                    <span className="hidden sm:inline">Delivery Export</span>
+                    <span className="sm:hidden">Delivery</span>
+                  </button>
+                  <button
+                    onClick={handleRefresh}
+                    disabled={refreshing || loading}
+                    className={`flex items-center justify-center gap-2 px-4 py-2 h-10 text-sm font-medium rounded-lg border transition-all duration-200 ${
+                      isDarkMode
+                        ? "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    }`}
+                    title="Refresh orders (R)"
+                  >
+                    <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+                    <span className="hidden sm:inline">Refresh</span>
+                  </button>
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                    className={`flex items-center justify-center gap-2 px-4 py-2 h-10 text-sm font-medium rounded-lg border transition-all duration-200 ${
                       hasActiveFilters
                         ? isDarkMode
-                          ? "bg-blue-600 border-blue-500 text-white"
-                          : "bg-blue-600 border-blue-500 text-white"
+                          ? "bg-blue-600 border-blue-500 text-white hover:bg-blue-700"
+                          : "bg-blue-600 border-blue-500 text-white hover:bg-blue-700"
                         : isDarkMode
                         ? "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
                         : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
                     }`}
                   >
-                    <Filter size={18} />
-                    Filters
+                    <Filter size={16} />
+                    <span className="hidden sm:inline">Filters</span>
                     {hasActiveFilters && (
-                      <span
-                        className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
-                          isDarkMode ? "bg-blue-500" : "bg-blue-500"
-                        }`}
-                      >
+                      <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-500 text-white">
                         {
                           [
                             searchTerm,
                             statusFilter !== "all",
                             selectedBranch,
+                            dateFrom,
+                            dateTo,
                           ].filter(Boolean).length
                         }
                       </span>
@@ -375,9 +803,9 @@ export default function OrdersPage() {
             </div>
           </div>
 
-          <div className="px-6 py-6">
+          <div className="px-3 sm:px-6 py-4 sm:py-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4 mb-6">
               {[
                 {
                   label: "Total",
@@ -467,7 +895,7 @@ export default function OrdersPage() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3
-                    className={`font-semibold ${
+                    className={`text-base font-semibold ${
                       isDarkMode ? "text-white" : "text-gray-900"
                     }`}
                   >
@@ -476,33 +904,68 @@ export default function OrdersPage() {
                   {hasActiveFilters && (
                     <button
                       onClick={clearFilters}
-                      className={`text-sm ${
+                      className={`text-sm font-medium ${
                         isDarkMode
                           ? "text-blue-400 hover:text-blue-300"
                           : "text-blue-600 hover:text-blue-700"
-                      } flex items-center gap-1`}
+                      } flex items-center gap-1.5 transition-colors`}
                     >
                       <X size={16} />
-                      Clear all
+                      <span>Clear all</span>
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-4">
+                  {/* Quick Date Presets */}
                   <div>
                     <label
                       className={`block text-sm font-medium ${
                         isDarkMode ? "text-slate-300" : "text-gray-700"
                       } mb-2`}
                     >
-                      Search
+                      Quick Date Filters
                     </label>
-                    <div className="relative">
-                      <Search
-                        size={18}
-                        className={`absolute left-3 top-3 ${
-                          isDarkMode ? "text-slate-400" : "text-gray-400"
-                        }`}
-                      />
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: "Today", value: "today" },
+                        { label: "Yesterday", value: "yesterday" },
+                        { label: "Last 7 Days", value: "last7days" },
+                        { label: "Last 30 Days", value: "last30days" },
+                        { label: "This Month", value: "thisMonth" },
+                        { label: "Last Month", value: "lastMonth" },
+                      ].map((preset) => (
+                        <button
+                          key={preset.value}
+                          onClick={() => setDatePreset(preset.value)}
+                          className={`px-3 py-1.5 h-8 text-xs sm:text-sm font-medium rounded-lg border transition-all duration-200 ${
+                            isDarkMode
+                              ? "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                              : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Main Filters Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+                    <div>
+                      <label
+                        className={`block text-sm font-medium ${
+                          isDarkMode ? "text-slate-300" : "text-gray-700"
+                        } mb-2`}
+                      >
+                        Search
+                      </label>
+                      <div className="relative">
+                        <Search
+                          size={18}
+                          className={`absolute left-3 top-3 ${
+                            isDarkMode ? "text-slate-400" : "text-gray-400"
+                          }`}
+                        />
                       <input
                         type="text"
                         placeholder="Order #, customer name, phone..."
@@ -511,75 +974,179 @@ export default function OrdersPage() {
                           setSearchTerm(e.target.value);
                           setCurrentPage(1);
                         }}
-                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full h-10 pl-10 pr-4 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
                           isDarkMode
                             ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
                             : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                         }`}
                       />
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        className={`block text-sm font-medium ${
+                          isDarkMode ? "text-slate-300" : "text-gray-700"
+                        } mb-2`}
+                      >
+                        Branch
+                      </label>
+                      <select
+                        value={selectedBranch || ""}
+                        onChange={(e) => {
+                          setSelectedBranch(
+                            e.target.value ? parseInt(e.target.value) : null
+                          );
+                          setCurrentPage(1);
+                        }}
+                        className={`w-full h-10 px-4 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                          isDarkMode
+                            ? "bg-slate-700 border-slate-600 text-white"
+                            : "bg-white border-gray-300 text-gray-900"
+                        }`}
+                      >
+                        <option value="">All Branches</option>
+                        {branches.map((branch) => (
+                          <option key={branch.branch_id} value={branch.branch_id}>
+                            {branch.branch_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        className={`block text-sm font-medium ${
+                          isDarkMode ? "text-slate-300" : "text-gray-700"
+                        } mb-2`}
+                      >
+                        Status
+                      </label>
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => {
+                          setStatusFilter(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className={`w-full h-10 px-4 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                          isDarkMode
+                            ? "bg-slate-700 border-slate-600 text-white"
+                            : "bg-white border-gray-300 text-gray-900"
+                        }`}
+                      >
+                        <option value="all">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="preparing">Preparing</option>
+                        <option value="ready">Ready</option>
+                        <option value="out_for_delivery">Out for Delivery</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        className={`block text-sm font-medium ${
+                          isDarkMode ? "text-slate-300" : "text-gray-700"
+                        } mb-2`}
+                      >
+                        From Date
+                      </label>
+                      <input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => {
+                          setDateFrom(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className={`w-full h-10 px-4 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                          isDarkMode
+                            ? "bg-slate-700 border-slate-600 text-white"
+                            : "bg-white border-gray-300 text-gray-900"
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        className={`block text-sm font-medium ${
+                          isDarkMode ? "text-slate-300" : "text-gray-700"
+                        } mb-2`}
+                      >
+                        To Date
+                      </label>
+                      <input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => {
+                          setDateTo(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className={`w-full h-10 px-4 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                          isDarkMode
+                            ? "bg-slate-700 border-slate-600 text-white"
+                            : "bg-white border-gray-300 text-gray-900"
+                        }`}
+                      />
                     </div>
                   </div>
-                  <div>
+
+                  {/* Items Per Page */}
+                  <div className="flex items-center gap-4">
                     <label
-                      className={`block text-sm font-medium ${
+                      className={`text-sm font-medium ${
                         isDarkMode ? "text-slate-300" : "text-gray-700"
-                      } mb-2`}
+                      }`}
                     >
-                      Branch
+                      Items per page:
                     </label>
                     <select
-                      value={selectedBranch || ""}
+                      value={itemsPerPage}
                       onChange={(e) => {
-                        setSelectedBranch(
-                          e.target.value ? parseInt(e.target.value) : null
-                        );
+                        setItemsPerPage(parseInt(e.target.value));
                         setCurrentPage(1);
                       }}
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      className={`h-10 px-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
                         isDarkMode
                           ? "bg-slate-700 border-slate-600 text-white"
                           : "bg-white border-gray-300 text-gray-900"
                       }`}
                     >
-                      <option value="">All Branches</option>
-                      {branches.map((branch) => (
-                        <option key={branch.branch_id} value={branch.branch_id}>
-                          {branch.branch_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label
-                      className={`block text-sm font-medium ${
-                        isDarkMode ? "text-slate-300" : "text-gray-700"
-                      } mb-2`}
-                    >
-                      Status
-                    </label>
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => {
-                        setStatusFilter(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        isDarkMode
-                          ? "bg-slate-700 border-slate-600 text-white"
-                          : "bg-white border-gray-300 text-gray-900"
-                      }`}
-                    >
-                      <option value="all">All Statuses</option>
-                      <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="preparing">Preparing</option>
-                      <option value="ready">Ready</option>
-                      <option value="out_for_delivery">Out for Delivery</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
+                      <option value="10">10</option>
+                      <option value="20">20</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
                     </select>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {successMessage && (
+              <div
+                className={`rounded-lg border p-4 mb-6 flex items-center gap-3 animate-in slide-in-from-top-5 ${
+                  isDarkMode
+                    ? "bg-green-900/30 border-green-700/50"
+                    : "bg-green-50 border-green-200"
+                }`}
+              >
+                <CheckCircle
+                  size={20}
+                  className={isDarkMode ? "text-green-400" : "text-green-600"}
+                />
+                <p
+                  className={`text-sm font-medium ${
+                    isDarkMode ? "text-green-300" : "text-green-800"
+                  }`}
+                >
+                  {successMessage}
+                </p>
+                <button
+                  onClick={() => setSuccessMessage(null)}
+                  className={`ml-auto ${
+                    isDarkMode ? "text-green-400 hover:text-green-300" : "text-green-600 hover:text-green-700"
+                  }`}
+                >
+                  <X size={16} />
+                </button>
               </div>
             )}
 
@@ -675,62 +1242,98 @@ export default function OrdersPage() {
                 } rounded-lg border overflow-hidden`}
               >
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full min-w-[800px]">
                     <thead
                       className={isDarkMode ? "bg-slate-900" : "bg-gray-50"}
                     >
                       <tr>
                         <th
-                          className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${
+                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${
                             isDarkMode ? "text-slate-300" : "text-gray-700"
                           }`}
                         >
                           Order
                         </th>
                         <th
-                          className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${
+                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${
                             isDarkMode ? "text-slate-300" : "text-gray-700"
                           }`}
                         >
                           Customer
                         </th>
                         <th
-                          className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${
+                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${
                             isDarkMode ? "text-slate-300" : "text-gray-700"
                           }`}
                         >
                           Branch
                         </th>
                         <th
-                          className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${
+                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell ${
                             isDarkMode ? "text-slate-300" : "text-gray-700"
                           }`}
                         >
                           Items
                         </th>
                         <th
-                          className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${
-                            isDarkMode ? "text-slate-300" : "text-gray-700"
+                          onClick={() => handleSort("total_amount")}
+                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors ${
+                            sortBy === "total_amount"
+                              ? isDarkMode
+                                ? "bg-blue-900/30 text-blue-300"
+                                : "bg-blue-50 text-blue-700"
+                              : isDarkMode
+                              ? "text-slate-300 hover:bg-slate-700"
+                              : "text-gray-700 hover:bg-gray-100"
                           }`}
                         >
-                          Amount
+                          <div className="flex items-center gap-1.5">
+                            Amount
+                            <span className={sortBy === "total_amount" ? "" : "opacity-50"}>
+                              {getSortIcon("total_amount")}
+                            </span>
+                          </div>
                         </th>
                         <th
-                          className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${
-                            isDarkMode ? "text-slate-300" : "text-gray-700"
+                          onClick={() => handleSort("order_status")}
+                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors ${
+                            sortBy === "order_status"
+                              ? isDarkMode
+                                ? "bg-blue-900/30 text-blue-300"
+                                : "bg-blue-50 text-blue-700"
+                              : isDarkMode
+                              ? "text-slate-300 hover:bg-slate-700"
+                              : "text-gray-700 hover:bg-gray-100"
                           }`}
                         >
-                          Status
+                          <div className="flex items-center gap-1.5">
+                            Status
+                            <span className={sortBy === "order_status" ? "" : "opacity-50"}>
+                              {getSortIcon("order_status")}
+                            </span>
+                          </div>
                         </th>
                         <th
-                          className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${
-                            isDarkMode ? "text-slate-300" : "text-gray-700"
+                          onClick={() => handleSort("created_at")}
+                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell cursor-pointer transition-colors ${
+                            sortBy === "created_at"
+                              ? isDarkMode
+                                ? "bg-blue-900/30 text-blue-300"
+                                : "bg-blue-50 text-blue-700"
+                              : isDarkMode
+                              ? "text-slate-300 hover:bg-slate-700"
+                              : "text-gray-700 hover:bg-gray-100"
                           }`}
                         >
-                          Date
+                          <div className="flex items-center gap-1.5">
+                            Date
+                            <span className={sortBy === "created_at" ? "" : "opacity-50"}>
+                              {getSortIcon("created_at")}
+                            </span>
+                          </div>
                         </th>
                         <th
-                          className={`px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider ${
+                          className={`px-4 sm:px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider ${
                             isDarkMode ? "text-slate-300" : "text-gray-700"
                           }`}
                         >
@@ -748,26 +1351,41 @@ export default function OrdersPage() {
                           order.order_status
                         );
                         const StatusIcon = statusConfig.icon;
+                        const nextStatus = getNextStatus(order.order_status);
+                        const quickActionLabel = getQuickActionLabel(order.order_status);
                         return (
                           <tr
                             key={order.order_id}
-                            className={`transition-colors ${
+                            onClick={(e) => {
+                              // Don't navigate if clicking on action buttons or dropdown
+                              const target = e.target as HTMLElement;
+                              if (
+                                target.closest('select') ||
+                                target.closest('a') ||
+                                target.closest('button') ||
+                                target.closest('[role="button"]')
+                              ) {
+                                return;
+                              }
+                              window.location.href = `/orders/${order.order_id}`;
+                            }}
+                            className={`transition-all cursor-pointer ${
                               isDarkMode
-                                ? "hover:bg-slate-750"
-                                : "hover:bg-gray-50"
+                                ? "hover:bg-slate-750 hover:shadow-lg"
+                                : "hover:bg-gray-50 hover:shadow-md"
                             }`}
                           >
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                               <div>
                                 <div
-                                  className={`font-semibold ${
+                                  className={`font-semibold text-sm ${
                                     isDarkMode ? "text-white" : "text-gray-900"
                                   }`}
                                 >
                                   #{order.order_number}
                                 </div>
                                 <div
-                                  className={`text-sm ${
+                                  className={`text-xs ${
                                     isDarkMode
                                       ? "text-slate-400"
                                       : "text-gray-500"
@@ -775,19 +1393,38 @@ export default function OrdersPage() {
                                 >
                                   {order.payment_method?.toUpperCase() || "N/A"}
                                 </div>
+                                <div className="sm:hidden mt-1">
+                                  <div
+                                    className={`text-xs font-medium ${
+                                      isDarkMode ? "text-white" : "text-gray-900"
+                                    }`}
+                                  >
+                                    {order.customer_name || "N/A"}
+                                  </div>
+                                  <div
+                                    className={`text-xs flex items-center gap-1 ${
+                                      isDarkMode
+                                        ? "text-slate-400"
+                                        : "text-gray-500"
+                                    }`}
+                                  >
+                                    <Phone size={10} />
+                                    {order.customer_phone || "N/A"}
+                                  </div>
+                                </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
                               <div>
                                 <div
-                                  className={`font-medium ${
+                                  className={`font-medium text-sm ${
                                     isDarkMode ? "text-white" : "text-gray-900"
                                   }`}
                                 >
                                   {order.customer_name || "N/A"}
                                 </div>
                                 <div
-                                  className={`text-sm flex items-center gap-1 ${
+                                  className={`text-xs flex items-center gap-1 ${
                                     isDarkMode
                                       ? "text-slate-400"
                                       : "text-gray-500"
@@ -798,7 +1435,7 @@ export default function OrdersPage() {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 sm:px-6 py-4 hidden md:table-cell">
                               <div
                                 className={`text-sm ${
                                   isDarkMode
@@ -809,7 +1446,7 @@ export default function OrdersPage() {
                                 {order.branch_name || "N/A"}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
                               <div
                                 className={`flex items-center gap-1 ${
                                   isDarkMode
@@ -818,14 +1455,14 @@ export default function OrdersPage() {
                                 }`}
                               >
                                 <Package size={16} />
-                                <span className="font-medium">
+                                <span className="font-medium text-sm">
                                   {order.items_count || 0}
                                 </span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                               <div
-                                className={`font-semibold ${
+                                className={`font-semibold text-sm ${
                                   isDarkMode ? "text-white" : "text-gray-900"
                                 }`}
                               >
@@ -835,15 +1472,15 @@ export default function OrdersPage() {
                                 ).toFixed(2)}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                               <span
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
                               >
                                 <StatusIcon size={14} />
                                 {statusConfig.label}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
                               <div
                                 className={`text-sm ${
                                   isDarkMode
@@ -878,41 +1515,96 @@ export default function OrdersPage() {
                                   : ""}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <select
-                                  value={order.order_status}
-                                  onChange={(e) =>
-                                    handleStatusUpdate(
-                                      order.order_id,
-                                      e.target.value
-                                    )
-                                  }
-                                  className={`text-xs px-2 py-1 rounded border focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                                    isDarkMode
-                                      ? "bg-slate-700 border-slate-600 text-slate-300"
-                                      : "bg-white border-gray-300 text-gray-700"
-                                  }`}
-                                >
-                                  <option value="pending">Pending</option>
-                                  <option value="confirmed">Confirmed</option>
-                                  <option value="preparing">Preparing</option>
-                                  <option value="ready">Ready</option>
-                                  <option value="out_for_delivery">
-                                    Out for Delivery
-                                  </option>
-                                  <option value="delivered">Delivered</option>
-                                  <option value="cancelled">Cancelled</option>
-                                </select>
+                            <td className="px-4 sm:px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center justify-end gap-2 flex-nowrap">
+                                {nextStatus && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleQuickAction(order.order_id, order.order_status);
+                                    }}
+                                    disabled={updatingOrderId === order.order_id}
+                                    className={`h-9 px-3 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1.5 ${
+                                      updatingOrderId === order.order_id
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                    } ${
+                                      isDarkMode
+                                        ? "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg active:scale-95"
+                                        : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md active:scale-95"
+                                    }`}
+                                    title={`Quick action: ${quickActionLabel}`}
+                                  >
+                                    {updatingOrderId === order.order_id ? (
+                                      <Loader2 size={14} className="animate-spin" />
+                                    ) : (
+                                      <>
+                                        <span className="hidden lg:inline">{quickActionLabel}</span>
+                                        <span className="lg:hidden">Next</span>
+                                      </>
+                                    )}
+                                  </button>
+                                )}
+                                <div className="relative">
+                                  <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+                                    {updatingOrderId === order.order_id ? (
+                                      <Loader2 size={14} className={`${statusConfig.text} animate-spin`} />
+                                    ) : (
+                                      <StatusIcon size={14} className={statusConfig.text} />
+                                    )}
+                                  </div>
+                                  <select
+                                    value={order.order_status}
+                                    onChange={(e) => {
+                                      e.stopPropagation();
+                                      handleStatusUpdate(
+                                        order.order_id,
+                                        e.target.value
+                                      );
+                                    }}
+                                    disabled={updatingOrderId === order.order_id}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className={`h-9 text-sm font-semibold pl-9 pr-8 rounded-lg border-2 transition-all duration-200 cursor-pointer appearance-none focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[130px] ${
+                                      updatingOrderId === order.order_id
+                                        ? "opacity-60 cursor-not-allowed"
+                                        : "cursor-pointer"
+                                    } ${
+                                      isDarkMode
+                                        ? `${statusConfig.bg} ${statusConfig.border} ${statusConfig.text} hover:opacity-90 focus:ring-blue-500`
+                                        : `${statusConfig.bg} ${statusConfig.border} ${statusConfig.text} hover:shadow-md focus:ring-blue-500`
+                                    }`}
+                                    style={{
+                                      backgroundImage: updatingOrderId === order.order_id
+                                        ? 'none'
+                                        : isDarkMode
+                                        ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23cbd5e1' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`
+                                        : `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                                      backgroundRepeat: 'no-repeat',
+                                      backgroundPosition: 'right 0.5rem center',
+                                      backgroundSize: '10px',
+                                    }}
+                                    title={updatingOrderId === order.order_id ? "Updating status..." : "Update order status"}
+                                  >
+                                    <option value="pending">Pending</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="preparing">Preparing</option>
+                                    <option value="ready">Ready</option>
+                                    <option value="out_for_delivery">Out for Delivery</option>
+                                    <option value="delivered">Delivered</option>
+                                    <option value="cancelled">Cancelled</option>
+                                  </select>
+                                </div>
                                 <Link
                                   href={`/orders/${order.order_id}`}
-                                  className={`p-2 rounded-lg transition-colors ${
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-200 ${
                                     isDarkMode
-                                      ? "text-slate-400 hover:text-white hover:bg-slate-700"
-                                      : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                                      ? "text-slate-400 hover:text-white hover:bg-slate-700 hover:shadow-lg"
+                                      : "text-gray-400 hover:text-gray-700 hover:bg-gray-100 hover:shadow-md"
                                   }`}
+                                  title="View order details"
                                 >
-                                  <Eye size={18} />
+                                  <Eye size={16} />
                                 </Link>
                               </div>
                             </td>
@@ -945,7 +1637,7 @@ export default function OrdersPage() {
                       isDarkMode ? "text-white" : "text-gray-900"
                     }`}
                   >
-                    {(currentPage - 1) * 20 + 1}
+                    {(currentPage - 1) * itemsPerPage + 1}
                   </span>{" "}
                   to{" "}
                   <span
@@ -953,7 +1645,7 @@ export default function OrdersPage() {
                       isDarkMode ? "text-white" : "text-gray-900"
                     }`}
                   >
-                    {Math.min(currentPage * 20, totalCount)}
+                    {Math.min(currentPage * itemsPerPage, totalCount)}
                   </span>{" "}
                   of{" "}
                   <span
@@ -969,13 +1661,13 @@ export default function OrdersPage() {
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={`p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`h-10 w-10 flex items-center justify-center rounded-lg border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                       isDarkMode
                         ? "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
                         : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
                     }`}
                   >
-                    <ChevronLeft size={18} />
+                    <ChevronLeft size={16} />
                   </button>
                   <div className="flex items-center gap-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -993,7 +1685,7 @@ export default function OrdersPage() {
                         <button
                           key={pageNum}
                           onClick={() => handlePageChange(pageNum)}
-                          className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-colors ${
+                          className={`h-10 px-3 rounded-lg font-medium text-sm transition-all duration-200 ${
                             currentPage === pageNum
                               ? "bg-blue-600 text-white"
                               : isDarkMode
@@ -1009,13 +1701,13 @@ export default function OrdersPage() {
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`h-10 w-10 flex items-center justify-center rounded-lg border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                       isDarkMode
                         ? "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
                         : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
                     }`}
                   >
-                    <ChevronRight size={18} />
+                    <ChevronRight size={16} />
                   </button>
                 </div>
               </div>
