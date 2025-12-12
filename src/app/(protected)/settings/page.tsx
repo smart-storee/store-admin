@@ -14,6 +14,11 @@ interface ExtendedAppSettings extends AppSettings {
   maintenance_message?: string;
   delivery_charge?: number;
   free_delivery_threshold?: number | null;
+  support_phone?: string;
+  support_email?: string;
+  whatsapp_number?: string;
+  privacy_policy_url?: string;
+  terms_and_conditions_url?: string;
 }
 
 export default function SettingsPage() {
@@ -61,6 +66,11 @@ export default function SettingsPage() {
     is_online_payment_enabled: 0,
     maintenance_mode: 0,
     maintenance_message: "",
+    support_phone: "",
+    support_email: "",
+    whatsapp_number: "",
+    privacy_policy_url: "",
+    terms_and_conditions_url: "",
     created_at: new Date().toISOString(),
   });
 
@@ -229,6 +239,11 @@ export default function SettingsPage() {
         is_online_payment_enabled: settings.is_online_payment_enabled,
         maintenance_mode: settings.maintenance_mode,
         maintenance_message: settings.maintenance_message,
+        support_phone: settings.support_phone,
+        support_email: settings.support_email,
+        whatsapp_number: settings.whatsapp_number,
+        privacy_policy_url: settings.privacy_policy_url,
+        terms_and_conditions_url: settings.terms_and_conditions_url,
       };
 
       const response: ApiResponse<null> = await makeAuthenticatedRequest(
@@ -566,6 +581,125 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
+                {/* Support Information */}
+                <div className="space-y-6">
+                  <h3
+                    className={`text-lg font-semibold ${textPrimary} border-b ${
+                      isDarkMode ? "border-slate-700" : "border-gray-200"
+                    } pb-2`}
+                  >
+                    Support Information
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {/* Support Phone */}
+                    <div>
+                      <label
+                        htmlFor="support_phone"
+                        className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                      >
+                        Support Phone
+                      </label>
+                      <input
+                        type="tel"
+                        id="support_phone"
+                        name="support_phone"
+                        value={settings.support_phone || ""}
+                        onChange={handleChange}
+                        placeholder="+1234567890"
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                      />
+                    </div>
+
+                    {/* Support Email */}
+                    <div>
+                      <label
+                        htmlFor="support_email"
+                        className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                      >
+                        Support Email
+                      </label>
+                      <input
+                        type="email"
+                        id="support_email"
+                        name="support_email"
+                        value={settings.support_email || ""}
+                        onChange={handleChange}
+                        placeholder="support@example.com"
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                      />
+                    </div>
+
+                    {/* WhatsApp Number */}
+                    <div>
+                      <label
+                        htmlFor="whatsapp_number"
+                        className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                      >
+                        WhatsApp Number
+                      </label>
+                      <input
+                        type="tel"
+                        id="whatsapp_number"
+                        name="whatsapp_number"
+                        value={settings.whatsapp_number || ""}
+                        onChange={handleChange}
+                        placeholder="+1234567890"
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Legal Links */}
+                <div className="space-y-6">
+                  <h3
+                    className={`text-lg font-semibold ${textPrimary} border-b ${
+                      isDarkMode ? "border-slate-700" : "border-gray-200"
+                    } pb-2`}
+                  >
+                    Legal Links
+                  </h3>
+                  <div className="grid grid-cols-1 gap-6">
+                    {/* Privacy Policy URL */}
+                    <div>
+                      <label
+                        htmlFor="privacy_policy_url"
+                        className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                      >
+                        Privacy Policy URL
+                      </label>
+                      <input
+                        type="url"
+                        id="privacy_policy_url"
+                        name="privacy_policy_url"
+                        value={settings.privacy_policy_url || ""}
+                        onChange={handleChange}
+                        placeholder="https://yourwebsite.com/privacy"
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                      />
+                    </div>
+
+                    {/* Terms and Conditions URL */}
+                    <div>
+                      <label
+                        htmlFor="terms_and_conditions_url"
+                        className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                      >
+                        Terms and Conditions URL
+                      </label>
+                      <input
+                        type="url"
+                        id="terms_and_conditions_url"
+                        name="terms_and_conditions_url"
+                        value={settings.terms_and_conditions_url || ""}
+                        onChange={handleChange}
+                        placeholder="https://yourwebsite.com/terms"
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Colors */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {/* Primary Color */}
@@ -731,36 +865,6 @@ export default function SettingsPage() {
                         className={`w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
                       />
                     </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="delivery_charge"
-                      className={`block text-sm font-semibold ${textPrimary} mb-2`}
-                    >
-                      Store Delivery Charge
-                    </label>
-                    <div className="relative">
-                      <span
-                        className={`absolute left-4 top-2.5 ${textSecondary}`}
-                      >
-                        ₹
-                      </span>
-                      <input
-                        type="number"
-                        id="delivery_charge"
-                        name="delivery_charge"
-                        value={settings.delivery_charge || 0}
-                        onChange={handleChange}
-                        step="0.01"
-                        min="0"
-                        className={`w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
-                      />
-                    </div>
-                    <p className={`text-xs ${textTertiary} mt-1`}>
-                      Default delivery charge for all branches (can be
-                      overridden per branch)
-                    </p>
                   </div>
                 </div>
 

@@ -155,6 +155,7 @@ export default function OrderDetailPage() {
                           {order.customer_name || "N/A"}
                         </p>
                         <p className="text-sm text-gray-500">
+                          User Mobile:{" "}
                           {order.customer_phone || "N/A"}
                         </p>
                         <p className="text-sm text-gray-500">
@@ -241,6 +242,11 @@ export default function OrderDetailPage() {
                       <p className="text-sm text-gray-500 mt-1">
                         {order.delivery_address}
                       </p>
+                      {order.customer_phone && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          Address Mobile: {order.customer_phone}
+                        </p>
+                      )}
                       {order.delivery_landmark && (
                         <p className="text-sm text-gray-500">
                           Landmark: {order.delivery_landmark}
