@@ -63,6 +63,8 @@ export default function PaymentLogsPage() {
   const [showLogDetails, setShowLogDetails] = useState(false);
 
   useEffect(() => {
+      console.log("Filtered logs:", filteredLogs);
+
     if (user?.store_id) {
       fetchPaymentLogs();
     }
@@ -75,7 +77,7 @@ export default function PaymentLogsPage() {
     dateTo,
   ]);
 
- const fetchPaymentLogs = async () => {
+const fetchPaymentLogs = async () => {
   try {
     setLoading(true);
     setError(null);
@@ -98,6 +100,7 @@ export default function PaymentLogsPage() {
       params.append("to_date", dateTo);
     }
 
+    console.log("Fetching payment logs with params:", params.toString());
     const response = (await makeAuthenticatedRequest(
       `/payment-logs?${params.toString()}`,
       {},
@@ -106,22 +109,22 @@ export default function PaymentLogsPage() {
       user?.branch_id || undefined
     )) as ApiResponse<PaymentLogsResponse>;
 
+    console.log("API Response:", response); // Add this line
+
     if (response.success && response.data) {
-      // Set the payment logs from the response
+      console.log("Payment logs data:", response.data.data); // Add this line
       setPaymentLogs(response.data.data || []);
       
-      // Set total count based on the data length since pagination.total is null
       const totalItems = response.data.data?.length || 0;
+      console.log("Total items:", totalItems); // Add this line
       setTotalCount(totalItems);
-      
-      // Since we're not using pagination, set total pages to 1
       setTotalPages(1);
     } else {
       throw new Error(response.message || "Failed to fetch payment logs");
     }
   } catch (err: any) {
+    console.error("Error fetching payment logs:", err); // Add this line
     setError(err.message || "Failed to load payment logs");
-    console.error("Load payment logs error:", err);
   } finally {
     setLoading(false);
     setRefreshing(false);
@@ -202,17 +205,20 @@ export default function PaymentLogsPage() {
     );
   };
 
-  const filteredLogs = paymentLogs.filter((log) => {
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        log.txn_id?.toLowerCase().includes(searchLower) ||
-        log.order_number?.toLowerCase().includes(searchLower) ||
-        log.order_id?.toString().includes(searchLower)
-      );
-    }
-    return true;
-  });
+const filteredLogs = paymentLogs.filter((log) => {
+  if (!log) return false; // Add null/undefined check
+  
+  if (searchTerm) {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (log.txn_id?.toLowerCase().includes(searchLower) ?? false) ||
+      (log.order_number?.toLowerCase().includes(searchLower) ?? false) ||
+      (log.order_id?.toString().includes(searchTerm) ?? false)
+    );
+  }
+  return true;
+});
+
 
   return (
     <RoleGuard requiredPermissions={["manage_orders"]}>
