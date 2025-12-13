@@ -162,10 +162,12 @@ const fetchPaymentLogs = async () => {
     }
   };
 
-  const formatCurrency = (amount: number | null) => {
-    if (amount === null) return "N/A";
-    return `₹${amount.toFixed(2)}`;
-  };
+const formatCurrency = (amount: number | string | null) => {
+  if (amount === null || amount === undefined) return "N/A";
+  // Convert string to number if needed
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return `₹${numAmount.toFixed(2)}`;
+};
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
