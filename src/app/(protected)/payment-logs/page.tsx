@@ -83,6 +83,8 @@ const fetchPaymentLogs = async () => {
     setError(null);
 
     const params = new URLSearchParams();
+    params.append("page", currentPage.toString());
+    params.append("limit", "20"); // Match the limit with your API
 
     if (statusFilter !== "all") {
       params.append("status", statusFilter);
@@ -106,24 +108,24 @@ const fetchPaymentLogs = async () => {
       {},
       true,
       user?.store_id,
-      user?.branch_id || undefined
+      user?.branch_id
     )) as ApiResponse<PaymentLogsResponse>;
 
-    console.log("API Response:", response); // Add this line
+    console.log("API Response:", response);
 
     if (response.success && response.data) {
-      console.log("Payment logs data:", response.data.data); // Add this line
-      setPaymentLogs(response.data.data || []);
+      const logs = response.data.data || [];
+      console.log("Payment logs data:", logs);
+      setPaymentLogs(logs);
       
-      const totalItems = response.data.data?.length || 0;
-      console.log("Total items:", totalItems); // Add this line
-      setTotalCount(totalItems);
-      setTotalPages(1);
+      // Update pagination
+      setTotalCount(response.data.pagination?.total || logs.length);
+      setTotalPages(Math.ceil((response.data.pagination?.total || logs.length) / 20));
     } else {
       throw new Error(response.message || "Failed to fetch payment logs");
     }
   } catch (err: any) {
-    console.error("Error fetching payment logs:", err); // Add this line
+    console.error("Error fetching payment logs:", err);
     setError(err.message || "Failed to load payment logs");
   } finally {
     setLoading(false);

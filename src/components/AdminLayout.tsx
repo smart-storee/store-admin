@@ -171,6 +171,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     //   permission: "view_reports",
     //   feature: "billings_enabled",
     // },
+
+    {
+      name: "Payment Logs",
+      href: "/payment-logs",
+      permission: "view_reports",
+      feature: "payment_logs_enabled",
+    },
     {
       name: "Settings",
       href: "/settings",
