@@ -102,7 +102,10 @@ export default function NewCategoryPage() {
             {
               method: "POST",
               body: JSON.stringify({
-                ...formData,
+                category_name: formData.category_name,
+                category_image: formData.category_image,
+                description: formData.category_description, // Map category_description to description
+                is_active: formData.is_active,
                 branch_id: branchId,
                 store_id: user?.store_id,
               }),
