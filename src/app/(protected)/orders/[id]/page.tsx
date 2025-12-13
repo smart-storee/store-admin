@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CreditCard } from "lucide-react";
+import Link from "next/link";
 import { makeAuthenticatedRequest } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { RoleGuard } from "@/components/RoleGuard";
@@ -155,8 +156,7 @@ export default function OrderDetailPage() {
                           {order.customer_name || "N/A"}
                         </p>
                         <p className="text-sm text-gray-500">
-                          User Mobile:{" "}
-                          {order.customer_phone || "N/A"}
+                          User Mobile: {order.customer_phone || "N/A"}
                         </p>
                         <p className="text-sm text-gray-500">
                           {order.customer_email || "N/A"}
@@ -384,7 +384,32 @@ export default function OrderDetailPage() {
                               : "N/A"}
                           </span>
                         </div>
+                        {order.payment_reference && (
+                          <>
+                            <div>
+                              <span className="text-sm text-gray-500">
+                                Payment Reference:
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-sm text-gray-900 font-mono">
+                                {order.payment_reference}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
+                      {order.payment_method === "online" && (
+                        <div className="mt-3">
+                          <Link
+                            href={`/payment-logs?order_id=${order.order_id}`}
+                            className="inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            View Payment Logs
+                          </Link>
+                        </div>
+                      )}
                     </div>
 
                     <div className="bg-gray-50 p-4 rounded-lg">

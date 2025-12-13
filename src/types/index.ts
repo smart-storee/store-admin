@@ -240,6 +240,7 @@ export interface Order {
     | "cancelled";
   payment_method: string;
   payment_status: "pending" | "completed" | "failed";
+  payment_reference?: string | null;
   delivery_address: string;
   delivery_landmark?: string;
   delivery_notes?: string;

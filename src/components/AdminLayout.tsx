@@ -153,6 +153,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       feature: "communication_logs_enabled",
     },
     {
+      name: "Payment Logs",
+      href: "/payment-logs",
+      permission: "manage_orders",
+      feature: "orders_enabled",
+    },
+    {
       name: "Home Config",
       href: "/home-config",
       permission: "app_settings",
@@ -449,6 +455,21 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <line x1="9" y1="14" x2="13" y2="14"></line>
           </svg>
         );
+      case "Payment Logs":
+        return (
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+            <line x1="1" y1="10" x2="23" y2="10"></line>
+            <path d="M7 16h.01M17 16h.01"></path>
+          </svg>
+        );
       case "Home Config":
         return (
           <svg
@@ -523,6 +544,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             {pathname === "/users" && "Employees"}
             {pathname === "/notifications" && "Notifications"}
             {pathname === "/communication-logs" && "Communication Logs"}
+            {pathname === "/payment-logs" && "Payment Logs"}
             {pathname === "/reports" && "Reports"}
             {pathname === "/api-logs" && "API Logs"}
             {pathname === "/settings" && "Settings"}
@@ -975,6 +997,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     {pathname === "/users" && "Employees Management"}
                     {pathname === "/notifications" && "Notifications"}
                     {pathname === "/communication-logs" && "Communication Logs"}
+                    {pathname === "/payment-logs" && "Payment Logs"}
                     {pathname === "/home-config" && "Home Screen Configuration"}
                     {pathname === "/reports" && "Reports & Analytics"}
                     {pathname === "/api-logs" && "API Logs"}
