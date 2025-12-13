@@ -152,12 +152,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       permission: "view_reports",
       feature: "communication_logs_enabled",
     },
-    {
-      name: "Payment Logs",
-      href: "/payment-logs",
-      permission: "manage_orders",
-      feature: "orders_enabled",
-    },
+    // {
+    //   name: "Payment Logs",
+    //   href: "/payment-logs",
+    //   permission: "manage_orders",
+    //   feature: "orders_enabled",
+    // },
     {
       name: "Home Config",
       href: "/home-config",
