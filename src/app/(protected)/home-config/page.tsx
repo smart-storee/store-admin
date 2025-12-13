@@ -234,12 +234,37 @@ export default function HomeConfigPage() {
           );
 
         if (response.success && response.data?.config) {
-          setConfig({
+          const savedConfig = response.data.config;
+          // Ensure featuredCategoryIds and featuredProductIds are arrays of numbers
+          const normalizedConfig = {
             ...defaultConfig,
-            ...response.data.config,
+            ...savedConfig,
+            categories: {
+              ...defaultConfig.categories,
+              ...savedConfig.categories,
+              featuredCategoryIds: Array.isArray(
+                savedConfig.categories?.featuredCategoryIds
+              )
+                ? savedConfig.categories.featuredCategoryIds
+                    .map((id) => Number(id))
+                    .filter((id) => !isNaN(id))
+                : [],
+            },
+            products: {
+              ...defaultConfig.products,
+              ...savedConfig.products,
+              featuredProductIds: Array.isArray(
+                savedConfig.products?.featuredProductIds
+              )
+                ? savedConfig.products.featuredProductIds
+                    .map((id) => Number(id))
+                    .filter((id) => !isNaN(id))
+                : [],
+            },
             sectionOrder:
-              response.data.config.sectionOrder || defaultConfig.sectionOrder,
-          });
+              savedConfig.sectionOrder || defaultConfig.sectionOrder,
+          };
+          setConfig(normalizedConfig);
         }
       } catch (err) {
         // If endpoint doesn't exist yet, use default config
@@ -633,10 +658,12 @@ export default function HomeConfigPage() {
                         ) : (
                           <div className="max-h-64 overflow-y-auto border rounded-lg p-3 dark:border-slate-700">
                             {categories.map((category) => {
+                              const categoryId = Number(category.category_id);
+                              const featuredIds = (
+                                config.categories.featuredCategoryIds || []
+                              ).map((id) => Number(id));
                               const isSelected =
-                                config.categories.featuredCategoryIds?.includes(
-                                  category.category_id
-                                ) || false;
+                                featuredIds.includes(categoryId);
                               return (
                                 <label
                                   key={category.category_id}
@@ -650,13 +677,17 @@ export default function HomeConfigPage() {
                                     type="checkbox"
                                     checked={isSelected}
                                     onChange={(e) => {
-                                      const currentIds =
+                                      const currentIds = (
                                         config.categories.featuredCategoryIds ||
-                                        [];
+                                        []
+                                      ).map((id) => Number(id));
+                                      const categoryId = Number(
+                                        category.category_id
+                                      );
                                       const newIds = e.target.checked
-                                        ? [...currentIds, category.category_id]
+                                        ? [...currentIds, categoryId]
                                         : currentIds.filter(
-                                            (id) => id !== category.category_id
+                                            (id) => id !== categoryId
                                           );
                                       updateConfig("categories", {
                                         featuredCategoryIds: newIds,
@@ -778,10 +809,12 @@ export default function HomeConfigPage() {
                         ) : (
                           <div className="max-h-64 overflow-y-auto border rounded-lg p-3 dark:border-slate-700">
                             {products.map((product) => {
+                              const productId = Number(product.product_id);
+                              const featuredIds = (
+                                config.products.featuredProductIds || []
+                              ).map((id) => Number(id));
                               const isSelected =
-                                config.products.featuredProductIds?.includes(
-                                  product.product_id
-                                ) || false;
+                                featuredIds.includes(productId);
                               return (
                                 <label
                                   key={product.product_id}
@@ -795,13 +828,16 @@ export default function HomeConfigPage() {
                                     type="checkbox"
                                     checked={isSelected}
                                     onChange={(e) => {
-                                      const currentIds =
-                                        config.products.featuredProductIds ||
-                                        [];
+                                      const currentIds = (
+                                        config.products.featuredProductIds || []
+                                      ).map((id) => Number(id));
+                                      const productId = Number(
+                                        product.product_id
+                                      );
                                       const newIds = e.target.checked
-                                        ? [...currentIds, product.product_id]
+                                        ? [...currentIds, productId]
                                         : currentIds.filter(
-                                            (id) => id !== product.product_id
+                                            (id) => id !== productId
                                           );
                                       updateConfig("products", {
                                         featuredProductIds: newIds,
