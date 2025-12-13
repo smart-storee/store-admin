@@ -63,7 +63,7 @@ export default function PaymentLogsPage() {
   const [showLogDetails, setShowLogDetails] = useState(false);
 
   useEffect(() => {
-      console.log("Filtered logs:", filteredLogs);
+    console.log("Filtered logs:", filteredLogs);
 
     if (user?.store_id) {
       fetchPaymentLogs();
@@ -77,61 +77,61 @@ export default function PaymentLogsPage() {
     dateTo,
   ]);
 
-const fetchPaymentLogs = async () => {
-  try {
-    setLoading(true);
-    setError(null);
+  const fetchPaymentLogs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    const params = new URLSearchParams();
-    params.append("page", currentPage.toString());
-    params.append("limit", "20"); // Match the limit with your API
+      const params = new URLSearchParams();
+      params.append("page", currentPage.toString());
+      params.append("limit", "20"); // Match the limit with your API
 
-    if (statusFilter !== "all") {
-      params.append("status", statusFilter);
+      if (statusFilter !== "all") {
+        params.append("status", statusFilter);
+      }
+
+      if (orderIdFilter) {
+        params.append("order_id", orderIdFilter);
+      }
+
+      if (dateFrom) {
+        params.append("from_date", dateFrom);
+      }
+
+      if (dateTo) {
+        params.append("to_date", dateTo);
+      }
+
+      console.log("Fetching payment logs with params:", params.toString());
+      const response = (await makeAuthenticatedRequest(
+        `/payment-logs?${params.toString()}`,
+        {},
+        true,
+        user?.store_id,
+        user?.branch_id
+      )) as ApiResponse<PaymentLogsResponse>;
+
+      console.log("API Response:", response);
+
+      if (response.success && response.data) {
+        const logs = response.data.data || [];
+        console.log("Payment logs data:", logs);
+        setPaymentLogs(logs);
+
+        // Update pagination
+        setTotalCount(response.data.pagination?.total || logs.length);
+        setTotalPages(Math.ceil((response.data.pagination?.total || logs.length) / 20));
+      } else {
+        throw new Error(response.message || "Failed to fetch payment logs");
+      }
+    } catch (err: any) {
+      console.error("Error fetching payment logs:", err);
+      setError(err.message || "Failed to load payment logs");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-
-    if (orderIdFilter) {
-      params.append("order_id", orderIdFilter);
-    }
-
-    if (dateFrom) {
-      params.append("from_date", dateFrom);
-    }
-
-    if (dateTo) {
-      params.append("to_date", dateTo);
-    }
-
-    console.log("Fetching payment logs with params:", params.toString());
-    const response = (await makeAuthenticatedRequest(
-      `/payment-logs?${params.toString()}`,
-      {},
-      true,
-      user?.store_id,
-      user?.branch_id
-    )) as ApiResponse<PaymentLogsResponse>;
-
-    console.log("API Response:", response);
-
-    if (response.success && response.data) {
-      const logs = response.data.data || [];
-      console.log("Payment logs data:", logs);
-      setPaymentLogs(logs);
-      
-      // Update pagination
-      setTotalCount(response.data.pagination?.total || logs.length);
-      setTotalPages(Math.ceil((response.data.pagination?.total || logs.length) / 20));
-    } else {
-      throw new Error(response.message || "Failed to fetch payment logs");
-    }
-  } catch (err: any) {
-    console.error("Error fetching payment logs:", err);
-    setError(err.message || "Failed to load payment logs");
-  } finally {
-    setLoading(false);
-    setRefreshing(false);
-  }
-};
+  };
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -207,19 +207,19 @@ const fetchPaymentLogs = async () => {
     );
   };
 
-const filteredLogs = paymentLogs.filter((log) => {
-  if (!log) return false; // Add null/undefined check
-  
-  if (searchTerm) {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      (log.txn_id?.toLowerCase().includes(searchLower) ?? false) ||
-      (log.order_number?.toLowerCase().includes(searchLower) ?? false) ||
-      (log.order_id?.toString().includes(searchTerm) ?? false)
-    );
-  }
-  return true;
-});
+  const filteredLogs = paymentLogs.filter((log) => {
+    if (!log) return false; // Add null/undefined check
+
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        (log.txn_id?.toLowerCase().includes(searchLower) ?? false) ||
+        (log.order_number?.toLowerCase().includes(searchLower) ?? false) ||
+        (log.order_id?.toString().includes(searchTerm) ?? false)
+      );
+    }
+    return true;
+  });
 
 
   return (
