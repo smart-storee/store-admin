@@ -164,7 +164,12 @@ export default function HomeConfigPage() {
         const productsData = Array.isArray(productsResponse.data)
           ? productsResponse.data
           : productsResponse.data?.data || [];
-        setProducts(productsData);
+        // Normalize product IDs to ensure they're numbers
+        const normalizedProducts = productsData.map((product: any) => ({
+          ...product,
+          product_id: Number(product.product_id) || product.product_id,
+        }));
+        setProducts(normalizedProducts);
       }
 
       // Fetch categories
@@ -181,7 +186,12 @@ export default function HomeConfigPage() {
         const categoriesData = Array.isArray(categoriesResponse.data)
           ? categoriesResponse.data
           : categoriesResponse.data?.data || [];
-        setCategories(categoriesData);
+        // Normalize category IDs to ensure they're numbers
+        const normalizedCategories = categoriesData.map((category: any) => ({
+          ...category,
+          category_id: Number(category.category_id) || category.category_id,
+        }));
+        setCategories(normalizedCategories);
       }
 
       // Fetch banners for home screen
@@ -235,6 +245,17 @@ export default function HomeConfigPage() {
 
         if (response.success && response.data?.config) {
           const savedConfig = response.data.config;
+
+          // Debug: Log what we received
+          console.log("Loaded config from API:", {
+            rawCategoryIds: savedConfig.categories?.featuredCategoryIds,
+            rawProductIds: savedConfig.products?.featuredProductIds,
+            categoryIdsType:
+              typeof savedConfig.categories?.featuredCategoryIds?.[0],
+            productIdsType:
+              typeof savedConfig.products?.featuredProductIds?.[0],
+          });
+
           // Ensure featuredCategoryIds and featuredProductIds are arrays of numbers
           const normalizedConfig = {
             ...defaultConfig,
@@ -264,6 +285,13 @@ export default function HomeConfigPage() {
             sectionOrder:
               savedConfig.sectionOrder || defaultConfig.sectionOrder,
           };
+
+          // Debug: Log normalized config
+          console.log("Normalized config:", {
+            categoryIds: normalizedConfig.categories.featuredCategoryIds,
+            productIds: normalizedConfig.products.featuredProductIds,
+          });
+
           setConfig(normalizedConfig);
         }
       } catch (err) {
@@ -282,13 +310,41 @@ export default function HomeConfigPage() {
       setSaving(true);
       setError(null);
 
+      // Normalize IDs to ensure they're numbers before saving
+      const normalizedConfig = {
+        ...config,
+        categories: {
+          ...config.categories,
+          featuredCategoryIds: Array.isArray(
+            config.categories.featuredCategoryIds
+          )
+            ? config.categories.featuredCategoryIds
+                .map((id) => Number(id))
+                .filter((id) => !isNaN(id))
+            : [],
+        },
+        products: {
+          ...config.products,
+          featuredProductIds: Array.isArray(config.products.featuredProductIds)
+            ? config.products.featuredProductIds
+                .map((id) => Number(id))
+                .filter((id) => !isNaN(id))
+            : [],
+        },
+      };
+
+      console.log("Saving config with normalized IDs:", {
+        categoryIds: normalizedConfig.categories.featuredCategoryIds,
+        productIds: normalizedConfig.products.featuredProductIds,
+      });
+
       const response: ApiResponse<null> = await makeAuthenticatedRequest(
         `/home-screen-config`,
         {
           method: "PUT",
           body: JSON.stringify({
             store_id: user?.store_id,
-            config: config,
+            config: normalizedConfig,
           }),
         },
         true,
@@ -299,6 +355,8 @@ export default function HomeConfigPage() {
       if (response.success) {
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
+        // Reload config to ensure UI reflects saved state
+        await fetchConfig();
       } else {
         throw new Error(response.message || "Failed to save configuration");
       }
@@ -658,12 +716,38 @@ export default function HomeConfigPage() {
                         ) : (
                           <div className="max-h-64 overflow-y-auto border rounded-lg p-3 dark:border-slate-700">
                             {categories.map((category) => {
+                              // Ensure category ID is a number
                               const categoryId = Number(category.category_id);
+
+                              // Get featured IDs and ensure they're all numbers
                               const featuredIds = (
                                 config.categories.featuredCategoryIds || []
-                              ).map((id) => Number(id));
+                              )
+                                .map((id) => Number(id))
+                                .filter((id) => !isNaN(id));
+
+                              // Compare as numbers
                               const isSelected =
                                 featuredIds.includes(categoryId);
+
+                              // Debug first few categories to see what's happening
+                              if (categories.indexOf(category) < 3) {
+                                console.log(
+                                  `Category [${categories.indexOf(
+                                    category
+                                  )}] comparison:`,
+                                  {
+                                    categoryId,
+                                    categoryIdRaw: category.category_id,
+                                    categoryIdType: typeof category.category_id,
+                                    featuredIds,
+                                    featuredIdsRaw:
+                                      config.categories.featuredCategoryIds,
+                                    isSelected,
+                                  }
+                                );
+                              }
+
                               return (
                                 <label
                                   key={category.category_id}
@@ -680,7 +764,9 @@ export default function HomeConfigPage() {
                                       const currentIds = (
                                         config.categories.featuredCategoryIds ||
                                         []
-                                      ).map((id) => Number(id));
+                                      )
+                                        .map((id) => Number(id))
+                                        .filter((id) => !isNaN(id));
                                       const categoryId = Number(
                                         category.category_id
                                       );
@@ -809,12 +895,38 @@ export default function HomeConfigPage() {
                         ) : (
                           <div className="max-h-64 overflow-y-auto border rounded-lg p-3 dark:border-slate-700">
                             {products.map((product) => {
+                              // Ensure product ID is a number
                               const productId = Number(product.product_id);
+
+                              // Get featured IDs and ensure they're all numbers
                               const featuredIds = (
                                 config.products.featuredProductIds || []
-                              ).map((id) => Number(id));
+                              )
+                                .map((id) => Number(id))
+                                .filter((id) => !isNaN(id));
+
+                              // Compare as numbers
                               const isSelected =
                                 featuredIds.includes(productId);
+
+                              // Debug first few products to see what's happening
+                              if (products.indexOf(product) < 3) {
+                                console.log(
+                                  `Product [${products.indexOf(
+                                    product
+                                  )}] comparison:`,
+                                  {
+                                    productId,
+                                    productIdRaw: product.product_id,
+                                    productIdType: typeof product.product_id,
+                                    featuredIds,
+                                    featuredIdsRaw:
+                                      config.products.featuredProductIds,
+                                    isSelected,
+                                  }
+                                );
+                              }
+
                               return (
                                 <label
                                   key={product.product_id}
@@ -830,7 +942,9 @@ export default function HomeConfigPage() {
                                     onChange={(e) => {
                                       const currentIds = (
                                         config.products.featuredProductIds || []
-                                      ).map((id) => Number(id));
+                                      )
+                                        .map((id) => Number(id))
+                                        .filter((id) => !isNaN(id));
                                       const productId = Number(
                                         product.product_id
                                       );
