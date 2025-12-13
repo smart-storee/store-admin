@@ -357,7 +357,9 @@ export default function SetupFlowPage() {
       >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mx-auto"></div>
-          <p className={`mt-4 font-medium ${textClass}`}>Loading your products...</p>
+          <p className={`mt-4 font-medium ${textClass}`}>
+            Loading your products...
+          </p>
         </div>
       </div>
     );
@@ -365,7 +367,7 @@ export default function SetupFlowPage() {
 
   return (
     // <FeatureGuard
-      // feature="categories_enabled"
+    // feature="categories_enabled"
     //   fallback={
     //     <div className="p-6 text-center">
     //       <div
@@ -381,148 +383,150 @@ export default function SetupFlowPage() {
     //     </div>
     //   }
     // >
-      <RoleGuard
-        requiredPermissions={["manage_categories", "manage_products"]}
-        fallback={<AccessDenied theme={isDark} />}
-      >
-        <div className={`min-h-screen ${bgClass} py-8 px-4 sm:px-6 lg:px-8`}>
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className={`text-3xl font-bold ${headingClass} mb-2`}>
-                  My Products
-                </h1>
-                <p className={textClass}>
-                  Manage your products, categories, and variants with branch-wise assignment
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                  className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors ${
-                    refreshing
-                      ? "opacity-50 cursor-not-allowed"
-                      : isDark
-                      ? "bg-gray-700 hover:bg-gray-600 text-white"
-                      : "bg-gray-200 hover:bg-gray-300 text-gray-900"
-                  }`}
-                >
-                  <RefreshCw
-                    size={18}
-                    className={refreshing ? "animate-spin" : ""}
-                  />
-                  Refresh
-                </button>
-                <button
-                  onClick={() => router.push("/categories/new")}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-                >
-                  <Plus size={18} />
-                  Add Category
-                </button>
-              </div>
+    <RoleGuard
+      requiredPermissions={["manage_categories", "manage_products"]}
+      fallback={<AccessDenied theme={isDark} />}
+    >
+      <div className={`min-h-screen ${bgClass} py-8 px-4 sm:px-6 lg:px-8`}>
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className={`text-3xl font-bold ${headingClass} mb-2`}>
+                My Products
+              </h1>
+              <p className={textClass}>
+                Manage your products, categories, and variants with branch-wise
+                assignment
+              </p>
             </div>
-
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <SummaryCard
-                icon={<Folder size={24} />}
-                label="Master Categories"
-                value={categories.length}
-                color="blue"
-                theme={isDark}
-              />
-              <SummaryCard
-                icon={<Package size={24} />}
-                label="Total Products"
-                value={categories.reduce(
-                  (sum, cat) => sum + (cat.products?.length || 0),
-                  0
-                )}
-                color="green"
-                theme={isDark}
-              />
-              <SummaryCard
-                icon={<Layers size={24} />}
-                label="Total Variants"
-                value={categories.reduce(
-                  (sum, cat) =>
-                    sum +
-                    (cat.products?.reduce(
-                      (pSum, prod) => pSum + (prod.variants?.length || 0),
-                      0
-                    ) || 0),
-                  0
-                )}
-                color="purple"
-                theme={isDark}
-              />
-              <SummaryCard
-                icon={<Building2 size={24} />}
-                label="Branches"
-                value={branches.length}
-                color="orange"
-                theme={isDark}
-              />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors ${
+                  refreshing
+                    ? "opacity-50 cursor-not-allowed"
+                    : isDark
+                    ? "bg-gray-700 hover:bg-gray-600 text-white"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-900"
+                }`}
+              >
+                <RefreshCw
+                  size={18}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
+              </button>
+              <button
+                onClick={() => router.push("/categories/new")}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <Plus size={18} />
+                Add Category
+              </button>
             </div>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div
-              className={`mb-6 p-4 rounded-lg border ${
-                isDark
-                  ? "bg-red-900/20 border-red-700/50 text-red-300"
-                  : "bg-red-50 border-red-200 text-red-700"
-              }`}
-            >
-              {error}
-            </div>
-          )}
-
-          {/* Main Content - Hierarchical View */}
-          <div className={`${cardClass} border rounded-xl shadow-sm p-6`}>
-            {categories.length === 0 ? (
-              <EmptyState
-                theme={isDark}
-                onAdd={() => router.push("/categories/new")}
-              />
-            ) : (
-              <div className="space-y-4">
-                {categories.map((category) => (
-                  <CategorySection
-                    key={category.category_id}
-                    category={category}
-                    branches={branches}
-                    isExpanded={expandedCategories.has(category.category_id)}
-                    onToggle={() => toggleCategory(category.category_id)}
-                    onToggleProductBranch={handleToggleProductBranch}
-                    onAddProduct={() =>
-                      router.push(
-                        `/products/new?category_id=${category.category_id}`
-                      )
-                    }
-                    onViewProduct={(productId) =>
-                      router.push(`/products/${productId}`)
-                    }
-                    onEditProduct={(productId) =>
-                      router.push(`/products/${productId}/edit`)
-                    }
-                    onAddVariant={(productId) =>
-                      router.push(
-                        `/product-variants/new?product_id=${productId}`
-                      )
-                    }
-                    theme={isDark}
-                  />
-                ))}
-              </div>
-            )}
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <SummaryCard
+              icon={<Folder size={24} />}
+              label="Master Categories"
+              value={categories.length}
+              color="blue"
+              theme={isDark}
+            />
+            <SummaryCard
+              icon={<Package size={24} />}
+              label="Total Products"
+              value={categories.reduce(
+                (sum, cat) => sum + (cat.products?.length || 0),
+                0
+              )}
+              color="green"
+              theme={isDark}
+            />
+            <SummaryCard
+              icon={<Layers size={24} />}
+              label="Total Variants"
+              value={categories.reduce(
+                (sum, cat) =>
+                  sum +
+                  (cat.products?.reduce(
+                    (pSum, prod) => pSum + (prod.variants?.length || 0),
+                    0
+                  ) || 0),
+                0
+              )}
+              color="purple"
+              theme={isDark}
+            />
+            <SummaryCard
+              icon={<Building2 size={24} />}
+              label="Branches"
+              value={branches.length}
+              color="orange"
+              theme={isDark}
+            />
           </div>
         </div>
-      </RoleGuard>
+
+        {/* Error Message */}
+        {error && (
+          <div
+            className={`mb-6 p-4 rounded-lg border ${
+              isDark
+                ? "bg-red-900/20 border-red-700/50 text-red-300"
+                : "bg-red-50 border-red-200 text-red-700"
+            }`}
+          >
+            {error}
+          </div>
+        )}
+
+        {/* Main Content - Hierarchical View */}
+        <div className={`${cardClass} border rounded-xl shadow-sm p-6`}>
+          {categories.length === 0 ? (
+            <EmptyState
+              theme={isDark}
+              onAdd={() => router.push("/categories/new")}
+            />
+          ) : (
+            <div className="space-y-4">
+              {categories.map((category) => (
+                <CategorySection
+                  key={category.category_id}
+                  category={category}
+                  branches={branches}
+                  isExpanded={expandedCategories.has(category.category_id)}
+                  onToggle={() => toggleCategory(category.category_id)}
+                  onEditCategory={() =>
+                    router.push(`/categories/${category.category_id}/edit`)
+                  }
+                  onToggleProductBranch={handleToggleProductBranch}
+                  onAddProduct={() =>
+                    router.push(
+                      `/products/new?category_id=${category.category_id}`
+                    )
+                  }
+                  onViewProduct={(productId) =>
+                    router.push(`/products/${productId}`)
+                  }
+                  onEditProduct={(productId) =>
+                    router.push(`/products/${productId}/edit`)
+                  }
+                  onAddVariant={(productId) =>
+                    router.push(`/product-variants/new?product_id=${productId}`)
+                  }
+                  theme={isDark}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </RoleGuard>
     // </FeatureGuard>
   );
 }
@@ -591,6 +595,7 @@ function CategorySection({
   branches,
   isExpanded,
   onToggle,
+  onEditCategory,
   onToggleProductBranch,
   onAddProduct,
   onViewProduct,
@@ -602,6 +607,7 @@ function CategorySection({
   branches: Branch[];
   isExpanded: boolean;
   onToggle: () => void;
+  onEditCategory: () => void;
   onToggleProductBranch: (
     productId: number,
     branchId: number,
@@ -623,55 +629,71 @@ function CategorySection({
       }`}
     >
       {/* Category Header */}
-      <button
-        onClick={onToggle}
-        className={`w-full px-6 py-4 flex items-center justify-between hover:bg-opacity-50 transition-colors ${
-          isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"
-        }`}
-      >
-        <div className="flex items-center gap-4 flex-1">
-          <Folder
-            size={24}
-            className={isDark ? "text-blue-400" : "text-blue-600"}
-          />
-          <div className="text-left flex-1">
-            <h3
-              className={`text-lg font-semibold ${
-                isDark ? "text-white" : "text-gray-900"
+      <div className="flex items-center">
+        <button
+          onClick={onToggle}
+          className={`flex-1 px-6 py-4 flex items-center justify-between hover:bg-opacity-50 transition-colors ${
+            isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"
+          }`}
+        >
+          <div className="flex items-center gap-4 flex-1">
+            <Folder
+              size={24}
+              className={isDark ? "text-blue-400" : "text-blue-600"}
+            />
+            <div className="text-left flex-1">
+              <h3
+                className={`text-lg font-semibold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                {category.category_name}
+              </h3>
+              <p
+                className={`text-sm ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                {category.description || "No description"} • {products.length}{" "}
+                product{products.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+            <span
+              className={`text-xs px-3 py-1 rounded-full font-medium ${
+                category.is_active
+                  ? isDark
+                    ? "bg-green-900/40 text-green-300"
+                    : "bg-green-100 text-green-800"
+                  : isDark
+                  ? "bg-gray-700 text-gray-300"
+                  : "bg-gray-200 text-gray-700"
               }`}
             >
-              {category.category_name}
-            </h3>
-            <p
-              className={`text-sm ${
-                isDark ? "text-gray-400" : "text-gray-600"
-              }`}
-            >
-              {category.description || "No description"} • {products.length}{" "}
-              product{products.length !== 1 ? "s" : ""}
-            </p>
+              {category.is_active ? "● Active" : "● Inactive"}
+            </span>
           </div>
-          <span
-            className={`text-xs px-3 py-1 rounded-full font-medium ${
-              category.is_active
-                ? isDark
-                  ? "bg-green-900/40 text-green-300"
-                  : "bg-green-100 text-green-800"
-                : isDark
-                ? "bg-gray-700 text-gray-300"
-                : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            {category.is_active ? "● Active" : "● Inactive"}
-          </span>
-        </div>
-        <ChevronRight
-          size={20}
-          className={`${
-            isDark ? "text-gray-400" : "text-gray-600"
-          } transition-transform ${isExpanded ? "rotate-90" : ""}`}
-        />
-      </button>
+          <ChevronRight
+            size={20}
+            className={`${
+              isDark ? "text-gray-400" : "text-gray-600"
+            } transition-transform ${isExpanded ? "rotate-90" : ""}`}
+          />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEditCategory();
+          }}
+          className={`px-4 py-4 flex items-center transition-colors ${
+            isDark
+              ? "hover:bg-indigo-900/40 text-indigo-400"
+              : "hover:bg-indigo-100 text-indigo-600"
+          }`}
+          title="Edit Category"
+        >
+          <Edit2 size={18} />
+        </button>
+      </div>
 
       {/* Products List */}
       {isExpanded && (
