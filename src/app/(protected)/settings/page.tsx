@@ -19,6 +19,10 @@ interface ExtendedAppSettings extends AppSettings {
   whatsapp_number?: string;
   privacy_policy_url?: string;
   terms_and_conditions_url?: string;
+  merchant_key?: string;
+  merchant_salt?: string;
+  merchant_secret_key?: string;
+  merchant_enviroment?: string;
 }
 
 export default function SettingsPage() {
@@ -71,6 +75,10 @@ export default function SettingsPage() {
     whatsapp_number: "",
     privacy_policy_url: "",
     terms_and_conditions_url: "",
+    merchant_key: "",
+    merchant_salt: "",
+    merchant_secret_key: "",
+    merchant_enviroment: "1",
     created_at: new Date().toISOString(),
   });
 
@@ -135,7 +143,9 @@ export default function SettingsPage() {
   }, [storeFeatures]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value, type } = e.target;
 
@@ -244,6 +254,10 @@ export default function SettingsPage() {
         whatsapp_number: settings.whatsapp_number,
         privacy_policy_url: settings.privacy_policy_url,
         terms_and_conditions_url: settings.terms_and_conditions_url,
+        merchant_key: settings.merchant_key,
+        merchant_salt: settings.merchant_salt,
+        merchant_secret_key: settings.merchant_secret_key,
+        merchant_enviroment: settings.merchant_enviroment,
       };
 
       const response: ApiResponse<null> = await makeAuthenticatedRequest(
@@ -1072,6 +1086,124 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* PayU Configuration - Only show when online payment is enabled */}
+                {settings.is_online_payment_enabled === 1 && (
+                  <div className="space-y-6 mt-8 pt-8 border-t border-gray-200 dark:border-slate-700">
+                    <div>
+                      <h3
+                        className={`text-lg font-semibold ${textPrimary} mb-2`}
+                      >
+                        PayU Payment Gateway Configuration
+                      </h3>
+                      <p className={`text-sm ${textSecondary} mb-4`}>
+                        Configure your PayU merchant credentials for online
+                        payments
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {/* Merchant Key */}
+                      <div>
+                        <label
+                          htmlFor="merchant_key"
+                          className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                        >
+                          Merchant Key
+                        </label>
+                        <input
+                          type="text"
+                          id="merchant_key"
+                          name="merchant_key"
+                          value={settings.merchant_key || ""}
+                          onChange={handleChange}
+                          placeholder="Enter PayU Merchant Key"
+                          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                        />
+                      </div>
+
+                      {/* Merchant Salt */}
+                      <div>
+                        <label
+                          htmlFor="merchant_salt"
+                          className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                        >
+                          Merchant Salt
+                        </label>
+                        <input
+                          type="text"
+                          id="merchant_salt"
+                          name="merchant_salt"
+                          value={settings.merchant_salt || ""}
+                          onChange={handleChange}
+                          placeholder="Enter PayU Merchant Salt"
+                          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                        />
+                      </div>
+
+                      {/* Merchant Secret Key */}
+                      <div>
+                        <label
+                          htmlFor="merchant_secret_key"
+                          className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                        >
+                          Merchant Secret Key
+                        </label>
+                        <input
+                          type="password"
+                          id="merchant_secret_key"
+                          name="merchant_secret_key"
+                          value={settings.merchant_secret_key || ""}
+                          onChange={handleChange}
+                          placeholder="Enter PayU Secret Key"
+                          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                        />
+                      </div>
+
+                      {/* Environment */}
+                      <div>
+                        <label
+                          htmlFor="merchant_enviroment"
+                          className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                        >
+                          Environment
+                        </label>
+                        <select
+                          id="merchant_enviroment"
+                          name="merchant_enviroment"
+                          value={settings.merchant_enviroment || "1"}
+                          onChange={handleChange}
+                          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                        >
+                          <option value="1">Test/Sandbox</option>
+                          <option value="0">Production</option>
+                        </select>
+                        <p className={`text-xs ${textTertiary} mt-1`}>
+                          Use Test mode for development, Production for live
+                          payments
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`${
+                        isDarkMode
+                          ? "bg-yellow-950 border-yellow-900"
+                          : "bg-yellow-50 border-yellow-200"
+                      } border rounded-lg p-4`}
+                    >
+                      <p
+                        className={`text-sm ${
+                          isDarkMode ? "text-yellow-200" : "text-yellow-900"
+                        }`}
+                      >
+                        <span className="font-semibold">⚠️ Security:</span> Keep
+                        your PayU credentials secure. Never share them publicly.
+                        These credentials are used to process online payments.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Info Box */}
                 <div

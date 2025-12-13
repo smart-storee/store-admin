@@ -221,7 +221,6 @@ export default function PaymentLogsPage() {
     return true;
   });
 
-
   return (
     <RoleGuard requiredPermissions={["manage_orders"]}>
       <div className="p-6 space-y-6">
