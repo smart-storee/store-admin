@@ -81,8 +81,8 @@ export default function PaymentLogsPage() {
       setError(null);
 
       const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: "20",
+        // page: currentPage.toString(),
+        // limit: "20",
       });
 
       if (statusFilter !== "all") {
@@ -111,13 +111,13 @@ export default function PaymentLogsPage() {
 
       if (response.success) {
         setPaymentLogs(response.data.data || []);
-        setTotalCount(response.data.pagination?.total || response.data.data?.length || 0);
+        // setTotalCount(response.data.pagination?.total || response.data.data?.length || 0);
 
         // If total is null, use the length of the current data array
-        const totalItems = response.data.pagination?.total ?? response.data.data?.length ?? 0;
-        const limit = response.data.pagination?.limit || 20;
+        // const totalItems = response.data.pagination?.total ?? response.data.data?.length ?? 0;
+        // const limit = response.data.pagination?.limit || 20;
 
-        setTotalPages(Math.ceil(totalItems / limit));
+        // setTotalPages(Math.ceil(totalItems / limit));
       } else {
         throw new Error(response.message || "Failed to fetch payment logs");
       }
