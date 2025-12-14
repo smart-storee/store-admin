@@ -588,3 +588,145 @@ export interface BulkOperationResult {
   success_count: number;
   error_count: number;
 }
+
+// Refund types
+export interface RefundRequest {
+  refund_id: number;
+  order_id: number;
+  user_id: number;
+  cust_id?: string;
+  store_id: number;
+  branch_id: number;
+  refund_type: "full" | "partial";
+  refund_amount: number;
+  original_amount: number;
+  refund_reason: string;
+  refund_description?: string;
+  refund_status:
+    | "pending"
+    | "approved"
+    | "rejected"
+    | "processing"
+    | "completed"
+    | "failed";
+  payment_method: "cod" | "online" | "upi";
+  refund_method: "original" | "bank_transfer" | "wallet" | "store_credit";
+  refund_reference?: string;
+  admin_notes?: string;
+  customer_notes?: string;
+  processed_by?: number;
+  processed_at?: string;
+  created_at: string;
+  updated_at: string;
+  order_number?: string;
+  order_total?: number;
+  order_status?: string;
+  payment_status?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  customer_email?: string;
+  txn_id?: string;
+  payment_log_status?: string;
+  history?: RefundHistory[];
+}
+
+export interface RefundHistory {
+  history_id: number;
+  refund_id: number;
+  status: string;
+  action: string;
+  notes?: string;
+  performed_by?: number;
+  performed_by_name?: string;
+  created_at: string;
+}
+
+export interface RefundStatistics {
+  total_refunds: number;
+  pending_count: number;
+  approved_count: number;
+  processing_count: number;
+  completed_count: number;
+  rejected_count: number;
+  failed_count: number;
+  total_refunded_amount: number;
+  total_requested_amount: number;
+}
+
+// Return types
+export interface ReturnRequest {
+  return_id: number;
+  order_id: number;
+  user_id: number;
+  cust_id?: string;
+  store_id: number;
+  branch_id: number;
+  return_type: "full" | "partial";
+  return_reason: string;
+  return_description?: string;
+  return_status:
+    | "pending"
+    | "approved"
+    | "rejected"
+    | "picked_up"
+    | "received"
+    | "processing_refund"
+    | "completed"
+    | "cancelled";
+  pickup_address?: string;
+  pickup_scheduled_at?: string;
+  pickup_completed_at?: string;
+  received_at?: string;
+  refund_id?: number;
+  admin_notes?: string;
+  customer_notes?: string;
+  processed_by?: number;
+  processed_at?: string;
+  created_at: string;
+  updated_at: string;
+  order_number?: string;
+  order_total?: number;
+  order_status?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  customer_email?: string;
+  items?: ReturnItem[];
+  history?: ReturnHistory[];
+}
+
+export interface ReturnItem {
+  return_item_id: number;
+  return_id: number;
+  order_item_id: number;
+  quantity: number;
+  refund_amount: number;
+  return_reason?: string;
+  item_condition: "unopened" | "opened" | "damaged" | "defective";
+  product_name?: string;
+  variant_name?: string;
+  original_quantity?: number;
+  unit_price?: number;
+  total_price?: number;
+}
+
+export interface ReturnHistory {
+  history_id: number;
+  return_id: number;
+  status: string;
+  action: string;
+  notes?: string;
+  performed_by?: number;
+  performed_by_name?: string;
+  created_at: string;
+}
+
+export interface ReturnStatistics {
+  total_returns: number;
+  pending_count: number;
+  approved_count: number;
+  picked_up_count: number;
+  received_count: number;
+  completed_count: number;
+  rejected_count: number;
+  cancelled_count: number;
+}

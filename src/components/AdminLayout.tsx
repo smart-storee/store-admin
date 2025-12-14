@@ -176,6 +176,18 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       permission: "view_reports",
       feature: "reports_enabled",
     },
+    // {
+    //   name: "Refunds",
+    //   href: "/refunds",
+    //   permission: "manage_orders",
+    //   feature: "orders_enabled",
+    // },
+    // {
+    //   name: "Returns",
+    //   href: "/returns",
+    //   permission: "manage_orders",
+    //   feature: "orders_enabled",
+    // },
     {
       name: "Home Config",
       href: "/home-config",
@@ -194,13 +206,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     //   href: "/billing",
     //   permission: "view_reports",
     //   feature: "billings_enabled",
-    // },
-
-    // {
-    //   name: "Payment Logs",
-    //   href: "/payment-logs",
-    //   permission: "view_reports",
-    //   feature: "payment_logs_enabled",
     // },
     {
       name: "Settings",
@@ -526,6 +531,50 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
             <line x1="1" y1="10" x2="23" y2="10"></line>
             <path d="M7 16h.01M17 16h.01"></path>
+          </svg>
+        );
+      case "Reviews":
+        return (
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+          </svg>
+        );
+      case "Refunds":
+        return (
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M12 2v20"></path>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            <path d="M3 12h3"></path>
+            <path d="M21 12h-3"></path>
+          </svg>
+        );
+      case "Returns":
+        return (
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H5a2 2 0 0 0-2-2z"></path>
+            <path d="M8 7l-4 4 4 4"></path>
+            <path d="M12 11h8"></path>
           </svg>
         );
       case "Home Config":
