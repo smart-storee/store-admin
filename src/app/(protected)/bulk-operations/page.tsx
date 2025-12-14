@@ -247,13 +247,14 @@ export default function BulkOperationsPage() {
   };
 
   // Fetch products
-  const fetchProducts = async () => {
+  const fetchProducts = async (search?: string) => {
     try {
       setProductsLoading(true);
+      const searchTerm = search ?? productSearchTerm;
       const params = new URLSearchParams({
         store_id: user?.store_id?.toString() || "",
         limit: "100",
-        ...(productSearchTerm && { search: productSearchTerm }),
+        ...(searchTerm && { search: searchTerm }),
       });
 
       const response: any = await makeAuthenticatedRequest(
