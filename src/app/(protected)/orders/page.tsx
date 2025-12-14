@@ -32,6 +32,7 @@ import {
   ArrowUp,
   ArrowDown,
   ChevronsUpDown,
+  CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -102,7 +103,17 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [currentPage, searchTerm, statusFilter, selectedBranch, dateFrom, dateTo, sortBy, sortOrder, itemsPerPage]);
+  }, [
+    currentPage,
+    searchTerm,
+    statusFilter,
+    selectedBranch,
+    dateFrom,
+    dateTo,
+    sortBy,
+    sortOrder,
+    itemsPerPage,
+  ]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -117,7 +128,7 @@ export default function OrdersPage() {
       }
 
       // Refresh on 'R' key
-      if ((e.key === 'r' || e.key === 'R') && !loading && !refreshing) {
+      if ((e.key === "r" || e.key === "R") && !loading && !refreshing) {
         e.preventDefault();
         setRefreshing(true);
         fetchOrders().finally(() => {
@@ -126,14 +137,14 @@ export default function OrdersPage() {
       }
 
       // Toggle filters on 'F' key
-      if (e.key === 'f' || e.key === 'F') {
+      if (e.key === "f" || e.key === "F") {
         e.preventDefault();
         setShowFilters((prev) => !prev);
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
   }, [loading, refreshing]);
 
   const fetchOrders = async () => {
@@ -192,9 +203,7 @@ export default function OrdersPage() {
         setOrders(ordersData);
 
         if (response.pagination) {
-          setTotalPages(
-            Math.ceil(response.pagination.total / itemsPerPage)
-          );
+          setTotalPages(Math.ceil(response.pagination.total / itemsPerPage));
           setTotalCount(response.pagination.total);
         }
 
@@ -231,7 +240,7 @@ export default function OrdersPage() {
 
   const handleStatusUpdate = async (orderId: number, newStatus: string) => {
     setUpdatingOrderId(orderId);
-    
+
     try {
       const response: ApiResponse<null> = await makeAuthenticatedRequest(
         `/orders/${orderId}/status`,
@@ -242,7 +251,9 @@ export default function OrdersPage() {
       );
 
       if (response.success) {
-        const statusLabel = newStatus.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+        const statusLabel = newStatus
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
         setSuccessMessage(`Order status updated to ${statusLabel}`);
         setTimeout(() => setSuccessMessage(null), 3000);
         await fetchOrders();
@@ -267,7 +278,7 @@ export default function OrdersPage() {
       ready: "out_for_delivery",
       out_for_delivery: "delivered",
     };
-    
+
     const nextStatus = nextStatusMap[currentStatus];
     if (nextStatus) {
       await handleStatusUpdate(orderId, nextStatus);
@@ -383,7 +394,11 @@ export default function OrdersPage() {
   };
 
   const hasActiveFilters =
-    searchTerm || statusFilter !== "all" || selectedBranch || dateFrom || dateTo;
+    searchTerm ||
+    statusFilter !== "all" ||
+    selectedBranch ||
+    dateFrom ||
+    dateTo;
 
   const handleSort = (column: string) => {
     if (sortBy === column) {
@@ -418,7 +433,7 @@ export default function OrdersPage() {
     const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
     const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
 
-    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+    const formatDate = (date: Date) => date.toISOString().split("T")[0];
 
     switch (preset) {
       case "today":
@@ -481,7 +496,10 @@ export default function OrdersPage() {
       if (response.success) {
         const ordersData = response.data.data || response.data;
         const csv = convertToCSV(ordersData);
-        downloadCSV(csv, `orders-${new Date().toISOString().split('T')[0]}.csv`);
+        downloadCSV(
+          csv,
+          `orders-${new Date().toISOString().split("T")[0]}.csv`
+        );
         setSuccessMessage("Orders exported successfully");
         setTimeout(() => setSuccessMessage(null), 3000);
       }
@@ -522,7 +540,7 @@ export default function OrdersPage() {
 
       if (response.success) {
         const ordersData = response.data.data || response.data;
-        
+
         // Fetch full order details with items for each order
         const ordersWithItems = await Promise.all(
           ordersData.map(async (order) => {
@@ -547,7 +565,10 @@ export default function OrdersPage() {
         );
 
         const csv = convertToDeliveryCSV(ordersWithItems);
-        downloadCSV(csv, `delivery-orders-${new Date().toISOString().split('T')[0]}.csv`);
+        downloadCSV(
+          csv,
+          `delivery-orders-${new Date().toISOString().split("T")[0]}.csv`
+        );
         setSuccessMessage("Delivery orders exported successfully");
         setTimeout(() => setSuccessMessage(null), 3000);
       }
@@ -620,10 +641,12 @@ export default function OrdersPage() {
       const itemsList = (order.items || [])
         .map(
           (item) =>
-            `${item.product_name}${item.variant_name ? ` (${item.variant_name})` : ""}`
+            `${item.product_name}${
+              item.variant_name ? ` (${item.variant_name})` : ""
+            }`
         )
         .join("; ");
-      
+
       const quantities = (order.items || [])
         .map((item) => `${item.product_name}: ${item.quantity}`)
         .join("; ");
@@ -740,12 +763,17 @@ export default function OrdersPage() {
                     }`}
                     title="Export orders to CSV"
                   >
-                    <Download size={16} className={exporting ? "animate-pulse" : ""} />
+                    <Download
+                      size={16}
+                      className={exporting ? "animate-pulse" : ""}
+                    />
                     <span className="hidden sm:inline">Export</span>
                   </button>
                   <button
                     onClick={handleDeliveryExport}
-                    disabled={exportingDelivery || loading || orders.length === 0}
+                    disabled={
+                      exportingDelivery || loading || orders.length === 0
+                    }
                     className={`flex items-center justify-center gap-2 px-4 py-2 h-10 text-sm font-medium rounded-lg border transition-all duration-200 ${
                       isDarkMode
                         ? "bg-green-700 border-green-600 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -753,7 +781,10 @@ export default function OrdersPage() {
                     }`}
                     title="Export for delivery partner (includes customer, address, items, price)"
                   >
-                    <Truck size={16} className={exportingDelivery ? "animate-pulse" : ""} />
+                    <Truck
+                      size={16}
+                      className={exportingDelivery ? "animate-pulse" : ""}
+                    />
                     <span className="hidden sm:inline">Delivery Export</span>
                     <span className="sm:hidden">Delivery</span>
                   </button>
@@ -767,7 +798,10 @@ export default function OrdersPage() {
                     }`}
                     title="Refresh orders (R)"
                   >
-                    <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+                    <RefreshCw
+                      size={16}
+                      className={refreshing ? "animate-spin" : ""}
+                    />
                     <span className="hidden sm:inline">Refresh</span>
                   </button>
                   <button
@@ -966,20 +1000,20 @@ export default function OrdersPage() {
                             isDarkMode ? "text-slate-400" : "text-gray-400"
                           }`}
                         />
-                      <input
-                        type="text"
-                        placeholder="Order #, customer name, phone..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value);
-                          setCurrentPage(1);
-                        }}
-                        className={`w-full h-10 pl-10 pr-4 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
-                          isDarkMode
-                            ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
-                            : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                        }`}
-                      />
+                        <input
+                          type="text"
+                          placeholder="Order #, customer name, phone..."
+                          value={searchTerm}
+                          onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setCurrentPage(1);
+                          }}
+                          className={`w-full h-10 pl-10 pr-4 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                            isDarkMode
+                              ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+                              : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                          }`}
+                        />
                       </div>
                     </div>
                     <div>
@@ -1006,7 +1040,10 @@ export default function OrdersPage() {
                       >
                         <option value="">All Branches</option>
                         {branches.map((branch) => (
-                          <option key={branch.branch_id} value={branch.branch_id}>
+                          <option
+                            key={branch.branch_id}
+                            value={branch.branch_id}
+                          >
                             {branch.branch_name}
                           </option>
                         ))}
@@ -1037,7 +1074,9 @@ export default function OrdersPage() {
                         <option value="confirmed">Confirmed</option>
                         <option value="preparing">Preparing</option>
                         <option value="ready">Ready</option>
-                        <option value="out_for_delivery">Out for Delivery</option>
+                        <option value="out_for_delivery">
+                          Out for Delivery
+                        </option>
                         <option value="delivered">Delivered</option>
                         <option value="cancelled">Cancelled</option>
                       </select>
@@ -1142,7 +1181,9 @@ export default function OrdersPage() {
                 <button
                   onClick={() => setSuccessMessage(null)}
                   className={`ml-auto ${
-                    isDarkMode ? "text-green-400 hover:text-green-300" : "text-green-600 hover:text-green-700"
+                    isDarkMode
+                      ? "text-green-400 hover:text-green-300"
+                      : "text-green-600 hover:text-green-700"
                   }`}
                 >
                   <X size={16} />
@@ -1269,6 +1310,13 @@ export default function OrdersPage() {
                           Branch
                         </th>
                         <th
+                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${
+                            isDarkMode ? "text-slate-300" : "text-gray-700"
+                          }`}
+                        >
+                          Payment Method
+                        </th>
+                        <th
                           className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell ${
                             isDarkMode ? "text-slate-300" : "text-gray-700"
                           }`}
@@ -1289,7 +1337,11 @@ export default function OrdersPage() {
                         >
                           <div className="flex items-center gap-1.5">
                             Amount
-                            <span className={sortBy === "total_amount" ? "" : "opacity-50"}>
+                            <span
+                              className={
+                                sortBy === "total_amount" ? "" : "opacity-50"
+                              }
+                            >
                               {getSortIcon("total_amount")}
                             </span>
                           </div>
@@ -1308,7 +1360,11 @@ export default function OrdersPage() {
                         >
                           <div className="flex items-center gap-1.5">
                             Status
-                            <span className={sortBy === "order_status" ? "" : "opacity-50"}>
+                            <span
+                              className={
+                                sortBy === "order_status" ? "" : "opacity-50"
+                              }
+                            >
                               {getSortIcon("order_status")}
                             </span>
                           </div>
@@ -1327,7 +1383,11 @@ export default function OrdersPage() {
                         >
                           <div className="flex items-center gap-1.5">
                             Date
-                            <span className={sortBy === "created_at" ? "" : "opacity-50"}>
+                            <span
+                              className={
+                                sortBy === "created_at" ? "" : "opacity-50"
+                              }
+                            >
                               {getSortIcon("created_at")}
                             </span>
                           </div>
@@ -1352,7 +1412,9 @@ export default function OrdersPage() {
                         );
                         const StatusIcon = statusConfig.icon;
                         const nextStatus = getNextStatus(order.order_status);
-                        const quickActionLabel = getQuickActionLabel(order.order_status);
+                        const quickActionLabel = getQuickActionLabel(
+                          order.order_status
+                        );
                         return (
                           <tr
                             key={order.order_id}
@@ -1360,9 +1422,9 @@ export default function OrdersPage() {
                               // Don't navigate if clicking on action buttons or dropdown
                               const target = e.target as HTMLElement;
                               if (
-                                target.closest('select') ||
-                                target.closest('a') ||
-                                target.closest('button') ||
+                                target.closest("select") ||
+                                target.closest("a") ||
+                                target.closest("button") ||
                                 target.closest('[role="button"]')
                               ) {
                                 return;
@@ -1384,19 +1446,46 @@ export default function OrdersPage() {
                                 >
                                   #{order.order_number}
                                 </div>
-                                <div
-                                  className={`text-xs ${
-                                    isDarkMode
-                                      ? "text-slate-400"
-                                      : "text-gray-500"
-                                  }`}
-                                >
-                                  {order.payment_method?.toUpperCase() || "N/A"}
+                                <div className="sm:hidden mt-1">
+                                  {order.payment_method === "cod" ? (
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${
+                                        isDarkMode
+                                          ? "bg-orange-900/30 text-orange-300"
+                                          : "bg-orange-50 text-orange-700"
+                                      }`}
+                                    >
+                                      COD
+                                    </span>
+                                  ) : order.payment_method === "online" ? (
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${
+                                        isDarkMode
+                                          ? "bg-green-900/30 text-green-300"
+                                          : "bg-green-50 text-green-700"
+                                      }`}
+                                    >
+                                      Online
+                                    </span>
+                                  ) : (
+                                    <span
+                                      className={`text-xs ${
+                                        isDarkMode
+                                          ? "text-slate-400"
+                                          : "text-gray-500"
+                                      }`}
+                                    >
+                                      {order.payment_method?.toUpperCase() ||
+                                        "N/A"}
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="sm:hidden mt-1">
                                   <div
                                     className={`text-xs font-medium ${
-                                      isDarkMode ? "text-white" : "text-gray-900"
+                                      isDarkMode
+                                        ? "text-white"
+                                        : "text-gray-900"
                                     }`}
                                   >
                                     {order.customer_name || "N/A"}
@@ -1444,6 +1533,44 @@ export default function OrdersPage() {
                                 }`}
                               >
                                 {order.branch_name || "N/A"}
+                              </div>
+                            </td>
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
+                              <div className="flex items-center gap-1.5">
+                                {order.payment_method === "cod" ? (
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+                                      isDarkMode
+                                        ? "bg-orange-900/30 text-orange-300 border border-orange-700/50"
+                                        : "bg-orange-50 text-orange-700 border border-orange-200"
+                                    }`}
+                                  >
+                                    <ShoppingBag size={12} />
+                                    COD
+                                  </span>
+                                ) : order.payment_method === "online" ? (
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+                                      isDarkMode
+                                        ? "bg-green-900/30 text-green-300 border border-green-700/50"
+                                        : "bg-green-50 text-green-700 border border-green-200"
+                                    }`}
+                                  >
+                                    <CreditCard size={12} />
+                                    Online
+                                  </span>
+                                ) : (
+                                  <span
+                                    className={`text-xs ${
+                                      isDarkMode
+                                        ? "text-slate-400"
+                                        : "text-gray-500"
+                                    }`}
+                                  >
+                                    {order.payment_method?.toUpperCase() ||
+                                      "N/A"}
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
@@ -1515,15 +1642,23 @@ export default function OrdersPage() {
                                   : ""}
                               </div>
                             </td>
-                            <td className="px-4 sm:px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                            <td
+                              className="px-4 sm:px-6 py-4 text-right"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <div className="flex items-center justify-end gap-2 flex-nowrap">
                                 {nextStatus && (
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleQuickAction(order.order_id, order.order_status);
+                                      handleQuickAction(
+                                        order.order_id,
+                                        order.order_status
+                                      );
                                     }}
-                                    disabled={updatingOrderId === order.order_id}
+                                    disabled={
+                                      updatingOrderId === order.order_id
+                                    }
                                     className={`h-9 px-3 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1.5 ${
                                       updatingOrderId === order.order_id
                                         ? "opacity-50 cursor-not-allowed"
@@ -1536,10 +1671,15 @@ export default function OrdersPage() {
                                     title={`Quick action: ${quickActionLabel}`}
                                   >
                                     {updatingOrderId === order.order_id ? (
-                                      <Loader2 size={14} className="animate-spin" />
+                                      <Loader2
+                                        size={14}
+                                        className="animate-spin"
+                                      />
                                     ) : (
                                       <>
-                                        <span className="hidden lg:inline">{quickActionLabel}</span>
+                                        <span className="hidden lg:inline">
+                                          {quickActionLabel}
+                                        </span>
                                         <span className="lg:hidden">Next</span>
                                       </>
                                     )}
@@ -1548,9 +1688,15 @@ export default function OrdersPage() {
                                 <div className="relative">
                                   <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10">
                                     {updatingOrderId === order.order_id ? (
-                                      <Loader2 size={14} className={`${statusConfig.text} animate-spin`} />
+                                      <Loader2
+                                        size={14}
+                                        className={`${statusConfig.text} animate-spin`}
+                                      />
                                     ) : (
-                                      <StatusIcon size={14} className={statusConfig.text} />
+                                      <StatusIcon
+                                        size={14}
+                                        className={statusConfig.text}
+                                      />
                                     )}
                                   </div>
                                   <select
@@ -1562,7 +1708,9 @@ export default function OrdersPage() {
                                         e.target.value
                                       );
                                     }}
-                                    disabled={updatingOrderId === order.order_id}
+                                    disabled={
+                                      updatingOrderId === order.order_id
+                                    }
                                     onClick={(e) => e.stopPropagation()}
                                     className={`h-9 text-sm font-semibold pl-9 pr-8 rounded-lg border-2 transition-all duration-200 cursor-pointer appearance-none focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[130px] ${
                                       updatingOrderId === order.order_id
@@ -1574,22 +1722,29 @@ export default function OrdersPage() {
                                         : `${statusConfig.bg} ${statusConfig.border} ${statusConfig.text} hover:shadow-md focus:ring-blue-500`
                                     }`}
                                     style={{
-                                      backgroundImage: updatingOrderId === order.order_id
-                                        ? 'none'
-                                        : isDarkMode
-                                        ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23cbd5e1' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`
-                                        : `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
-                                      backgroundRepeat: 'no-repeat',
-                                      backgroundPosition: 'right 0.5rem center',
-                                      backgroundSize: '10px',
+                                      backgroundImage:
+                                        updatingOrderId === order.order_id
+                                          ? "none"
+                                          : isDarkMode
+                                          ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23cbd5e1' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`
+                                          : `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                                      backgroundRepeat: "no-repeat",
+                                      backgroundPosition: "right 0.5rem center",
+                                      backgroundSize: "10px",
                                     }}
-                                    title={updatingOrderId === order.order_id ? "Updating status..." : "Update order status"}
+                                    title={
+                                      updatingOrderId === order.order_id
+                                        ? "Updating status..."
+                                        : "Update order status"
+                                    }
                                   >
                                     <option value="pending">Pending</option>
                                     <option value="confirmed">Confirmed</option>
                                     <option value="preparing">Preparing</option>
                                     <option value="ready">Ready</option>
-                                    <option value="out_for_delivery">Out for Delivery</option>
+                                    <option value="out_for_delivery">
+                                      Out for Delivery
+                                    </option>
                                     <option value="delivered">Delivered</option>
                                     <option value="cancelled">Cancelled</option>
                                   </select>
