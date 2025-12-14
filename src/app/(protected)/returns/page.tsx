@@ -151,7 +151,7 @@ export default function ReturnsPage() {
 
     try {
       setProcessingAction(returnId);
-      const response: ApiResponse = await makeAuthenticatedRequest(
+      const response: ApiResponse<{}> = await makeAuthenticatedRequest(
         `/returns/${returnId}/approve`,
         {
           method: "PUT",
@@ -186,7 +186,7 @@ export default function ReturnsPage() {
 
     try {
       setProcessingAction(returnId);
-      const response: ApiResponse = await makeAuthenticatedRequest(
+      const response: ApiResponse<{}> = await makeAuthenticatedRequest(
         `/returns/${returnId}/reject`,
         {
           method: "PUT",
@@ -218,7 +218,7 @@ export default function ReturnsPage() {
   const handlePickupCompleted = async (returnId: number) => {
     try {
       setProcessingAction(returnId);
-      const response: ApiResponse = await makeAuthenticatedRequest(
+      const response: ApiResponse<{}> = await makeAuthenticatedRequest(
         `/returns/${returnId}/pickup-completed`,
         {
           method: "PUT",
@@ -248,7 +248,7 @@ export default function ReturnsPage() {
   const handleItemsReceived = async (returnId: number) => {
     try {
       setProcessingAction(returnId);
-      const response: ApiResponse = await makeAuthenticatedRequest(
+      const response: ApiResponse<{}> = await makeAuthenticatedRequest(
         `/returns/${returnId}/items-received`,
         {
           method: "PUT",
@@ -278,7 +278,7 @@ export default function ReturnsPage() {
   const handleComplete = async (returnId: number) => {
     try {
       setProcessingAction(returnId);
-      const response: ApiResponse = await makeAuthenticatedRequest(
+      const response: ApiResponse<{}> = await makeAuthenticatedRequest(
         `/returns/${returnId}/complete`,
         {
           method: "PUT",

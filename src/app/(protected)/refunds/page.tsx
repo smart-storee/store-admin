@@ -150,7 +150,7 @@ export default function RefundsPage() {
 
     try {
       setProcessingAction(refundId);
-      const response: ApiResponse = await makeAuthenticatedRequest(
+      const response: ApiResponse<{}> = await makeAuthenticatedRequest(
         `/refunds/${refundId}/approve`,
         {
           method: "PUT",
@@ -183,7 +183,7 @@ export default function RefundsPage() {
 
     try {
       setProcessingAction(refundId);
-      const response: ApiResponse = await makeAuthenticatedRequest(
+      const response: ApiResponse<{}> = await makeAuthenticatedRequest(
         `/refunds/${refundId}/reject`,
         {
           method: "PUT",
@@ -219,7 +219,7 @@ export default function RefundsPage() {
 
     try {
       setProcessingAction(refundId);
-      const response: ApiResponse = await makeAuthenticatedRequest(
+      const response: ApiResponse<{}> = await makeAuthenticatedRequest(
         `/refunds/${refundId}/complete`,
         {
           method: "PUT",
@@ -350,10 +350,7 @@ export default function RefundsPage() {
                       Total Refunded
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                      ₹
-                      {parseFloat(
-                        statistics.total_refunded_amount || 0
-                      ).toFixed(2)}
+                      ₹{(statistics.total_refunded_amount || 0).toFixed(2)}
                     </p>
                   </div>
                   <TrendingDown className="h-8 w-8 text-red-600 dark:text-red-400" />
