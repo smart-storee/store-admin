@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { validateEmail } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { LOGIN_CONSTANTS } from "@/constants/login";
+import { API_BASE_URL_WITH_VERSION } from "@/config/api.config";
+import loginImage from "@/assets/images/login-logo.png";
+import favicon from "@/assets/images/favicon.png";
+
+interface AppConfig {
+  app_name: string;
+  sub_title: string | null;
+  logo_url: string | null;
+  store_initial: string;
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,7 +24,77 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [appConfig, setAppConfig] = useState<AppConfig | null>(null);
+  const [loadingConfig, setLoadingConfig] = useState(true);
   const { login } = useAuth();
+
+  // Fetch app config from database
+  useEffect(() => {
+    const fetchAppConfig = async () => {
+      try {
+        // Get store_id from environment variable
+        const storeId = process.env.NEXT_PUBLIC_STORE_ID;
+
+        if (!storeId) {
+          // Fallback to default constants if no store_id
+          setAppConfig({
+            app_name: LOGIN_CONSTANTS.STORE_NAME,
+            sub_title: LOGIN_CONSTANTS.PORTAL_NAME,
+            logo_url: null,
+            store_initial: LOGIN_CONSTANTS.STORE_INITIAL,
+          });
+          setLoadingConfig(false);
+          return;
+        }
+
+        const response = await fetch(
+          `${API_BASE_URL_WITH_VERSION}/admin/app-settings/public?store_id=${storeId}`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            setAppConfig({
+              app_name: data.data.app_name || LOGIN_CONSTANTS.STORE_NAME,
+              sub_title: data.data.sub_title || LOGIN_CONSTANTS.PORTAL_NAME,
+              logo_url: data.data.logo_url || null,
+              store_initial:
+                data.data.store_initial || LOGIN_CONSTANTS.STORE_INITIAL,
+            });
+          } else {
+            // Fallback to default constants
+            setAppConfig({
+              app_name: LOGIN_CONSTANTS.STORE_NAME,
+              sub_title: LOGIN_CONSTANTS.PORTAL_NAME,
+              logo_url: null,
+              store_initial: LOGIN_CONSTANTS.STORE_INITIAL,
+            });
+          }
+        } else {
+          // Fallback to default constants on error
+          setAppConfig({
+            app_name: LOGIN_CONSTANTS.STORE_NAME,
+            sub_title: LOGIN_CONSTANTS.PORTAL_NAME,
+            logo_url: null,
+            store_initial: LOGIN_CONSTANTS.STORE_INITIAL,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch app config:", err);
+        // Fallback to default constants on error
+        setAppConfig({
+          app_name: LOGIN_CONSTANTS.STORE_NAME,
+          sub_title: LOGIN_CONSTANTS.PORTAL_NAME,
+          logo_url: null,
+          store_initial: LOGIN_CONSTANTS.STORE_INITIAL,
+        });
+      } finally {
+        setLoadingConfig(false);
+      }
+    };
+
+    fetchAppConfig();
+  }, []);
 
   const validateForm = () => {
     let isValid = true;
@@ -93,17 +173,23 @@ export default function LoginPage() {
                   "0 4px 6px rgba(65, 105, 225, 0.3)";
               }}
             >
-              {LOGIN_CONSTANTS.STORE_INITIAL}
+              {loadingConfig
+                ? LOGIN_CONSTANTS.STORE_INITIAL
+                : appConfig?.store_initial || LOGIN_CONSTANTS.STORE_INITIAL}
             </div>
             <div>
               <h1
                 className="text-xl font-bold"
                 style={{ color: "var(--text-primary)" }}
               >
-                {LOGIN_CONSTANTS.STORE_NAME}
+                {loadingConfig
+                  ? LOGIN_CONSTANTS.STORE_NAME
+                  : appConfig?.app_name || LOGIN_CONSTANTS.STORE_NAME}
               </h1>
               <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                {LOGIN_CONSTANTS.PORTAL_NAME}
+                {loadingConfig
+                  ? LOGIN_CONSTANTS.PORTAL_NAME
+                  : appConfig?.sub_title || LOGIN_CONSTANTS.PORTAL_NAME}
               </p>
             </div>
           </div>
@@ -357,13 +443,30 @@ export default function LoginPage() {
             zIndex: 1,
           }}
         >
-          <Image
-            src={LOGIN_CONSTANTS.LOGIN_IMAGE}
-            alt="Login"
-            fill
-            style={{ objectFit: "contain" }}
-            priority
-          />
+          {loadingConfig || !appConfig?.logo_url ? (
+            <Image
+              src={LOGIN_CONSTANTS.LOGIN_IMAGE}
+              alt="Login"
+              fill
+              style={{ objectFit: "contain" }}
+              priority
+            />
+          ) : (
+            <img
+              src={appConfig.logo_url}
+              alt="Login"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+              }}
+              onError={(e) => {
+                // Fallback to default image if logo_url fails to load
+                const target = e.target as HTMLImageElement;
+                target.src = LOGIN_CONSTANTS.LOGIN_IMAGE.src;
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
