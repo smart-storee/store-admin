@@ -1,0 +1,16 @@
+Product Name,Category,Base Price,Product Active,Variant Name,Variant Price,Variant Active,Stock
+"Margherita Pizza","Pizza",299.00,Yes,"Regular",299.00,Yes,50
+"Margherita Pizza","Pizza",299.00,Yes,"Large",399.00,Yes,30
+"Pepperoni Pizza","Pizza",349.00,Yes,"Regular",349.00,Yes,40
+"Pepperoni Pizza","Pizza",349.00,Yes,"Large",449.00,Yes,25
+"Chicken Burger","Burgers",199.00,Yes,"Single",199.00,Yes,60
+"Chicken Burger","Burgers",199.00,Yes,"Double",299.00,Yes,35
+"Veg Burger","Burgers",179.00,Yes,"Single",179.00,Yes,45
+"French Fries","Sides",99.00,Yes,"Regular",99.00,Yes,100
+"French Fries","Sides",99.00,Yes,"Large",149.00,Yes,80
+"Onion Rings","Sides",129.00,Yes,"Regular",129.00,Yes,70
+"Coca Cola","Beverages",50.00,Yes,"250ml",50.00,Yes,200
+"Coca Cola","Beverages",50.00,Yes,"500ml",80.00,Yes,150
+"Pepsi","Beverages",50.00,Yes,"250ml",50.00,Yes,180
+"Pepsi","Beverages",50.00,Yes,"500ml",80.00,Yes,120
+"Water Bottle","Beverages",30.00,Yes,"500ml",30.00,Yes,300

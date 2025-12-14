@@ -117,6 +117,18 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       feature: "categories_enabled", // Business setup flow requires categories
     },
     {
+      name: "Inventory",
+      href: "/inventory",
+      permission: "view_reports",
+      feature: "products_enabled",
+    },
+    {
+      name: "Bulk Operations",
+      href: "/bulk-operations",
+      permission: "manage_products",
+      feature: "products_enabled",
+    },
+    {
       name: "Orders",
       href: "/orders",
       permission: "manage_orders",
@@ -155,6 +167,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     {
       name: "Payment Logs",
       href: "/payment-logs",
+      permission: "view_reports",
+      feature: "reports_enabled",
+    },
+    {
+      name: "Reviews",
+      href: "/reviews",
       permission: "view_reports",
       feature: "reports_enabled",
     },
@@ -338,6 +356,39 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <line x1="9" y1="21" x2="9" y2="9"></line>
             <path d="M9 13h6"></path>
             <path d="M9 17h4"></path>
+          </svg>
+        );
+      case "Inventory":
+        return (
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+        );
+      case "Bulk Operations":
+        return (
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
+            <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
+            <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
           </svg>
         );
       case "Orders":

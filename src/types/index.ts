@@ -220,6 +220,17 @@ export interface OrderItem {
   created_at: string;
 }
 
+export interface Review {
+  review_id: number;
+  order_id: number;
+  rating: number;
+  review_text: string;
+  is_approved: number; // 0 = pending, 1 = approved, 2 = rejected
+  admin_response?: string | null;
+  review_created_at?: string;
+  created_at?: string;
+}
+
 export interface Order {
   order_id: number;
   order_number: string;
@@ -256,6 +267,7 @@ export interface Order {
   total_amount: number;
   items_count: number;
   items?: OrderItem[];
+  review?: Review | null;
   created_at: string;
 }
 
@@ -473,4 +485,106 @@ export interface DashboardSummary {
     status: string;
     payment_method?: string;
   }>;
+}
+
+// Inventory types
+export interface InventoryItem {
+  inventory_id: number;
+  variant_id: number;
+  variant_name: string;
+  variant_price: number;
+  variant_active: boolean;
+  product_id: number;
+  product_name: string;
+  product_description?: string;
+  product_active: boolean;
+  category_id?: number;
+  category_name?: string;
+  branch_id: number;
+  branch_name: string;
+  stock: number;
+  stock_status: "in_stock" | "low_stock" | "out_of_stock";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InventoryStatistics {
+  total_items: number;
+  total_stock: number;
+  out_of_stock_count: number;
+  low_stock_count: number;
+  in_stock_count: number;
+}
+
+export interface LowStockAlert {
+  inventory_id: number;
+  variant_id: number;
+  variant_name: string;
+  product_id: number;
+  product_name: string;
+  category_name?: string;
+  branch_id: number;
+  branch_name: string;
+  stock: number;
+  threshold: number;
+}
+
+export interface OutOfStockItem {
+  inventory_id: number;
+  variant_id: number;
+  variant_name: string;
+  product_id: number;
+  product_name: string;
+  category_name?: string;
+  branch_id: number;
+  branch_name: string;
+  stock: number;
+}
+
+export interface BulkStockUpdate {
+  inventory_id: number;
+  stock: number;
+}
+
+// Bulk Operations types
+export interface BulkProductUpdate {
+  product_id: number;
+  variant_id?: number;
+  updates: {
+    base_price?: number;
+    is_active?: boolean;
+    variant_price?: number;
+    variant_active?: boolean;
+    stock?: number;
+    branch_id?: number;
+  };
+}
+
+export interface BulkCategoryAssignment {
+  product_ids: number[];
+  category_id: number;
+}
+
+export interface BulkOrderStatusUpdate {
+  order_ids: number[];
+  order_status: string;
+}
+
+export interface BulkOperationResult {
+  updated?: Array<{
+    product_id: number;
+    variant_id?: number;
+    success: boolean;
+  }>;
+  imported?: Array<{ row: number; product_name: string; success: boolean }>;
+  errors: Array<{
+    product_id?: number;
+    variant_id?: number;
+    order_id?: number;
+    row?: number;
+    error: string;
+  }>;
+  total: number;
+  success_count: number;
+  error_count: number;
 }
