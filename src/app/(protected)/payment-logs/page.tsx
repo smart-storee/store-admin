@@ -61,10 +61,9 @@ export default function PaymentLogsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedLog, setSelectedLog] = useState<PaymentLog | null>(null);
   const [showLogDetails, setShowLogDetails] = useState(false);
+  const [activeTab, setActiveTab] = useState<"cod" | "online">("cod"); // New state for tabs
 
   useEffect(() => {
-    console.log("Filtered logs:", filteredLogs);
-
     if (user?.store_id) {
       fetchPaymentLogs();
     }
@@ -76,6 +75,11 @@ export default function PaymentLogsPage() {
     dateFrom,
     dateTo,
   ]);
+
+  // Reset to first page when tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
 
 const fetchPaymentLogs = async () => {
   try {
@@ -210,9 +214,32 @@ const formatCurrency = (amount: number | string | null) => {
     );
   };
 
+  // Filter logs based on active tab
   const filteredLogs = paymentLogs.filter((log) => {
-    if (!log) return false; // Add null/undefined check
+    // Filter out null/undefined logs
+    if (!log) return false;
 
+    // Apply current tab filtering
+    if (activeTab === "cod") {
+      // For COD tab, show only COD payments (typically payment method contains "cod" or similar)
+      // We'll need to check for COD-related payment methods
+      const isCodPayment = log.payment_method &&
+        (log.payment_method.toLowerCase().includes("cod") ||
+         log.payment_method.toLowerCase().includes("cash on delivery") ||
+         log.payment_method.toLowerCase().trim() === "");
+
+      if (!isCodPayment) return false;
+    } else if (activeTab === "online") {
+      // For Online Payment tab, show only online payments and only successful ones
+      const isOnlinePayment = log.payment_method &&
+        !log.payment_method.toLowerCase().includes("cod") &&
+        !log.payment_method.toLowerCase().includes("cash on delivery");
+
+      // Only include successful online payments
+      if (!isOnlinePayment || log.status !== "success") return false;
+    }
+
+    // Apply search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       return (
@@ -223,6 +250,21 @@ const formatCurrency = (amount: number | string | null) => {
     }
     return true;
   });
+
+  // Calculate counts for each tab
+  const codPaymentCount = paymentLogs.filter(log =>
+    log.payment_method &&
+    (log.payment_method.toLowerCase().includes("cod") ||
+     log.payment_method.toLowerCase().includes("cash on delivery") ||
+     log.payment_method.toLowerCase().trim() === "")
+  ).length;
+
+  const onlinePaymentCount = paymentLogs.filter(log =>
+    log.payment_method &&
+    !log.payment_method.toLowerCase().includes("cod") &&
+    !log.payment_method.toLowerCase().includes("cash on delivery") &&
+    log.status === "success"
+  ).length;
 
   return (
     <RoleGuard requiredPermissions={["manage_orders"]}>
@@ -256,6 +298,40 @@ const formatCurrency = (amount: number | string | null) => {
               Filters
             </button>
           </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex border-b border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => setActiveTab("cod")}
+            className={`px-4 py-2 font-medium text-sm ${
+              activeTab === "cod"
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            }`}
+          >
+            COD
+            {codPaymentCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100">
+                {codPaymentCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("online")}
+            className={`px-4 py-2 font-medium text-sm ${
+              activeTab === "online"
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            }`}
+          >
+            Online Payment
+            {onlinePaymentCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100">
+                {onlinePaymentCount}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Filters */}
@@ -474,7 +550,7 @@ const formatCurrency = (amount: number | string | null) => {
             {totalPages > 1 && (
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700 dark:text-gray-300">
-                  Showing {filteredLogs.length} of {totalCount} payment logs
+                  Showing {filteredLogs.length} of {activeTab === "cod" ? codPaymentCount : onlinePaymentCount} {activeTab === "cod" ? "COD" : "Online"} payment logs
                 </div>
                 <div className="flex items-center gap-2">
                   <button
