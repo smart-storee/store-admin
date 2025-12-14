@@ -155,8 +155,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     {
       name: "Payment Logs",
       href: "/payment-logs",
-      permission: "manage_orders",
-      feature: "orders_enabled",
+      permission: "view_reports",
+      feature: "reports_enabled",
     },
     {
       name: "Home Config",
@@ -178,12 +178,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     //   feature: "billings_enabled",
     // },
 
-    {
-      name: "Payment Logs",
-      href: "/payment-logs",
-      permission: "view_reports",
-      feature: "payment_logs_enabled",
-    },
+    // {
+    //   name: "Payment Logs",
+    //   href: "/payment-logs",
+    //   permission: "view_reports",
+    //   feature: "payment_logs_enabled",
+    // },
     {
       name: "Settings",
       href: "/settings",
