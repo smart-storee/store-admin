@@ -266,7 +266,8 @@ export default function EditCategoryPage() {
       }
 
       if (responses.every((r) => r.success)) {
-        router.push("/categories");
+        // Navigate to setup flow (categories page with setup view) instead of list
+        router.push("/categories?setup=true");
       } else {
         const failedResponse = responses.find((r) => !r.success);
         throw new Error(failedResponse?.message || "Failed to update category");
