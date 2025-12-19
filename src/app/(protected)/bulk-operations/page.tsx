@@ -626,72 +626,139 @@ export default function BulkOperationsPage() {
           </div>
 
           {/* Tabs */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow mb-6">
-            <div className="border-b border-gray-200 dark:border-gray-700">
-              <nav className="flex -mb-px overflow-x-auto">
-                {[
-                  {
-                    id: "products",
-                    label: "Bulk Product Update",
-                    icon: Package,
-                  },
-                  {
-                    id: "categories",
-                    label: "Bulk Category Assignment",
-                    icon: FolderTree,
-                  },
-                  {
-                    id: "orders",
-                    label: "Bulk Order Status",
-                    icon: ShoppingCart,
-                  },
-                  {
-                    id: "manage-categories",
-                    label: "Manage Categories",
-                    icon: FolderTree,
-                  },
-                  {
-                    id: "manage-products",
-                    label: "Manage Products",
-                    icon: Package,
-                  },
-                  {
-                    id: "manage-variants",
-                    label: "Manage Variants",
-                    icon: Package,
-                  },
-                  {
-                    id: "manage-inventory",
-                    label: "Manage Inventory",
-                    icon: Package,
-                  },
-                  {
-                    id: "import-export",
-                    label: "CSV Import/Export",
-                    icon: FileText,
-                  },
-                ].map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as BulkOperationTab)}
-                      className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                        activeTab === tab.id
-                          ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
+            <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900/50">
+              <nav className="flex flex-wrap gap-1 p-2">
+                {/* Bulk Operations Group */}
+                <div className="flex items-center gap-1 flex-wrap">
+                  <span className="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mr-1">
+                    Bulk Operations
+                  </span>
+                  {[
+                    {
+                      id: "products",
+                      label: "Product Update",
+                      icon: Package,
+                    },
+                    {
+                      id: "categories",
+                      label: "Category Assignment",
+                      icon: FolderTree,
+                    },
+                    {
+                      id: "orders",
+                      label: "Order Status",
+                      icon: ShoppingCart,
+                    },
+                  ].map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as BulkOperationTab)}
+                        className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap ${
+                          isActive
+                            ? "text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/40 shadow-sm border border-indigo-200 dark:border-indigo-800"
+                            : "text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 border border-transparent"
+                        }`}
+                      >
+                        <Icon
+                          className={`h-4 w-4 transition-all duration-200 ${
+                            isActive
+                              ? "text-indigo-600 dark:text-indigo-400"
+                              : ""
+                          }`}
+                        />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Divider */}
+                <div className="w-px h-8 bg-gray-300 dark:bg-gray-600 mx-2" />
+
+                {/* Manage Group */}
+                <div className="flex items-center gap-1 flex-wrap">
+                  <span className="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mr-1">
+                    Manage
+                  </span>
+                  {[
+                    {
+                      id: "manage-categories",
+                      label: "Categories",
+                      icon: FolderTree,
+                    },
+                    {
+                      id: "manage-products",
+                      label: "Products",
+                      icon: Package,
+                    },
+                    {
+                      id: "manage-variants",
+                      label: "Variants",
+                      icon: Package,
+                    },
+                    {
+                      id: "manage-inventory",
+                      label: "Inventory",
+                      icon: Package,
+                    },
+                  ].map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as BulkOperationTab)}
+                        className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap ${
+                          isActive
+                            ? "text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/40 shadow-sm border border-indigo-200 dark:border-indigo-800"
+                            : "text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 border border-transparent"
+                        }`}
+                      >
+                        <Icon
+                          className={`h-4 w-4 transition-all duration-200 ${
+                            isActive
+                              ? "text-indigo-600 dark:text-indigo-400"
+                              : ""
+                          }`}
+                        />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Divider */}
+                <div className="w-px h-8 bg-gray-300 dark:bg-gray-600 mx-2" />
+
+                {/* Import/Export */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setActiveTab("import-export")}
+                    className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap ${
+                      activeTab === "import-export"
+                        ? "text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/40 shadow-sm border border-indigo-200 dark:border-indigo-800"
+                        : "text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 border border-transparent"
+                    }`}
+                  >
+                    <FileText
+                      className={`h-4 w-4 transition-all duration-200 ${
+                        activeTab === "import-export"
+                          ? "text-indigo-600 dark:text-indigo-400"
+                          : ""
                       }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                      {tab.label}
-                    </button>
-                  );
-                })}
+                    />
+                    <span>CSV Import/Export</span>
+                  </button>
+                </div>
               </nav>
             </div>
 
             {/* Tab Content */}
-            <div className="p-6">
+            <div className="p-6 bg-white dark:bg-slate-800">
               {/* Bulk Product Update */}
               {activeTab === "products" && (
                 <div className="space-y-6">
@@ -1812,12 +1879,18 @@ export default function BulkOperationsPage() {
                                 <input
                                   type="number"
                                   step="0.01"
+                                  min="0"
                                   value={op.base_price || ""}
                                   onChange={(e) => {
                                     const newOps = [...productOperations];
-                                    newOps[index].base_price = e.target.value
+                                    const priceValue = e.target.value
                                       ? parseFloat(e.target.value)
                                       : undefined;
+                                    // CRITICAL: Prevent negative prices
+                                    newOps[index].base_price =
+                                      priceValue !== undefined
+                                        ? Math.max(0, priceValue)
+                                        : undefined;
                                     setProductOperations(newOps);
                                   }}
                                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
@@ -2156,12 +2229,18 @@ export default function BulkOperationsPage() {
                                 <input
                                   type="number"
                                   step="0.01"
+                                  min="0"
                                   value={op.variant_price || ""}
                                   onChange={(e) => {
                                     const newOps = [...variantOperations];
-                                    newOps[index].variant_price = e.target.value
+                                    const priceValue = e.target.value
                                       ? parseFloat(e.target.value)
                                       : undefined;
+                                    // CRITICAL: Prevent negative prices
+                                    newOps[index].variant_price =
+                                      priceValue !== undefined
+                                        ? Math.max(0, priceValue)
+                                        : undefined;
                                     setVariantOperations(newOps);
                                   }}
                                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
@@ -2202,12 +2281,18 @@ export default function BulkOperationsPage() {
                                 </label>
                                 <input
                                   type="number"
+                                  min="0"
                                   value={op.stock || ""}
                                   onChange={(e) => {
                                     const newOps = [...variantOperations];
-                                    newOps[index].stock = e.target.value
+                                    const stockValue = e.target.value
                                       ? parseInt(e.target.value)
                                       : undefined;
+                                    // CRITICAL: Prevent negative stock values
+                                    newOps[index].stock =
+                                      stockValue !== undefined
+                                        ? Math.max(0, stockValue)
+                                        : undefined;
                                     setVariantOperations(newOps);
                                   }}
                                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
@@ -2486,12 +2571,18 @@ export default function BulkOperationsPage() {
                             </label>
                             <input
                               type="number"
+                              min="0"
                               value={update.stock || ""}
                               onChange={(e) => {
                                 const newUpdates = [...inventoryUpdates];
-                                newUpdates[index].stock = e.target.value
+                                const stockValue = e.target.value
                                   ? parseInt(e.target.value)
                                   : 0;
+                                // CRITICAL: Prevent negative stock values
+                                newUpdates[index].stock = Math.max(
+                                  0,
+                                  stockValue
+                                );
                                 setInventoryUpdates(newUpdates);
                               }}
                               className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
@@ -2527,14 +2618,28 @@ export default function BulkOperationsPage() {
                         return;
                       }
 
-                      // Validate all updates
+                      // CRITICAL: Validate all updates
                       const invalid = inventoryUpdates.some(
-                        (u) => !u.variant_id || !u.branch_id
+                        (u) =>
+                          !u.variant_id ||
+                          !u.branch_id ||
+                          (u.stock !== undefined && u.stock < 0)
                       );
                       if (invalid) {
-                        alert(
-                          "Please fill in all required fields (Variant ID and Branch ID)"
+                        const missingFields = inventoryUpdates.some(
+                          (u) => !u.variant_id || !u.branch_id
                         );
+                        const negativeStock = inventoryUpdates.some(
+                          (u) => u.stock !== undefined && u.stock < 0
+                        );
+
+                        if (missingFields) {
+                          alert(
+                            "Please fill in all required fields (Variant ID and Branch ID)"
+                          );
+                        } else if (negativeStock) {
+                          alert("Stock values cannot be negative");
+                        }
                         return;
                       }
 

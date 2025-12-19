@@ -79,6 +79,19 @@ export default function NewCategoryPage() {
     setError(null);
     setSaving(true);
 
+    // CRITICAL: Validate required fields
+    if (!formData.category_name || formData.category_name.trim() === "") {
+      setError("Category name is required");
+      setSaving(false);
+      return;
+    }
+
+    if (branches.length === 0) {
+      setError("No branches available. Please create a branch first.");
+      setSaving(false);
+      return;
+    }
+
     // Use first selected branch or first available branch as fallback
     const branchIdToUse =
       selectedBranches.length > 0
@@ -86,6 +99,12 @@ export default function NewCategoryPage() {
         : branches.length > 0
         ? branches[0].branch_id
         : null;
+
+    if (!branchIdToUse) {
+      setError("Please select at least one branch");
+      setSaving(false);
+      return;
+    }
 
     try {
       // Create category for each selected branch

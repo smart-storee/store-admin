@@ -231,9 +231,11 @@ export default function EditProductPage() {
       }));
     } else if (name === "base_price") {
       const numericValue = parseFloat(value) || 0;
+      // CRITICAL: Prevent negative prices
+      const finalValue = Math.max(0, numericValue);
       setFormData((prev) => ({
         ...prev,
-        [name]: numericValue,
+        [name]: finalValue,
       }));
     } else {
       setFormData((prev) => ({
@@ -247,6 +249,25 @@ export default function EditProductPage() {
     e.preventDefault();
     setError(null);
     setSaving(true);
+
+    // CRITICAL: Validate required fields
+    if (!formData.product_name || formData.product_name.trim() === "") {
+      setError("Product name is required");
+      setSaving(false);
+      return;
+    }
+
+    if (!formData.category_id || formData.category_id === 0) {
+      setError("Please select a category");
+      setSaving(false);
+      return;
+    }
+
+    if (formData.base_price <= 0) {
+      setError("Base price must be greater than 0");
+      setSaving(false);
+      return;
+    }
 
     // Validate that at least one branch is selected
     if (selectedBranches.length === 0) {

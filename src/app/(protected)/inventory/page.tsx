@@ -280,8 +280,9 @@ export default function InventoryPage() {
 
     try {
       setUpdating(true);
+      // CRITICAL: store_id should be in body, not query param (backend expects it in body)
       const response: any = await makeAuthenticatedRequest(
-        `/inventory/${item.inventory_id}/stock?store_id=${user?.store_id}`,
+        `/inventory/${item.inventory_id}/stock`,
         {
           method: "PUT",
           body: JSON.stringify({

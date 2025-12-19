@@ -117,9 +117,11 @@ export default function NewProductVariantPage() {
       }));
     } else if (name === "variant_price" || name === "stock") {
       const numericValue = parseFloat(value) || 0;
+      // CRITICAL: Prevent negative values for both price and stock
+      const finalValue = Math.max(0, numericValue);
       setFormData((prev) => ({
         ...prev,
-        [name]: numericValue,
+        [name]: finalValue,
       }));
     } else if (name === "product_id") {
       setFormData((prev) => ({
@@ -138,6 +140,31 @@ export default function NewProductVariantPage() {
     e.preventDefault();
     setError(null);
     setSaving(true);
+
+    // CRITICAL: Validate required fields
+    if (!formData.product_id || formData.product_id === 0) {
+      setError("Please select a product");
+      setSaving(false);
+      return;
+    }
+
+    if (!formData.variant_name || formData.variant_name.trim() === "") {
+      setError("Variant name is required");
+      setSaving(false);
+      return;
+    }
+
+    if (formData.variant_price <= 0) {
+      setError("Variant price must be greater than 0");
+      setSaving(false);
+      return;
+    }
+
+    if (formData.stock < 0) {
+      setError("Stock cannot be negative");
+      setSaving(false);
+      return;
+    }
 
     // Validate that at least one branch is selected
     if (formData.branch_ids.length === 0) {

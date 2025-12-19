@@ -182,6 +182,13 @@ export default function EditCategoryPage() {
     setError(null);
     setSaving(true);
 
+    // CRITICAL: Validate required fields
+    if (!formData.category_name || formData.category_name.trim() === "") {
+      setError("Category name is required");
+      setSaving(false);
+      return;
+    }
+
     if (selectedBranches.length === 0) {
       setError("Please select at least one branch");
       setSaving(false);
