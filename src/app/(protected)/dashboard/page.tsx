@@ -7,6 +7,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { makeAuthenticatedRequest } from "@/utils/api";
 import { DashboardSummary, Branch, Store } from "@/types";
 import { LoadingWrapper } from "@/components/LoadingWrapper";
+import { escapeHtml } from "@/utils/xss";
+import { apiCache } from "@/utils/cache";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -158,8 +160,21 @@ export default function DashboardPage() {
       if (!user?.store_id) return;
 
       try {
+        // Create cache key for store config
+        const cacheKey = `/app-settings?store_id=${user.store_id}`;
+
+        // Check if data is in cache
+        const cachedData = apiCache.get(cacheKey);
+        if (cachedData) {
+          setStoreConfig({
+            app_name: cachedData.app_name || user.store_name || "Store",
+            logo_url: cachedData.logo_url || "/images/login-image.png",
+          });
+          return;
+        }
+
         const response = await makeAuthenticatedRequest(
-          `/app-settings?store_id=${user.store_id}`,
+          cacheKey,
           {},
           true,
           user.store_id,
@@ -172,6 +187,9 @@ export default function DashboardPage() {
             app_name: config.app_name || user.store_name || "Store",
             logo_url: config.logo_url || "/images/login-image.png",
           });
+
+          // Cache the response for 30 minutes
+          apiCache.set(cacheKey, config, 30 * 60 * 1000);
         }
       } catch (err) {
         console.error("Error fetching store config:", err);
@@ -197,12 +215,30 @@ export default function DashboardPage() {
 
       try {
         setLoading(true);
-        const branchesResponse = await makeAuthenticatedRequest(
-          `/branches?store_id=${selectedStore}`
-        );
+
+        // Create cache key for branches
+        const cacheKey = `/branches?store_id=${selectedStore}`;
+
+        // Check if data is in cache
+        const cachedData = apiCache.get(cacheKey);
+        if (cachedData) {
+          setBranches(cachedData);
+          setSelectedBranch(null);
+
+          if (cachedData.length > 0) {
+            setSelectedBranch(cachedData[0].branch_id);
+          }
+          setLoading(false);
+          return;
+        }
+
+        const branchesResponse = await makeAuthenticatedRequest(cacheKey);
 
         if (branchesResponse.success) {
           setBranches(branchesResponse.data);
+          // Cache the response for 10 minutes
+          apiCache.set(cacheKey, branchesResponse.data, 10 * 60 * 1000);
+
           setSelectedBranch(null);
 
           if (branchesResponse.data.length > 0) {
@@ -241,6 +277,7 @@ export default function DashboardPage() {
           throw new Error("User information is not available");
         }
 
+        // Create cache key based on store and branch
         const params = new URLSearchParams({
           store_id: user.store_id.toString(),
         });
@@ -249,11 +286,21 @@ export default function DashboardPage() {
           params.append("branch_id", selectedBranch.toString());
         }
 
-        const data = await makeAuthenticatedRequest(
-          `/dashboard?${params.toString()}`
-        );
+        const cacheKey = `/dashboard?${params.toString()}`;
+
+        // Check if data is in cache
+        const cachedData = apiCache.get(cacheKey);
+        if (cachedData) {
+          setDashboardData(cachedData);
+          setLoading(false);
+          return;
+        }
+
+        const data = await makeAuthenticatedRequest(cacheKey);
         if (data.success) {
           setDashboardData(data.data);
+          // Cache the response for 5 minutes
+          apiCache.set(cacheKey, data.data, 5 * 60 * 1000);
         } else {
           throw new Error(data.message || "Failed to fetch dashboard data");
         }
@@ -337,8 +384,10 @@ export default function DashboardPage() {
                       lineHeight: "1.3",
                     }}
                   >
-                    Hello, {user?.name || "Admin"}! Welcome to{" "}
-                    {storeConfig?.app_name || user?.store_name || "Store Admin"}
+                    Hello, {user?.name ? escapeHtml(user.name) : "Admin"}! Welcome to{" "}
+                    {storeConfig?.app_name
+                      ? escapeHtml(storeConfig.app_name)
+                      : (user?.store_name ? escapeHtml(user.store_name) : "Store Admin")}
                   </h1>
                   <p
                     className="text-sm sm:text-base"

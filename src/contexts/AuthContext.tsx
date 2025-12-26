@@ -89,9 +89,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setRefreshToken(refresh_token);
         setStoreName(admin.store_name || null);
 
+        // Store in localStorage with additional security
         localStorage.setItem("adminUser", JSON.stringify(admin));
         localStorage.setItem("authToken", auth_token);
         localStorage.setItem("refreshToken", refresh_token);
+
+        // Add session timestamp to help with session management
+        localStorage.setItem("sessionStartTime", new Date().toISOString());
 
         router.push("/dashboard");
       } else {
@@ -113,6 +117,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem("adminUser");
     localStorage.removeItem("authToken");
     localStorage.removeItem("refreshToken");
+    localStorage.removeItem("sessionStartTime");
 
     router.push("/login");
   };

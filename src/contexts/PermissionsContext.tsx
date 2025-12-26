@@ -309,8 +309,28 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({
     // Check billing status
     if (storeFeatures.billing_status) {
       if (storeFeatures.billing_status === "active") {
-        // Allow access if status is active, even if paid_until date has passed
-        // The backend should update billing_status to 'expired' if payment is overdue
+        // Check if billing date has expired even if status is active
+        if (storeFeatures.billing_paid_until) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const paidUntil = new Date(storeFeatures.billing_paid_until);
+          paidUntil.setHours(0, 0, 0, 0);
+
+          console.log("Billing date check:", {
+            today: today.toISOString(),
+            paidUntil: paidUntil.toISOString(),
+            isExpired: paidUntil < today,
+            billing_status: storeFeatures.billing_status,
+          });
+
+          // Block access if the paid_until date has passed
+          if (paidUntil < today) {
+            return {
+              hasAccess: false,
+              reason: "Billing period has expired. Please renew your subscription.",
+            };
+          }
+        }
         return { hasAccess: true };
       } else {
         return {
@@ -320,7 +340,7 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({
       }
     }
 
-    // Additional check: if billing_paid_until is set and in the past, warn but don't block if status is active
+    // Additional check: if billing_paid_until is set and in the past, block access
     if (storeFeatures.billing_paid_until) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -334,8 +354,8 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({
         billing_status: storeFeatures.billing_status,
       });
 
-      // Only block if status is not active AND date is expired
-      if (paidUntil < today && storeFeatures.billing_status !== "active") {
+      // Block access if the paid_until date has passed
+      if (paidUntil < today) {
         return {
           hasAccess: false,
           reason: "Billing has expired. Please renew your subscription.",
