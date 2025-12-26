@@ -8,64 +8,27 @@ import { API_URL, API_SERVER_URL, isNgrokUrl } from "@/config/api.config";
 
 // Sanitize input to prevent XSS
 export const sanitizeInput = (input: string): string => {
-  if (typeof input !== 'string') {
-    return '';
-  }
-
-  // Remove potentially dangerous characters while preserving safe ones
-  return input
-    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
-    .replace(/[<>"'&]/g, (match) => { // Escape HTML special characters
-      const escapeMap: Record<string, string> = {
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#x27;',
-        '&': '&amp;'
-      };
-      return escapeMap[match] || match;
-    })
-    .substring(0, 1000); // Limit length to prevent overflow
+  return input.replace(/[^a-zA-Z0-9@.\-_]/g, "");
 };
 
-// Validate email format with more comprehensive regex
+// Validate email format
 export const validateEmail = (email: string): boolean => {
-  if (typeof email !== 'string' || email.length > 254) {
-    return false;
-  }
-
-  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-// Validate password strength with configurable requirements
+// Validate password strength
 export const validatePassword = (password: string): boolean => {
-  if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
-    return false;
-  }
-
-  // At least 8 characters, one uppercase, one lowercase, one number, one special character
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  // At least 8 characters, one uppercase, one lowercase, one number
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/;
   return passwordRegex.test(password);
 };
 
-// Sanitize URL endpoint to prevent path traversal and other attacks
+// Sanitize URL endpoint to prevent path traversal
 export const sanitizeEndpoint = (endpoint: string): string => {
-  if (typeof endpoint !== 'string') {
-    return '/';
-  }
-
-  // Remove any potentially dangerous patterns
-  return endpoint
-    .replace(/\.\.\//g, '') // Path traversal
-    .replace(/\.\.\\/g, '') // Windows path traversal
-    .replace(/[\x00-\x1F\x7F]/g, '') // Control characters
-    .replace(/[<>"'&]/g, '') // HTML special characters
-    .substring(0, 500); // Limit length
+  // Remove any potentially dangerous characters or traversal patterns
+  return endpoint.replace(/\.\.\//g, "").replace(/\.\.\\/g, "");
 };
-
-// Global variable to track ongoing token refresh
-let tokenRefreshPromise: Promise<boolean> | null = null;
 
 // API utility function to make authenticated requests
 export const makeAuthenticatedRequest = async (
@@ -136,16 +99,7 @@ export const makeAuthenticatedRequest = async (
         error: "Authentication token expired, attempting refresh",
       });
 
-      // Prevent multiple simultaneous token refreshes
-      if (!tokenRefreshPromise) {
-        tokenRefreshPromise = refreshAuthToken();
-      }
-
-      const refreshSuccess = await tokenRefreshPromise;
-
-      // Reset the refresh promise after completion
-      tokenRefreshPromise = null;
-
+      const refreshSuccess = await refreshAuthToken();
       if (refreshSuccess) {
         const newToken = localStorage.getItem("authToken");
         if (newToken) {
@@ -202,42 +156,33 @@ export const makeAuthenticatedRequest = async (
     if (!response.ok) {
       // Handle different error statuses appropriately
       let errorDetails = `API request failed with status ${response.status}`;
-      let errorResponseData = null;
 
       // Try to get error details from response
       try {
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
-          // Clone the response to allow multiple reads
-          const responseClone = response.clone();
-          errorResponseData = await responseClone.json();
-          if (errorResponseData.message) {
-            errorDetails = errorResponseData.message;
-          } else if (errorResponseData.error) {
-            errorDetails = errorResponseData.error;
+          const errorResponse = await response.json();
+          if (errorResponse.message) {
+            errorDetails = errorResponse.message;
+          } else if (errorResponse.error) {
+            errorDetails = errorResponse.error;
           }
         } else {
           // If not JSON, try to get text
-          const responseClone = response.clone();
-          const text = await responseClone.text();
+          const text = await response.text();
           if (text) {
             errorDetails = text;
           }
         }
       } catch (parseError: any) {
-        console.warn("Failed to parse error response:", parseError);
         // If we can't parse the error response, use status-based default messages
         if (response.status >= 500) {
           errorDetails = "Server error occurred. Please try again later.";
         } else if (response.status === 403) {
           errorDetails =
             "Access forbidden. You don't have permission to perform this action.";
-        } else if (response.status === 401) {
-          errorDetails = "Authentication required. Please log in again.";
         } else if (response.status === 404) {
           errorDetails = "Requested resource not found.";
-        } else if (response.status === 429) {
-          errorDetails = "Too many requests. Please try again later.";
         } else {
           errorDetails = `API request failed: ${response.status}`;
         }
@@ -251,16 +196,8 @@ export const makeAuthenticatedRequest = async (
         errorDetails =
           errorDetails ||
           "Access forbidden. You don't have permission to perform this action.";
-      } else if (response.status === 401) {
-        errorDetails =
-          errorDetails ||
-          "Authentication required. Please log in again.";
       } else if (response.status === 404) {
         errorDetails = errorDetails || "Requested resource not found.";
-      } else if (response.status === 429) {
-        errorDetails =
-          errorDetails ||
-          "Too many requests. Please try again later.";
       }
 
       logApiCall({
@@ -492,9 +429,6 @@ export const refreshAuthToken = async (): Promise<boolean> => {
   }
 };
 
-// Rate limiting variables for login attempts
-let loginAttempts: { [key: string]: { count: number; timestamp: number } } = {};
-
 // General API utility for login (public endpoint) with validation
 export const loginRequest = async (
   email: string,
@@ -511,38 +445,6 @@ export const loginRequest = async (
     const error = "Password is required";
     logApiError("POST", "/auth/login", error);
     throw new Error(error);
-  }
-
-  // Implement rate limiting - max 5 attempts per minute per email
-  const emailKey = `login_${email}`;
-  const now = Date.now();
-  const attemptWindow = 60000; // 1 minute window
-  const maxAttempts = 5;
-
-  if (loginAttempts[emailKey]) {
-    const { count, timestamp } = loginAttempts[emailKey];
-    if (now - timestamp < attemptWindow) {
-      if (count >= maxAttempts) {
-        const error = "Too many login attempts. Please try again later.";
-        logApiCall({
-          level: "error",
-          method: "POST",
-          url: "/auth/login",
-          error: "Rate limit exceeded",
-          duration: 0,
-        });
-        throw new Error(error);
-      } else {
-        // Increment attempt count
-        loginAttempts[emailKey] = { count: count + 1, timestamp };
-      }
-    } else {
-      // Reset counter after window expires
-      loginAttempts[emailKey] = { count: 1, timestamp: now };
-    }
-  } else {
-    // First attempt
-    loginAttempts[emailKey] = { count: 1, timestamp: now };
   }
 
   // Sanitize inputs
@@ -588,17 +490,6 @@ export const loginRequest = async (
     );
 
     if (!response.ok) {
-      // If login fails, increment the attempt counter
-      if (response.status === 401 || response.status === 403) {
-        // Update attempt count for failed login
-        if (loginAttempts[emailKey]) {
-          const { count, timestamp } = loginAttempts[emailKey];
-          loginAttempts[emailKey] = { count: count + 1, timestamp };
-        } else {
-          loginAttempts[emailKey] = { count: 1, timestamp: now };
-        }
-      }
-
       if (response.status >= 500) {
         // Try to get more details from the response
         let errorDetails = "Server error occurred. Please try again later.";
@@ -642,9 +533,6 @@ export const loginRequest = async (
         });
         throw new Error(errorDetails);
       }
-    } else {
-      // If login succeeds, reset the attempt counter
-      delete loginAttempts[emailKey];
     }
 
     const data = await response.json();

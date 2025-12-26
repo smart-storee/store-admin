@@ -10,7 +10,6 @@ import { usePermissions } from "@/contexts/PermissionsContext";
 import { makeAuthenticatedRequest } from "@/utils/api";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { IoSettingsOutline, IoLogOutOutline } from "react-icons/io5";
-import { escapeHtml } from "@/utils/xss";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -241,11 +240,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           featureEnabled
         );
       }
-      // If neither is available and we're still loading, don't show the item
-      // This prevents showing items before features are properly loaded
+      // If neither is available and we're still loading, don't filter yet (show it temporarily)
+      // This prevents hiding items before features are loaded
       else {
-        // Hide the item if we're still loading features to prevent showing unauthorized items
-        featureEnabled = false; // Don't show while loading - default to safe state
+        // Only show if we're still loading features, otherwise hide for safety
+        featureEnabled = featuresLoading === true; // Show only while loading
       }
 
       if (!featureEnabled) {
@@ -927,7 +926,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       fontWeight: "700",
                     }}
                   >
-                    {escapeHtml(storeName)}
+                    {storeName}
                   </h1>
                 )}
               </div>
@@ -1121,7 +1120,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       color: isDarkMode ? "#cbd5e1" : "#374151",
                     }}
                   >
-                    Welcome, {user?.name ? escapeHtml(user?.name) : "Admin"}
+                    Welcome, {user?.name || "Admin"}
                   </span>
 
                   {/* Theme Toggle */}
@@ -1187,7 +1186,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                               marginBottom: "2px",
                             }}
                           >
-                            {user?.name ? escapeHtml(user.name) : "Admin"}
+                            {user?.name || "Admin"}
                           </p>
                           <p
                             style={{
@@ -1195,7 +1194,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                               color: isDarkMode ? "#cbd5e1" : "#6B7280",
                             }}
                           >
-                            {user?.email ? escapeHtml(user.email) : ""}
+                            {user?.email || ""}
                           </p>
                         </div>
 
