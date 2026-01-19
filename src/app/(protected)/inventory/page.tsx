@@ -125,7 +125,7 @@ export default function InventoryPage() {
         const params = new URLSearchParams({
           store_id: user?.store_id?.toString() || "",
           category_id: selectedCategory.toString(),
-          limit: "1000",
+          limit: "100", // Maximum allowed limit
         });
 
         const response = await makeAuthenticatedRequest(

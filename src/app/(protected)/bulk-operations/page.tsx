@@ -206,7 +206,7 @@ export default function BulkOperationsPage() {
       setVariantsLoading(true);
       const params = new URLSearchParams({
         store_id: user?.store_id?.toString() || "",
-        limit: "1000",
+        limit: "100", // Maximum allowed limit
         ...(search && { search }),
       });
 

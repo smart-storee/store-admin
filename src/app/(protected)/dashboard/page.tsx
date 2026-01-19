@@ -1038,7 +1038,7 @@ export default function DashboardPage() {
                         >
                           Status
                         </th>
-                        {dashboardData.top_products.some(p => p.product_id || p.id) && (
+                        {dashboardData.top_products.some(p => p.product_id) && (
                           <th
                             style={{
                               padding: "16px",
@@ -1162,14 +1162,14 @@ export default function DashboardPage() {
                               {product.total_sold} sold
                             </span>
                           </td>
-                          {dashboardData.top_products.some(p => p.product_id || p.id) && (
+                          {dashboardData.top_products.some(p => p.product_id) && (
                             <td style={{ padding: "16px" }}>
                               <div style={{ display: "flex", gap: "8px" }}>
-                                {(product.product_id || product.id) ? (
+                                {product.product_id ? (
                                   <button
                                     onClick={() => {
                                       // Use the product ID to navigate to product details
-                                      const productId = product.product_id || product.id;
+                                      const productId = product.product_id;
                                       window.location.href = `/products/${productId}`;
                                     }}
                                     style={{
