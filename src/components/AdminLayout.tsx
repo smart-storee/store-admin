@@ -24,6 +24,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   );
   const [storeName, setStoreName] = useState<string>("Store Admin");
   const [storeLogo, setStoreLogo] = useState<string>("");
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { user, logout } = useAuth();
   const { theme } = useTheme();
   const { features } = useStore();
@@ -1227,7 +1228,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                           </Link>
 
                           <button
-                            onClick={logout}
+                            onClick={() => setShowLogoutModal(true)}
                             style={{
                               width: "100%",
                               display: "flex",
@@ -1266,10 +1267,82 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
 
         <main className="flex-1">
-          <div className="py-4 sm:py-6 md:pt-6" style={{ paddingTop: "72px" }}>
+          <div className="py-4 sm:py-6">
             <div className="px-4 sm:px-6 md:px-8">{children}</div>
           </div>
         </main>
+
+        {/* Logout Confirmation Modal */}
+        {showLogoutModal && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in"
+            style={{
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+            }}
+          >
+            <div
+              className="animate-pop-in rounded-xl p-6 max-w-md w-full mx-4"
+              style={{
+                backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
+                boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                animation: "popIn 0.2s ease-out",
+              }}
+            >
+              <h3
+                className="text-lg font-semibold mb-2"
+                style={{
+                  color: isDarkMode ? "#f8fafc" : "#111827",
+                }}
+              >
+                Confirm Logout
+              </h3>
+              <p
+                className="mb-6 text-sm"
+                style={{
+                  color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                }}
+              >
+                Are you sure you want to log out? You'll need to sign in again to access your account.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="px-4 py-2 rounded-lg font-medium transition-colors"
+                  style={{
+                    backgroundColor: isDarkMode ? "#334155" : "#F3F4F6",
+                    color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = isDarkMode ? "#475569" : "#E5E7EB";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#F3F4F6";
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    logout();
+                    setShowLogoutModal(false);
+                  }}
+                  className="px-4 py-2 rounded-lg font-medium text-white transition-colors"
+                  style={{
+                    backgroundColor: "#EF4444",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#DC2626";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "#EF4444";
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

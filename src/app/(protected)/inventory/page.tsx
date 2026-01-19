@@ -32,6 +32,7 @@ import {
 export default function InventoryPage() {
   const { user } = useAuth();
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -165,15 +166,44 @@ export default function InventoryPage() {
     user,
   ]);
 
+  // Update filtered inventory when currentPage, searchTerm, or filters change
+  useEffect(() => {
+    if (inventory.length > 0) {
+      // Apply search filtering again when page changes (in case search term changed)
+      let filteredData = [...inventory];
+
+      if (searchTerm) {
+        const lowerSearchTerm = searchTerm.toLowerCase();
+        filteredData = filteredData.filter(item =>
+          item.product_name.toLowerCase().includes(lowerSearchTerm) ||
+          item.variant_name.toLowerCase().includes(lowerSearchTerm) ||
+          (item.category_name && item.category_name.toLowerCase().includes(lowerSearchTerm)) ||
+          (item.branch_name && item.branch_name.toLowerCase().includes(lowerSearchTerm))
+        );
+      }
+
+      // Apply pagination to the filtered data
+      const startIndex = (currentPage - 1) * 50;
+      const endIndex = startIndex + 50;
+      const paginatedInventory = filteredData.slice(startIndex, endIndex);
+      setFilteredInventory(paginatedInventory);
+
+      // Update total counts based on current filtered data
+      setTotalCount(filteredData.length);
+      setTotalPages(Math.ceil(filteredData.length / 50));
+    }
+  }, [currentPage, inventory, searchTerm, selectedBranch, selectedCategory, selectedProduct, selectedVariant, lowStockOnly, outOfStockOnly, lowStockThreshold]);
+
   const fetchInventory = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Fetch all inventory items to allow client-side filtering
       const params = new URLSearchParams({
         store_id: user?.store_id?.toString() || "",
-        page: currentPage.toString(),
-        limit: "50",
+        page: "1",  // Fetch all items
+        limit: "100", // Maximum allowed limit
         low_stock_threshold: lowStockThreshold.toString(),
       });
 
@@ -195,9 +225,6 @@ export default function InventoryPage() {
       if (outOfStockOnly) {
         params.append("out_of_stock_only", "true");
       }
-      if (searchTerm) {
-        params.append("search", searchTerm);
-      }
 
       const response: any = await makeAuthenticatedRequest(
         `/inventory?${params.toString()}`
@@ -210,14 +237,17 @@ export default function InventoryPage() {
         const inventoryData = Array.isArray(response.data)
           ? response.data
           : response.data?.data || [];
-        const paginationData = response.pagination || response.data?.pagination;
 
         console.log("Parsed Inventory Data:", inventoryData);
-        console.log("Pagination Data:", paginationData);
 
+        // Store all inventory data (before filtering)
         setInventory(inventoryData);
-        setTotalCount(paginationData?.total || 0);
-        setTotalPages(paginationData?.totalPages || 1);
+
+        // Update total counts based on unfiltered data
+        setTotalCount(inventoryData.length);
+        setTotalPages(Math.ceil(inventoryData.length / 50));
+
+        // The actual filtering and pagination will be handled by the useEffect
       } else {
         throw new Error(response.message || "Failed to fetch inventory");
       }
@@ -708,7 +738,7 @@ export default function InventoryPage() {
                 <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
                 <p className="text-red-600 dark:text-red-400">{error}</p>
               </div>
-            ) : inventory.length === 0 ? (
+            ) : filteredInventory.length === 0 ? (
               <div className="p-12 text-center">
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 dark:text-gray-400 mb-2">
@@ -760,7 +790,7 @@ export default function InventoryPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {inventory.map((item) => {
+                      {filteredInventory.map((item) => {
                         const isEditing = editingItems.has(item.inventory_id);
                         const editedStock = editingItems.get(item.inventory_id);
                         const bulkStock = bulkUpdates.get(item.inventory_id);
@@ -901,7 +931,7 @@ export default function InventoryPage() {
                 {totalPages > 1 && (
                   <div className="bg-gray-50 dark:bg-slate-700 px-6 py-4 flex items-center justify-between">
                     <div className="text-sm text-gray-700 dark:text-gray-300">
-                      Showing {inventory.length} of {totalCount} items
+                      Showing {filteredInventory.length} of {totalCount} items
                     </div>
                     <div className="flex gap-2">
                       <button

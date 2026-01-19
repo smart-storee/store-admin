@@ -387,7 +387,7 @@ export default function SetupFlowPage() {
       requiredPermissions={["manage_categories", "manage_products"]}
       fallback={<AccessDenied theme={isDark} />}
     >
-      <div className={`min-h-screen ${bgClass} py-8 px-4 sm:px-6 lg:px-8`}>
+      <div className={`min-h-screen ${bgClass} py-1`}>
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">

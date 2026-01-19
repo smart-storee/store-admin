@@ -432,7 +432,7 @@ export default function ReportsPage() {
       }
     >
       <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
-        <div className={`p-6 ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'} shadow-sm`}>
+        <div className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-white'} shadow-sm`}>
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
               <div>

@@ -141,8 +141,8 @@ export default function EditBranchPage() {
             branch_phone: formData.branch_phone,
             latitude: formData.latitude || null,
             longitude: formData.longitude || null,
-            delivery_charge: formData.delivery_charge || 0,
-            surge_fee: formData.surge_fee || 0,
+            delivery_charge: formData.delivery_charge,
+            surge_fee: formData.surge_fee,
             is_active: formData.is_active,
             store_id: user?.store_id,
           }),
@@ -400,7 +400,7 @@ export default function EditBranchPage() {
                     type="number"
                     id="delivery_charge"
                     name="delivery_charge"
-                    value={formData.delivery_charge || ''}
+                    value={formData.delivery_charge}
                     onChange={handleChange}
                     min="0"
                     step="0.01"

@@ -51,16 +51,15 @@ export default function BranchesPage() {
   const fetchBranches = async () => {
     try {
       setLoading(true);
+
+      // Fetch all branches for the store without search filter to allow client-side filtering
       const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: "10",
+        page: "1",  // Get all pages initially
+        limit: "100", // Maximum allowed limit
         store_id: user?.store_id?.toString() || "1",
       });
 
-      if (searchTerm) {
-        params.append("search", searchTerm);
-      }
-
+      // Apply other filters but not search (we'll filter search on client side)
       if (filterActive !== "all") {
         params.append("is_active", filterActive === "active" ? "1" : "0");
       }
@@ -73,21 +72,32 @@ export default function BranchesPage() {
         await makeAuthenticatedRequest(`/branches?${params.toString()}`);
 
       if (response.success) {
-        const branchesData = Array.isArray(response.data)
+        let branchesData = Array.isArray(response.data)
           ? response.data
           : response.data?.data || [];
 
-        setBranches(branchesData);
-
-        if (response.pagination) {
-          setTotalPages(
-            Math.ceil(response.pagination.total / response.pagination.limit)
+        // Apply client-side case-insensitive search filtering if searchTerm exists
+        if (searchTerm) {
+          const lowerSearchTerm = searchTerm.toLowerCase();
+          branchesData = branchesData.filter(branch =>
+            branch.branch_name.toLowerCase().includes(lowerSearchTerm) ||
+            (branch.city && branch.city.toLowerCase().includes(lowerSearchTerm)) ||
+            (branch.address && branch.address.toLowerCase().includes(lowerSearchTerm)) ||
+            (branch.address_line_1 && branch.address_line_1.toLowerCase().includes(lowerSearchTerm)) ||
+            (branch.address_line_2 && branch.address_line_2.toLowerCase().includes(lowerSearchTerm)) ||
+            (branch.pincode && branch.pincode.toLowerCase().includes(lowerSearchTerm))
           );
-          setTotalCount(response.pagination.total);
-        } else {
-          setTotalPages(1);
-          setTotalCount(branchesData.length);
         }
+
+        // Apply pagination after client-side filtering
+        const startIndex = (currentPage - 1) * 10;
+        const endIndex = startIndex + 10;
+        const paginatedBranches = branchesData.slice(startIndex, endIndex);
+
+        setBranches(paginatedBranches);
+        setTotalCount(branchesData.length);
+        setTotalPages(Math.ceil(branchesData.length / 10));
+
         setError(null);
       } else {
         throw new Error(response.message || "Failed to fetch branches");
@@ -263,7 +273,7 @@ export default function BranchesPage() {
         }
       >
         <div className="min-h-screen transition-colors duration-300">
-          <div className="py-8">
+          <div className="py-1">
             {/* Combined Header with Search and Filter Bar */}
             <div
               className={`rounded-xl border p-6 mb-8 shadow-sm ${

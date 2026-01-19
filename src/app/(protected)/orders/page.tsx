@@ -471,7 +471,7 @@ export default function OrdersPage() {
     try {
       const params = new URLSearchParams({
         store_id: user?.store_id?.toString() || "",
-        limit: "10000", // Export all
+        limit: "100", // Maximum allowed limit
       });
 
       if (searchTerm) params.append("search", searchTerm);
@@ -516,7 +516,7 @@ export default function OrdersPage() {
     try {
       const params = new URLSearchParams({
         store_id: user?.store_id?.toString() || "",
-        limit: "10000",
+        limit: "100", // Maximum allowed limit
       });
 
       if (searchTerm) params.append("search", searchTerm);

@@ -1038,17 +1038,19 @@ export default function DashboardPage() {
                         >
                           Status
                         </th>
-                        <th
-                          style={{
-                            padding: "16px",
-                            textAlign: "left",
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            color: isDarkMode ? "#cbd5e1" : "#6B7280",
-                          }}
-                        >
-                          Action
-                        </th>
+                        {dashboardData.top_products.some(p => p.product_id || p.id) && (
+                          <th
+                            style={{
+                              padding: "16px",
+                              textAlign: "left",
+                              fontSize: "14px",
+                              fontWeight: "600",
+                              color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                            }}
+                          >
+                            Action
+                          </th>
+                        )}
                       </tr>
                     </thead>
                     <tbody>
@@ -1160,49 +1162,69 @@ export default function DashboardPage() {
                               {product.total_sold} sold
                             </span>
                           </td>
-                          <td style={{ padding: "16px" }}>
-                            <div style={{ display: "flex", gap: "8px" }}>
-                              <button
-                                style={{
-                                  padding: "6px 16px",
-                                  borderRadius: "6px",
-                                  border: isDarkMode
-                                    ? "1px solid #475569"
-                                    : "1px solid #E5E7EB",
-                                  backgroundColor: isDarkMode
-                                    ? "#334155"
-                                    : "#FFFFFF",
-                                  fontSize: "13px",
-                                  color: isDarkMode ? "#cbd5e1" : "#6B7280",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    isDarkMode ? "#475569" : "#F9FAFB";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    isDarkMode ? "#334155" : "#FFFFFF";
-                                }}
-                              >
-                                <svg
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                >
-                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                  <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                                View
-                              </button>
-                            </div>
-                          </td>
+                          {dashboardData.top_products.some(p => p.product_id || p.id) && (
+                            <td style={{ padding: "16px" }}>
+                              <div style={{ display: "flex", gap: "8px" }}>
+                                {(product.product_id || product.id) ? (
+                                  <button
+                                    onClick={() => {
+                                      // Use the product ID to navigate to product details
+                                      const productId = product.product_id || product.id;
+                                      window.location.href = `/products/${productId}`;
+                                    }}
+                                    style={{
+                                      padding: "6px 16px",
+                                      borderRadius: "6px",
+                                      border: isDarkMode
+                                        ? "1px solid #475569"
+                                        : "1px solid #E5E7EB",
+                                      backgroundColor: isDarkMode
+                                        ? "#334155"
+                                        : "#FFFFFF",
+                                      fontSize: "13px",
+                                      color: isDarkMode ? "#cbd5e1" : "#6B7280",
+                                      cursor: "pointer",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "4px",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor =
+                                        isDarkMode ? "#475569" : "#F9FAFB";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor =
+                                        isDarkMode ? "#334155" : "#FFFFFF";
+                                    }}
+                                  >
+                                    <svg
+                                      width="16"
+                                      height="16"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                    >
+                                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                      <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    View
+                                  </button>
+                                ) : (
+                                  <span
+                                    style={{
+                                      padding: "6px 16px",
+                                      fontSize: "13px",
+                                      color: isDarkMode ? "#64748b" : "#9ca3af",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    N/A
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>

@@ -196,7 +196,7 @@ const CouponsPage = () => {
         }
       >
         <div
-          className={`p-6 ${
+          className={` ${
             isDark ? "bg-gray-900" : "bg-gray-50"
           } min-h-screen`}
         >

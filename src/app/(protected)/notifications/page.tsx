@@ -92,6 +92,13 @@ export default function NotificationsPage() {
     setDeepLink(template.deep_link);
   };
 
+  const handleClearTemplate = () => {
+    setTitle('');
+    setMessage('');
+    setImageUrl('');
+    setDeepLink('');
+  };
+
   const handleSendNotification = async () => {
     if (!title || !message) {
       setSendResult({ success: false, message: 'Title and message are required!' });
@@ -164,7 +171,7 @@ export default function NotificationsPage() {
         </div>
       }
     >
-      <div className="p-6">
+      <div className="">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Push Notifications</h1>
           <p className="text-gray-600">Send customized push notifications to your customers</p>
@@ -174,10 +181,19 @@ export default function NotificationsPage() {
           {/* Left Column - Predefined Templates */}
           <div className="lg:col-span-1">
             <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Predefined Templates</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-medium text-gray-900">Predefined Templates</h2>
+                <button
+                  type="button"
+                  onClick={handleClearTemplate}
+                  className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 px-3 py-1 rounded-md"
+                >
+                  Clear
+                </button>
+              </div>
               <div className="space-y-3">
                 {PREDEFINED_TEMPLATES.map((template) => (
-                  <div 
+                  <div
                     key={template.id}
                     className="border border-gray-200 rounded-md p-4 hover:bg-gray-50 cursor-pointer"
                     onClick={() => handleTemplateSelect(template)}
@@ -292,7 +308,7 @@ export default function NotificationsPage() {
                   </div>
                 </div>
 
-                <div>
+                {/* <div>
                   <label htmlFor="deep_link" className="block text-sm font-medium text-gray-700">
                     Deep Link (optional)
                   </label>
@@ -308,7 +324,7 @@ export default function NotificationsPage() {
                       </option>
                     ))}
                   </select>
-                </div>
+                </div> */}
 
                 <div>
                   <button
@@ -324,7 +340,7 @@ export default function NotificationsPage() {
             </div>
 
             {/* Notifications History Section */}
-            <div className="bg-white shadow rounded-lg p-6 mt-6">
+            {/* <div className="bg-white shadow rounded-lg p-6 mt-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">Notification History</h2>
               {loadingHistory ? (
                 <div className="text-center py-4">Loading notification history...</div>
@@ -350,7 +366,7 @@ export default function NotificationsPage() {
                   ))}
                 </div>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

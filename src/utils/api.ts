@@ -44,7 +44,7 @@ export const makeAuthenticatedRequest = async (
   const token = localStorage.getItem("authToken");
 
   if (!token) {
-    const error = "No authentication token found";
+    const error = "Session Expired, please login again";
     logApiError(options.method || "GET", endpoint, error);
     throw new Error(error);
   }
@@ -96,7 +96,7 @@ export const makeAuthenticatedRequest = async (
         method: options.method || "GET",
         url: sanitizedEndpoint,
         status: 401,
-        error: "Authentication token expired, attempting refresh",
+        error: "Session expired, attempting refresh",
       });
 
       const refreshSuccess = await refreshAuthToken();
@@ -138,7 +138,7 @@ export const makeAuthenticatedRequest = async (
           return retryResponse.json();
         }
       }
-      const error = "Authentication failed";
+      const error = "Session expired";
       logApiError(options.method || "GET", sanitizedEndpoint, error);
       throw new Error(error);
     }

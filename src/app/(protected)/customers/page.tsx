@@ -17,6 +17,7 @@ export default function CustomersPage() {
   const { theme } = useTheme();
   const { features } = useStore();
   const [customers, setCustomers] = useState<CustomerWithBranch[]>([]);
+  const [filteredCustomers, setFilteredCustomers] = useState<CustomerWithBranch[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,21 +66,19 @@ export default function CustomersPage() {
     }
   }, [user?.store_id, user?.branch_id]);
 
+  // Fetch all customers initially
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
         setLoading(true);
         setError(null);
 
+        // Fetch all customers without search term to allow client-side filtering
         const params = new URLSearchParams({
-          page: currentPage.toString(),
-          limit: "10",
+          page: "1", // Fetch all customers to allow client-side filtering
+          limit: "100", // Maximum allowed limit
           store_id: user?.store_id?.toString() || "1",
         });
-
-        if (searchTerm) {
-          params.append("search", searchTerm);
-        }
 
         if (selectedBranch) {
           params.append("branch_id", selectedBranch.toString());
@@ -120,25 +119,7 @@ export default function CustomersPage() {
 
           setCustomers(customersData);
 
-          if (response.pagination) {
-            setTotalPages(
-              Math.ceil(response.pagination.total / response.pagination.limit)
-            );
-            setTotalCount(response.pagination.total);
-          } else if (
-            response.data &&
-            typeof response.data === "object" &&
-            !Array.isArray(response.data) &&
-            "pagination" in response.data
-          ) {
-            const pagination = (response.data as { pagination: Pagination })
-              .pagination;
-            setTotalPages(Math.ceil(pagination.total / pagination.limit));
-            setTotalCount(pagination.total);
-          } else {
-            setTotalPages(1);
-            setTotalCount(customersData.length);
-          }
+          // Apply filtering and pagination in the separate effect
         } else {
           throw new Error(response.message || "Failed to fetch customers");
         }
@@ -153,7 +134,32 @@ export default function CustomersPage() {
     if (user?.store_id) {
       fetchCustomers();
     }
-  }, [user?.store_id, selectedBranch, currentPage, searchTerm]);
+  }, [user?.store_id, selectedBranch]);
+
+  // Apply filtering and pagination when customers, searchTerm, or currentPage changes
+  useEffect(() => {
+    // Apply client-side case-insensitive search filtering if searchTerm exists
+    let filteredData = [...customers];
+
+    if (searchTerm) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      filteredData = filteredData.filter(customer =>
+        customer.name.toLowerCase().includes(lowerSearchTerm) ||
+        (customer.email && customer.email.toLowerCase().includes(lowerSearchTerm)) ||
+        (customer.phone && customer.phone.toLowerCase().includes(lowerSearchTerm))
+      );
+    }
+
+    // Update pagination based on filtered results
+    setTotalCount(filteredData.length);
+    setTotalPages(Math.ceil(filteredData.length / 10));
+
+    // Calculate current page results after filtering
+    const startIndex = (currentPage - 1) * 10;
+    const endIndex = startIndex + 10;
+    const paginatedCustomers = filteredData.slice(startIndex, endIndex);
+    setFilteredCustomers(paginatedCustomers);
+  }, [customers, searchTerm, currentPage]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -233,7 +239,7 @@ export default function CustomersPage() {
         </div>
       }
     >
-      <div className={`p-6 ${theme === "dark" ? "bg-gray-900" : "bg-white"}`}>
+      <div className={` ${theme === "dark" ? "bg-gray-900" : "bg-white"}`}>
         <div className="flex justify-between items-center mb-6">
           <h1
             className={`text-2xl font-bold ${
@@ -425,14 +431,14 @@ export default function CustomersPage() {
               theme === "dark" ? "bg-gray-800" : "bg-white"
             }`}
           >
-            {customers.length > 0 ? (
+            {filteredCustomers.length > 0 ? (
               <>
                 <ul
                   className={`${
                     theme === "dark" ? "divide-gray-700" : "divide-gray-200"
                   } divide-y`}
                 >
-                  {customers.map((customer, index) => (
+                  {filteredCustomers.map((customer, index) => (
                     <li key={customer.cust_id || `customer-${index}`}>
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex items-center justify-between">
