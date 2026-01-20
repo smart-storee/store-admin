@@ -125,7 +125,7 @@ export default function NotificationsPage() {
       if (response.success) {
         setSendResult({
           success: true,
-          message: `Notification sent successfully to ${response.recipients_count} recipients!`
+          message: `Notification sent successfully to ${response.data.recipients_count} recipients!`
         });
         // Reset form after successful send
         setTitle('');
