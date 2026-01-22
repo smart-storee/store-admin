@@ -667,103 +667,105 @@ export default function InventoryPage() {
 
   return (
     <RoleGuard requiredPermissions={["view_reports"]}>
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-3 sm:p-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                  <Package className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
-                  Inventory Management
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  Manage stock levels, track inventory, and set up alerts
-                </p>
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-8 px-0">
+        <div>
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6 mb-6">
+            {/* Header */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                    <Package className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                    Inventory Management
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2">
+                    Manage stock levels, track inventory, and set up alerts
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    fetchInventory();
+                    fetchStatistics();
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  fetchInventory();
-                  fetchStatistics();
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </button>
             </div>
-          </div>
 
-          {/* Statistics Cards */}
-          {statistics && (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Total Items
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {statistics.total_items}
-                    </p>
+            {/* Statistics Cards */}
+            {statistics && (
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="bg-[#fafafa] dark:bg-slate-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Total Items
+                      </p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {statistics.total_items}
+                      </p>
+                    </div>
+                    <BarChart3 className="h-8 w-8 text-indigo-600" />
                   </div>
-                  <BarChart3 className="h-8 w-8 text-indigo-600" />
+                </div>
+                <div className="bg-[#fafafa] dark:bg-slate-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Total Stock
+                      </p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {statistics.total_stock}
+                      </p>
+                    </div>
+                    <Package className="h-8 w-8 text-blue-600" />
+                  </div>
+                </div>
+                <div className="bg-[#fafafa] dark:bg-slate-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        In Stock
+                      </p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {statistics.in_stock_count}
+                      </p>
+                    </div>
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                </div>
+                <div className="bg-[#fafafa] dark:bg-slate-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Low Stock
+                      </p>
+                      <p className="text-2xl font-bold text-yellow-600">
+                        {statistics.low_stock_count}
+                      </p>
+                    </div>
+                    <AlertTriangle className="h-8 w-8 text-yellow-600" />
+                  </div>
+                </div>
+                <div className="bg-[#fafafa] dark:bg-slate-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Out of Stock
+                      </p>
+                      <p className="text-2xl font-bold text-red-600">
+                        {statistics.out_of_stock_count}
+                      </p>
+                    </div>
+                    <XCircle className="h-8 w-8 text-red-600" />
+                  </div>
                 </div>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Total Stock
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {statistics.total_stock}
-                    </p>
-                  </div>
-                  <Package className="h-8 w-8 text-blue-600" />
-                </div>
-              </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      In Stock
-                    </p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {statistics.in_stock_count}
-                    </p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-              </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Low Stock
-                    </p>
-                    <p className="text-2xl font-bold text-yellow-600">
-                      {statistics.low_stock_count}
-                    </p>
-                  </div>
-                  <AlertTriangle className="h-8 w-8 text-yellow-600" />
-                </div>
-              </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Out of Stock
-                    </p>
-                    <p className="text-2xl font-bold text-red-600">
-                      {statistics.out_of_stock_count}
-                    </p>
-                  </div>
-                  <XCircle className="h-8 w-8 text-red-600" />
-                </div>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Filters */}
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow mb-6 p-6">

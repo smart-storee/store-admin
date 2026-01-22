@@ -1291,7 +1291,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
 
         <main className="flex-1">
-          <div className="pt-16 md:pt-0 py-4 sm:py-6">
+          <div className="pt-16 md:pt-10 py-10">
             <div className="px-4 sm:px-6 md:px-8">{children}</div>
           </div>
         </main>

@@ -22,6 +22,9 @@ export default function EditCategoryPage() {
     is_active: 1,
   });
   const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
+  const [categoryBranchMap, setCategoryBranchMap] = useState<
+    Map<number, number>
+  >(new Map());
   const [selectAllBranches, setSelectAllBranches] = useState(false);
 
   // Fetch branches when component loads
@@ -127,6 +130,13 @@ export default function EditCategoryPage() {
             .filter((id: number) => id !== undefined && id !== null);
 
           setSelectedBranches(branchIdsWithCategory);
+          const branchMap = new Map<number, number>();
+          sameNameCategories.forEach((cat: Category) => {
+            if (cat.branch_id) {
+              branchMap.set(cat.branch_id, cat.category_id);
+            }
+          });
+          setCategoryBranchMap(branchMap);
 
           // Set select all only if we have branches loaded
           if (branches.length > 0) {
@@ -200,36 +210,10 @@ export default function EditCategoryPage() {
       const responses = [];
 
       for (const branchId of selectedBranches) {
-        // First, check if category exists in this branch
-        const checkResponse: ApiResponse<{ data: Category[] }> =
-          await makeAuthenticatedRequest(
-            `/categories?store_id=${user?.store_id}&branch_id=${branchId}`,
-            {},
-            true,
-            user?.store_id,
-            branchId
-          );
-
-        let categoryExists = false;
-        let existingCategoryId = null;
-
-        if (checkResponse.success) {
-          const branchCategories = Array.isArray(checkResponse.data)
-            ? checkResponse.data
-            : checkResponse.data?.data || [];
-
-          const existingCategory = branchCategories.find(
-            (cat: Category) => cat.category_name === formData.category_name
-          );
-
-          if (existingCategory) {
-            categoryExists = true;
-            existingCategoryId = existingCategory.category_id;
-          }
-        }
+        const existingCategoryId = categoryBranchMap.get(branchId);
 
         // Update existing or create new
-        if (categoryExists && existingCategoryId) {
+        if (existingCategoryId) {
           // Update existing category
           const response = await makeAuthenticatedRequest(
             `/categories/${existingCategoryId}`,
