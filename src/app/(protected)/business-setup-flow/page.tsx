@@ -23,6 +23,7 @@ import {
   Building2,
   Edit2,
   Eye,
+  X,
 } from "lucide-react";
 
 import { FeatureGuard } from "@/components/FeatureGuard";
@@ -55,6 +56,18 @@ export default function SetupFlowPage() {
   >("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name">("newest");
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    category_name: "",
+    description: "",
+    category_image: "",
+    is_active: 1,
+  });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editingCategory, setEditingCategory] =
+    useState<CategoryWithProducts | null>(null);
+  const [originalCategoryName, setOriginalCategoryName] = useState("");
 
   const isDark = theme === "dark";
   const bgClass = isDark ? "bg-gray-900" : "bg-gray-50";
@@ -63,6 +76,120 @@ export default function SetupFlowPage() {
     : "bg-white border-gray-200";
   const textClass = isDark ? "text-gray-300" : "text-gray-600";
   const headingClass = isDark ? "text-white" : "text-gray-900";
+
+  const openEditModal = (category: CategoryWithProducts) => {
+    setEditingCategory(category);
+    setOriginalCategoryName(category.category_name || "");
+    setEditForm({
+      category_name: category.category_name || "",
+      description: category.description || "",
+      category_image: category.category_image || "",
+      is_active: category.is_active ? 1 : 0,
+    });
+    setEditError(null);
+    setShowEditModal(true);
+  };
+
+  const handleEditChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      const checked = (e.target as HTMLInputElement).checked;
+      setEditForm((prev) => ({ ...prev, [name]: checked ? 1 : 0 }));
+      return;
+    }
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategory || !user?.store_id) return;
+
+    if (!editForm.category_name.trim()) {
+      setEditError("Category name is required");
+      return;
+    }
+
+    setEditSaving(true);
+    setEditError(null);
+
+    try {
+      const allCategoriesResponse: ApiResponse<{ data: Category[] }> =
+        await makeAuthenticatedRequest(
+          `/categories?store_id=${user.store_id}`,
+          {},
+          true,
+          user.store_id,
+          user?.branch_id
+        );
+
+      const allCategories = Array.isArray(allCategoriesResponse.data)
+        ? allCategoriesResponse.data
+        : allCategoriesResponse.data?.data || [];
+
+      const targetCategories = allCategories.filter(
+        (cat: Category) => cat.category_name === originalCategoryName
+      );
+
+      const updateTargets =
+        targetCategories.length > 0
+          ? targetCategories
+          : [
+              {
+                category_id: editingCategory.category_id,
+              } as Category,
+            ];
+
+      const responses = await Promise.all(
+        updateTargets.map((cat) =>
+          makeAuthenticatedRequest(
+            `/categories/${cat.category_id}`,
+            {
+              method: "PUT",
+              body: JSON.stringify({
+                category_name: editForm.category_name,
+                description: editForm.description,
+                category_image: editForm.category_image,
+                is_active: editForm.is_active,
+                store_id: user.store_id,
+              }),
+            },
+            true,
+            user.store_id,
+            cat.branch_id
+          )
+        )
+      );
+
+      if (responses.some((res) => !res.success)) {
+        const failed = responses.find((res) => !res.success);
+        throw new Error(failed?.message || "Failed to update category");
+      }
+
+      setCategories((prev) =>
+        prev.map((cat) =>
+          cat.category_name === originalCategoryName
+            ? {
+                ...cat,
+                category_name: editForm.category_name,
+                description: editForm.description,
+                category_image: editForm.category_image,
+                is_active: editForm.is_active,
+              }
+            : cat
+        )
+      );
+
+      setShowEditModal(false);
+    } catch (err: any) {
+      setEditError(err.message || "Failed to update category");
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   const filteredCategories = categories
     .filter((category) => {
@@ -728,9 +855,7 @@ export default function SetupFlowPage() {
                 <CategorySection
                   key={category.category_id}
                   category={category}
-                  onEditCategory={() =>
-                    router.push(`/categories/${category.category_id}/edit`)
-                  }
+                  onEditCategory={() => openEditModal(category)}
                   onViewCategory={() =>
                     router.push(`/categories/${category.category_id}`)
                   }
@@ -747,6 +872,142 @@ export default function SetupFlowPage() {
             </div>
           )}
         </div>
+
+        {showEditModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setShowEditModal(false)}
+            />
+            <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Edit Category
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Update the existing category details
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="h-9 w-9 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <X className="h-4 w-4 mx-auto" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditSubmit} className="px-6 py-5 space-y-4">
+                {editError && (
+                  <div
+                    className={`rounded-lg border px-4 py-3 text-sm ${
+                      isDark
+                        ? "bg-red-900/30 border-red-700/50 text-red-300"
+                        : "bg-red-50 border-red-200 text-red-700"
+                    }`}
+                  >
+                    {editError}
+                  </div>
+                )}
+                <div>
+                  <label
+                    className={`block text-sm font-medium mb-2 ${
+                      isDark ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
+                    Category Name
+                  </label>
+                  <input
+                    name="category_name"
+                    value={editForm.category_name}
+                    onChange={handleEditChange}
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isDark
+                        ? "bg-gray-700 border-gray-600 text-white"
+                        : "bg-white border-gray-300 text-gray-900"
+                    }`}
+                  />
+                </div>
+                <div>
+                  <label
+                    className={`block text-sm font-medium mb-2 ${
+                      isDark ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={editForm.description}
+                    onChange={handleEditChange}
+                    rows={3}
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isDark
+                        ? "bg-gray-700 border-gray-600 text-white"
+                        : "bg-white border-gray-300 text-gray-900"
+                    }`}
+                  />
+                </div>
+                <div>
+                  <label
+                    className={`block text-sm font-medium mb-2 ${
+                      isDark ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
+                    Category Image URL
+                  </label>
+                  <input
+                    name="category_image"
+                    value={editForm.category_image}
+                    onChange={handleEditChange}
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isDark
+                        ? "bg-gray-700 border-gray-600 text-white"
+                        : "bg-white border-gray-300 text-gray-900"
+                    }`}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <label
+                    className={`text-sm font-medium ${
+                      isDark ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
+                    Active
+                  </label>
+                  <input
+                    type="checkbox"
+                    name="is_active"
+                    checked={editForm.is_active === 1}
+                    onChange={handleEditChange}
+                    className="h-4 w-4"
+                  />
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold border ${
+                      isDark
+                        ? "border-gray-600 text-gray-200 hover:bg-gray-700"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editSaving}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {editSaving ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </RoleGuard>
     // </FeatureGuard>

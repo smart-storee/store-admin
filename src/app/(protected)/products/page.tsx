@@ -224,41 +224,43 @@ const ProductsPage = () => {
       >
         <div className={`min-h-screen ${bgClass} py-1`}>
           <div className="mb-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div>
-                <h1
-                  className={`text-3xl font-bold ${
-                    isDark ? "text-white" : "text-gray-900"
-                  } mb-2`}
-                >
-                  Products
-                </h1>
-                <p className={textClass}>
-                  Manage product details, pricing, availability, and status.
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={async () => {
-                    setRefreshing(true);
-                    await fetchProducts();
-                    setRefreshing(false);
-                  }}
-                  disabled={refreshing}
-                  className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors ${
-                    refreshing
-                      ? "opacity-50 cursor-not-allowed"
-                      : isDark
-                      ? "bg-gray-700 hover:bg-gray-600 text-white"
-                      : "bg-gray-200 hover:bg-gray-300 text-gray-900"
-                  }`}
-                >
-                  <RefreshCw
-                    size={18}
-                    className={refreshing ? "animate-spin" : ""}
-                  />
-                  Refresh
-                </button>
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                  <h1
+                    className={`text-3xl font-bold ${
+                      isDark ? "text-white" : "text-gray-900"
+                    } mb-2`}
+                  >
+                    Products
+                  </h1>
+                  <p className={textClass}>
+                    Manage product details, pricing, availability, and status.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={async () => {
+                      setRefreshing(true);
+                      await fetchProducts();
+                      setRefreshing(false);
+                    }}
+                    disabled={refreshing}
+                    className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors ${
+                      refreshing
+                        ? "opacity-50 cursor-not-allowed"
+                        : isDark
+                        ? "bg-gray-700 hover:bg-gray-600 text-white"
+                        : "bg-gray-200 hover:bg-gray-300 text-gray-900"
+                    }`}
+                  >
+                    <RefreshCw
+                      size={18}
+                      className={refreshing ? "animate-spin" : ""}
+                    />
+                    Refresh
+                  </button>
+                </div>
               </div>
             </div>
 
