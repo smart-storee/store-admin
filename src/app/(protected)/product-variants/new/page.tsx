@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { RoleGuard } from "@/components/RoleGuard";
 import { FeatureGuard } from "@/components/FeatureGuard";
 import { useTheme } from "@/contexts/ThemeContext";
-import { ApiResponse, Product, Branch, ProductVariant } from "@/types";
+import { ApiResponse, Product, Branch, ProductVariant, Uom } from "@/types";
 
 export default function NewProductVariantPage() {
   const router = useRouter();
@@ -15,9 +15,12 @@ export default function NewProductVariantPage() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const productId = searchParams.get("product_id");
+  const returnToParam = searchParams.get("returnTo");
+  const returnTo = returnToParam ? decodeURIComponent(returnToParam) : "";
 
   const [products, setProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
+  const [uoms, setUoms] = useState<Uom[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +29,7 @@ export default function NewProductVariantPage() {
     variant_name: "",
     variant_price: 0,
     stock: 0,
+    uom_id: 0,
     is_active: 1,
     branch_ids: user?.branch_id ? [user.branch_id] : [],
   });
@@ -47,17 +51,20 @@ export default function NewProductVariantPage() {
           );
 
         if (productsResponse.success) {
-          setProducts(productsResponse.data.data || productsResponse.data);
+          const productsData =
+            productsResponse.data.data || productsResponse.data;
+          setProducts(productsData);
 
           // If product_id was provided via URL param, pre-populate it
           if (productId) {
-            const selectedProduct = productsResponse.data.data?.find(
+            const selectedProduct = productsData?.find(
               (p) => p.product_id === parseInt(productId)
             );
             if (selectedProduct) {
               setFormData((prev) => ({
                 ...prev,
                 product_id: parseInt(productId),
+                uom_id: selectedProduct.uom_id || 0,
               }));
             }
           }
@@ -83,6 +90,22 @@ export default function NewProductVariantPage() {
           throw new Error(
             branchesResponse.message || "Failed to fetch branches"
           );
+        }
+
+        // Fetch UOMs
+        const uomsResponse: ApiResponse<{ data: Uom[] }> =
+          await makeAuthenticatedRequest(
+            "/uoms",
+            {},
+            true,
+            user?.store_id,
+            user?.branch_id || undefined
+          );
+
+        if (uomsResponse.success) {
+          setUoms(uomsResponse.data.data || uomsResponse.data);
+        } else {
+          throw new Error(uomsResponse.message || "Failed to fetch UOMs");
         }
       } catch (err: any) {
         setError(err.message || "Failed to load initial data");
@@ -124,6 +147,16 @@ export default function NewProductVariantPage() {
         [name]: finalValue,
       }));
     } else if (name === "product_id") {
+      const parsedId = parseInt(value) || 0;
+      const selectedProduct = products.find(
+        (p) => p.product_id === parsedId
+      );
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parsedId,
+        uom_id: selectedProduct?.uom_id || prev.uom_id,
+      }));
+    } else if (name === "uom_id") {
       setFormData((prev) => ({
         ...prev,
         [name]: parseInt(value) || 0,
@@ -160,8 +193,14 @@ export default function NewProductVariantPage() {
       return;
     }
 
-    if (formData.stock < 0) {
-      setError("Stock cannot be negative");
+    if (formData.stock <= 0) {
+      setError("Stock quantity is required and must be greater than 0");
+      setSaving(false);
+      return;
+    }
+
+    if (!formData.uom_id || formData.uom_id === 0) {
+      setError("Please select a UOM");
       setSaving(false);
       return;
     }
@@ -182,7 +221,8 @@ export default function NewProductVariantPage() {
             body: JSON.stringify({
               variant_name: formData.variant_name,
               variant_price: formData.variant_price,
-              stock: formData.stock || 0,
+              stock: formData.stock,
+              uom_id: formData.uom_id,
               is_active: formData.is_active,
               store_id: user?.store_id,
               branch_ids: formData.branch_ids,
@@ -194,9 +234,7 @@ export default function NewProductVariantPage() {
         );
 
       if (response.success) {
-        // Navigate back to the product details page
-        router.push(`/products/${formData.product_id}`);
-        router.refresh(); // Refresh to show the new variant
+        router.push(returnTo || `/products/${formData.product_id}`);
       } else {
         throw new Error(response.message || "Failed to create product variant");
       }
@@ -451,6 +489,36 @@ export default function NewProductVariantPage() {
                   />
                 </div>
 
+                <div className="col-span-6 sm:col-span-3">
+                  <label
+                    htmlFor="uom_id"
+                    className={`block text-sm font-medium ${
+                      theme === "dark" ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
+                    UOM *
+                  </label>
+                  <select
+                    id="uom_id"
+                    name="uom_id"
+                    value={formData.uom_id}
+                    onChange={handleChange}
+                    required
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      theme === "dark"
+                        ? "bg-gray-700 border-gray-600 text-white"
+                        : "bg-white border-gray-300 text-gray-900"
+                    }`}
+                  >
+                    <option value="">Select UOM</option>
+                    {uoms.map((uom) => (
+                      <option key={uom.uom_id} value={uom.uom_id}>
+                        {uom.uom_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="col-span-6">
                   <div className="flex items-start">
                     <div className="flex items-center h-5">
@@ -499,7 +567,12 @@ export default function NewProductVariantPage() {
             >
               <button
                 type="button"
-                onClick={() => router.push(`/business-setup-flow`)}
+                onClick={() =>
+                  router.push(
+                    returnTo ||
+                      `/products/${formData.product_id || productId || ""}`
+                  )
+                }
                 className={`py-2 px-4 border rounded-md text-sm font-medium mr-3 ${
                   theme === "dark"
                     ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"

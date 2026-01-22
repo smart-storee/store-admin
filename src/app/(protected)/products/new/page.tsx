@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { RoleGuard } from "@/components/RoleGuard";
 import { FeatureGuard } from "@/components/FeatureGuard";
-import { ApiResponse, Category, Branch } from "@/types";
+import { ApiResponse, Category, Branch, Uom } from "@/types";
 import { Plus } from "lucide-react";
 
 export default function NewProductPage() {
@@ -17,6 +17,7 @@ export default function NewProductPage() {
   const isDarkMode = theme === "dark";
   const [categories, setCategories] = useState<Category[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
+  const [uoms, setUoms] = useState<Uom[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +25,7 @@ export default function NewProductPage() {
     product_name: "",
     product_description: "",
     base_price: 0,
+    uom_id: 0,
     category_id: 0,
     branch_ids: [] as number[],
     is_active: 1,
@@ -75,6 +77,22 @@ export default function NewProductPage() {
             branchesResponse.message || "Failed to fetch branches"
           );
         }
+
+        // Fetch UOMs
+        const uomsResponse: ApiResponse<{ data: Uom[] }> =
+          await makeAuthenticatedRequest(
+            "/uoms",
+            {},
+            true,
+            user?.store_id,
+            user?.branch_id || undefined
+          );
+
+        if (uomsResponse.success) {
+          setUoms(uomsResponse.data.data || uomsResponse.data);
+        } else {
+          throw new Error(uomsResponse.message || "Failed to fetch UOMs");
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load data");
         console.error("New product fetch error:", err);
@@ -109,6 +127,16 @@ export default function NewProductPage() {
         ...prev,
         [name]: finalValue,
       }));
+    } else if (name === "uom_id") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parseInt(value) || 0,
+      }));
+    } else if (name === "is_vegetarian") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parseInt(value) || 0,
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -141,6 +169,12 @@ export default function NewProductPage() {
       return;
     }
 
+    if (!formData.uom_id || formData.uom_id === 0) {
+      setError("Please select a UOM");
+      setSaving(false);
+      return;
+    }
+
     try {
       const response: ApiResponse<null> = await makeAuthenticatedRequest(
         "/products",
@@ -150,6 +184,7 @@ export default function NewProductPage() {
             product_name: formData.product_name,
             product_description: formData.product_description,
             base_price: formData.base_price,
+            uom_id: formData.uom_id,
             category_id: formData.category_id,
             product_image: formData.product_image,
             branch_ids:
@@ -362,6 +397,36 @@ export default function NewProductPage() {
 
                   <div className="col-span-1 sm:col-span-1">
                     <label
+                      htmlFor="uom_id"
+                      className={`block text-sm font-medium ${
+                        isDarkMode ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      UOM *
+                    </label>
+                    <select
+                      id="uom_id"
+                      name="uom_id"
+                      value={formData.uom_id}
+                      onChange={handleChange}
+                      required
+                      className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm p-2 border transition-colors ${
+                        isDarkMode
+                          ? "bg-gray-700 border-gray-600 text-gray-100"
+                          : "bg-white border-gray-300 text-gray-900"
+                      }`}
+                    >
+                      <option value="">Select UOM</option>
+                      {uoms.map((uom) => (
+                        <option key={uom.uom_id} value={uom.uom_id}>
+                          {uom.uom_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="col-span-1 sm:col-span-1">
+                    <label
                       htmlFor="category_id"
                       className={`block text-sm font-medium ${
                         isDarkMode ? "text-gray-300" : "text-gray-700"
@@ -393,30 +458,6 @@ export default function NewProductPage() {
                     </select>
                   </div>
 
-                  <div className="col-span-1 sm:col-span-1">
-                    <label
-                      htmlFor="serves_count"
-                      className={`block text-sm font-medium ${
-                        isDarkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Serves Count
-                    </label>
-                    <input
-                      type="number"
-                      id="serves_count"
-                      name="serves_count"
-                      value={formData.serves_count}
-                      onChange={handleChange}
-                      min="1"
-                      className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm p-2 border transition-colors ${
-                        isDarkMode
-                          ? "bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400"
-                          : "bg-white border-gray-300 text-gray-900"
-                      }`}
-                    />
-                  </div>
-
                   <div className="col-span-1 sm:col-span-2">
                     <label
                       className={`block text-sm font-medium mb-2 ${
@@ -425,27 +466,52 @@ export default function NewProductPage() {
                     >
                       Options
                     </label>
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.is_vegetarian === 1}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              is_vegetarian: e.target.checked ? 1 : 0,
-                            }))
-                          }
-                          className={`rounded border-gray-300 dark:border-gray-600 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 bg-white dark:bg-gray-700 transition-colors`}
-                        />
-                        <span
-                          className={`text-sm ${
+                    <div className="space-y-4">
+                      <div>
+                        <p
+                          className={`text-sm font-medium mb-2 ${
                             isDarkMode ? "text-gray-300" : "text-gray-700"
                           }`}
                         >
-                          Vegetarian
-                        </span>
-                      </label>
+                          Diet Type
+                        </p>
+                        <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="is_vegetarian"
+                              value="1"
+                              checked={formData.is_vegetarian === 1}
+                              onChange={handleChange}
+                              className={`h-4 w-4 rounded-full border-gray-300 dark:border-gray-600 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400`}
+                            />
+                            <span
+                              className={`text-sm ${
+                                isDarkMode ? "text-gray-300" : "text-gray-700"
+                              }`}
+                            >
+                              Vegetarian
+                            </span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="is_vegetarian"
+                              value="0"
+                              checked={formData.is_vegetarian === 0}
+                              onChange={handleChange}
+                              className={`h-4 w-4 rounded-full border-gray-300 dark:border-gray-600 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400`}
+                            />
+                            <span
+                              className={`text-sm ${
+                                isDarkMode ? "text-gray-300" : "text-gray-700"
+                              }`}
+                            >
+                              Non Vegetarian
+                            </span>
+                          </label>
+                        </div>
+                      </div>
                       <label className="flex items-center space-x-2">
                         <input
                           type="checkbox"

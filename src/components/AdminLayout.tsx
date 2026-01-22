@@ -112,10 +112,16 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       feature: "branches_enabled",
     },
     {
-      name: "My Products",
+      name: "Product Categories",
       href: "/business-setup-flow",
       permission: "manage_categories",
       feature: "categories_enabled", // Business setup flow requires categories
+    },
+    {
+      name: "Products",
+      href: "/products",
+      permission: "manage_products",
+      feature: "products_enabled",
     },
     {
       name: "Inventory",
@@ -347,7 +353,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
           </svg>
         );
-      case "My Products":
+      case "Product Categories":
         return (
           <svg
             width="20"
@@ -362,6 +368,21 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <line x1="9" y1="21" x2="9" y2="9"></line>
             <path d="M9 13h6"></path>
             <path d="M9 17h4"></path>
+          </svg>
+        );
+      case "Products":
+        return (
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
           </svg>
         );
       case "Inventory":
@@ -657,7 +678,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             {pathname === "/api-logs" && "API Logs"}
             {pathname === "/settings" && "Settings"}
             {pathname === "/home-config" && "Home Config"}
-            {pathname === "/business-setup-flow" && "My Products"}
+            {pathname === "/business-setup-flow" && "Product Categories"}
+            {pathname === "/products" && "Products"}
           </h2>
           <div className="flex items-center gap-2">
             <DarkModeToggle />
@@ -844,11 +866,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
       {/* Desktop sidebar */}
       <div
-        className="hidden md:flex md:flex-col md:fixed md:inset-y-0 transition-all duration-300"
+        className={`hidden md:flex md:flex-col md:fixed md:inset-y-0 transition-all duration-300 ${
+          sidebarCollapsed ? "md:w-20" : "md:w-64"
+        }`}
         style={{
           backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
           borderRight: isDarkMode ? "1px solid #334155" : "1px solid #E5E7EB",
-          width: sidebarCollapsed ? "80px" : "256px",
         }}
       >
         <div className="flex-1 flex flex-col min-h-0">
@@ -1072,10 +1095,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
       {/* Main content */}
       <div
-        className="flex flex-col flex-1 transition-all duration-300 md:pl-64"
-        style={{
-          paddingLeft: sidebarCollapsed ? "80px" : "256px",
-        }}
+        className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ${
+          sidebarCollapsed ? "md:pl-20" : "md:pl-64"
+        }`}
       >
         <div className="md:pr-4">
           {/* Top header with branch selector */}
@@ -1110,7 +1132,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     {pathname === "/reports" && "Reports & Analytics"}
                     {pathname === "/api-logs" && "API Logs"}
                     {pathname === "/settings" && "App Settings"}
-                    {pathname === "/business-setup-flow" && "My Products"}
+                    {pathname === "/business-setup-flow" &&
+                      "Product Categories"}
+                    {pathname === "/products" && "Products"}
                   </h2>
                 </div>
 
@@ -1267,7 +1291,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
 
         <main className="flex-1">
-          <div className="py-4 sm:py-6">
+          <div className="pt-16 md:pt-0 py-4 sm:py-6">
             <div className="px-4 sm:px-6 md:px-8">{children}</div>
           </div>
         </main>

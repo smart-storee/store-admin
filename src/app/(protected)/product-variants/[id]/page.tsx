@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { makeAuthenticatedRequest } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { RoleGuard } from "@/components/RoleGuard";
@@ -13,6 +13,9 @@ import { ShoppingCart, MapPin, CheckCircle2 } from "lucide-react";
 export default function ProductVariantDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const returnToParam = searchParams.get("returnTo");
+  const returnTo = returnToParam ? decodeURIComponent(returnToParam) : "";
   const { user } = useAuth();
   const { theme } = useTheme();
   const isDarkMode = theme === "dark";
@@ -200,7 +203,9 @@ export default function ProductVariantDetailPage() {
             </h1>
             <div className="flex space-x-3">
               <button
-                onClick={() => router.push(`/products/${variant?.product_id}`)}
+                onClick={() =>
+                  router.push(returnTo || `/products/${variant?.product_id}`)
+                }
                 className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
               >
                 Back to Product
@@ -670,10 +675,12 @@ export default function ProductVariantDetailPage() {
             <div className="text-center py-8">
               <p className="text-gray-500">Product variant not found</p>
               <button
-                onClick={() => router.push("/business-setup-flow")}
+                onClick={() =>
+                  router.push(returnTo || "/business-setup-flow")
+                }
                 className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
               >
-                Back to My Products
+                Back to Product Categories
               </button>
             </div>
           )}

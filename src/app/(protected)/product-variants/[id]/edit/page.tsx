@@ -1,23 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { makeAuthenticatedRequest } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { RoleGuard } from "@/components/RoleGuard";
 import { FeatureGuard } from "@/components/FeatureGuard";
 import { useTheme } from "@/contexts/ThemeContext";
-import { ApiResponse, Product, Branch, ProductVariant } from "@/types";
+import { ApiResponse, Product, Branch, ProductVariant, Uom } from "@/types";
 
 export default function EditProductVariantPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const returnToParam = searchParams.get("returnTo");
+  const returnTo = returnToParam ? decodeURIComponent(returnToParam) : "";
   const { user } = useAuth();
   const { theme } = useTheme();
   const isDarkMode = theme === "dark";
   const [products, setProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
+  const [uoms, setUoms] = useState<Uom[]>([]);
   const [variant, setVariant] = useState<ProductVariant | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -27,6 +31,7 @@ export default function EditProductVariantPage() {
     variant_name: "",
     variant_price: 0,
     stock: 0,
+    uom_id: 0,
     is_active: 1,
     branch_ids: [] as number[],
   });
@@ -73,6 +78,22 @@ export default function EditProductVariantPage() {
           );
         }
 
+        // Fetch UOMs
+        const uomsResponse: ApiResponse<{ data: Uom[] }> =
+          await makeAuthenticatedRequest(
+            "/uoms",
+            {},
+            true,
+            user?.store_id,
+            user?.branch_id || undefined
+          );
+
+        if (uomsResponse.success) {
+          setUoms(uomsResponse.data.data || uomsResponse.data);
+        } else {
+          throw new Error(uomsResponse.message || "Failed to fetch UOMs");
+        }
+
         // Fetch the specific variant to edit
         const variantResponse: ApiResponse<{ data: ProductVariant }> =
           await makeAuthenticatedRequest(
@@ -100,6 +121,7 @@ export default function EditProductVariantPage() {
             variant_name: v.variant_name,
             variant_price: parseFloat(String(v.variant_price || 0)),
             stock: parseFloat(String(v.stock || 0)),
+            uom_id: v.uom_id || 0,
             is_active: v.is_active || 1,
             branch_ids: branchIds,
           });
@@ -146,6 +168,16 @@ export default function EditProductVariantPage() {
         [name]: finalValue,
       }));
     } else if (name === "product_id") {
+      const parsedId = parseInt(value) || 0;
+      const selectedProduct = products.find(
+        (p) => p.product_id === parsedId
+      );
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parsedId,
+        uom_id: selectedProduct?.uom_id || prev.uom_id,
+      }));
+    } else if (name === "uom_id") {
       setFormData((prev) => ({
         ...prev,
         [name]: parseInt(value) || 0,
@@ -184,8 +216,14 @@ export default function EditProductVariantPage() {
       return;
     }
 
-    if (formData.stock < 0) {
-      setError("Stock cannot be negative");
+    if (formData.stock <= 0) {
+      setError("Stock quantity is required and must be greater than 0");
+      setSaving(false);
+      return;
+    }
+
+    if (!formData.uom_id || formData.uom_id === 0) {
+      setError("Please select a UOM");
       setSaving(false);
       return;
     }
@@ -208,6 +246,7 @@ export default function EditProductVariantPage() {
               variant_name: formData.variant_name,
               variant_price: formData.variant_price,
               stock: formData.stock,
+              uom_id: formData.uom_id,
               is_active: formData.is_active,
               store_id: user?.store_id,
               branch_ids: formData.branch_ids,
@@ -279,7 +318,8 @@ export default function EditProductVariantPage() {
             <button
               onClick={() =>
                 router.push(
-                  `/products/${variant?.product_id || formData.product_id}`
+                  returnTo ||
+                    `/products/${variant?.product_id || formData.product_id}`
                 )
               }
               className={`inline-flex items-center mb-4 ${
@@ -498,6 +538,36 @@ export default function EditProductVariantPage() {
                     />
                   </div>
 
+                  <div className="col-span-6 sm:col-span-3">
+                    <label
+                      htmlFor="uom_id"
+                      className={`block text-sm font-medium ${
+                        isDarkMode ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      UOM *
+                    </label>
+                    <select
+                      id="uom_id"
+                      name="uom_id"
+                      value={formData.uom_id}
+                      onChange={handleChange}
+                      required
+                      className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                        isDarkMode
+                          ? "bg-gray-700 border-gray-600 text-white"
+                          : "bg-white border-gray-300 text-gray-900"
+                      }`}
+                    >
+                      <option value="">Select UOM</option>
+                      {uoms.map((uom) => (
+                        <option key={uom.uom_id} value={uom.uom_id}>
+                          {uom.uom_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div className="col-span-6">
                     <div className="flex items-start">
                       <div className="flex items-center h-5">
@@ -576,10 +646,12 @@ export default function EditProductVariantPage() {
                 Product variant not found
               </p>
               <button
-                onClick={() => router.push("/business-setup-flow")}
+                onClick={() =>
+                  router.push(returnTo || "/business-setup-flow")
+                }
                 className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
               >
-                Back to My Products
+                Back to Product Categories
               </button>
             </div>
           )}
