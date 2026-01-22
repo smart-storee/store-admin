@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Edit2, Plus, ArrowLeft } from "lucide-react";
 import { makeAuthenticatedRequest } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +13,12 @@ import { ApiResponse, Product, ProductVariant } from "@/types";
 export default function ProductDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const returnTo = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+  const encodedReturnTo = encodeURIComponent(returnTo);
+  const returnToParam = searchParams.get("returnTo");
+  const backTo = returnToParam ? decodeURIComponent(returnToParam) : "/business-setup-flow";
   const { user } = useAuth();
   const { theme } = useTheme();
   const [product, setProduct] = useState<Product | null>(null);
@@ -87,10 +93,10 @@ export default function ProductDetailPage() {
           {error}
         </div>
         <button
-          onClick={() => router.push("/business-setup-flow")}
+          onClick={() => router.push(backTo)}
           className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
         >
-          Back to My Products
+          Back to Product Categories
         </button>
       </div>
     );
@@ -139,13 +145,13 @@ export default function ProductDetailPage() {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => router.push("/business-setup-flow")}
+                      onClick={() => router.push(backTo)}
                       className={`p-2 rounded-lg transition-colors ${
                         theme === "dark"
                           ? "hover:bg-gray-700 text-gray-300"
                           : "hover:bg-gray-100 text-gray-600"
                       }`}
-                      title="Back to My Products"
+                      title="Back to Product Categories"
                     >
                       <ArrowLeft size={20} />
                     </button>
@@ -248,6 +254,7 @@ export default function ProductDetailPage() {
                             }`}
                           >
                             ₹{parseFloat(String(product.base_price || 0)).toFixed(2)}
+                            {product.uom_name ? ` / ${product.uom_name}` : ""}
                           </p>
                         </div>
 
@@ -392,7 +399,7 @@ export default function ProductDetailPage() {
                     <button
                       onClick={() =>
                         router.push(
-                          `/product-variants/new?product_id=${product.product_id}`
+                          `/product-variants/new?product_id=${product.product_id}&returnTo=${encodedReturnTo}`
                         )
                       }
                       className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2"
@@ -426,7 +433,7 @@ export default function ProductDetailPage() {
                             <button
                               onClick={() =>
                                 router.push(
-                                  `/product-variants/${variant.variant_id}/edit`
+                                  `/product-variants/${variant.variant_id}/edit?returnTo=${encodedReturnTo}`
                                 )
                               }
                               className={`p-1.5 rounded transition-colors ${
@@ -478,7 +485,7 @@ export default function ProductDetailPage() {
                           <button
                             onClick={() =>
                               router.push(
-                                `/product-variants/${variant.variant_id}`
+                                `/product-variants/${variant.variant_id}?returnTo=${encodedReturnTo}`
                               )
                             }
                             className={`mt-3 text-sm w-full py-1.5 rounded transition-colors ${
@@ -510,7 +517,7 @@ export default function ProductDetailPage() {
                       <button
                         onClick={() =>
                           router.push(
-                            `/product-variants/new?product_id=${product.product_id}`
+                            `/product-variants/new?product_id=${product.product_id}&returnTo=${encodedReturnTo}`
                           )
                         }
                         className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2 mx-auto"

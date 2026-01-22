@@ -14,15 +14,13 @@ import {
 } from "@/types";
 import { RoleGuard } from "@/components/RoleGuard";
 import {
-  ChevronRight,
   Plus,
   RefreshCw,
+  Search,
   Folder,
   Package,
   Layers,
   Building2,
-  CheckCircle2,
-  XCircle,
   Edit2,
   Eye,
 } from "lucide-react";
@@ -51,9 +49,12 @@ export default function SetupFlowPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(
-    new Set()
-  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name">("newest");
+  const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
 
   const isDark = theme === "dark";
   const bgClass = isDark ? "bg-gray-900" : "bg-gray-50";
@@ -62,6 +63,41 @@ export default function SetupFlowPage() {
     : "bg-white border-gray-200";
   const textClass = isDark ? "text-gray-300" : "text-gray-600";
   const headingClass = isDark ? "text-white" : "text-gray-900";
+
+  const filteredCategories = categories
+    .filter((category) => {
+      if (!searchTerm) return true;
+      const term = searchTerm.toLowerCase();
+      return (
+        category.category_name?.toLowerCase().includes(term) ||
+        category.description?.toLowerCase().includes(term)
+      );
+    })
+    .filter((category) => {
+      if (statusFilter === "all") return true;
+      return statusFilter === "active"
+        ? category.is_active === 1
+        : category.is_active === 0;
+    })
+    .filter((category) => {
+      if (!selectedBranch) return true;
+      if (category.branch_id === selectedBranch) return true;
+      const branchIds = Array.isArray(category.branch_ids)
+        ? category.branch_ids
+        : [];
+      if (branchIds.length === 0) {
+        return true;
+      }
+      return branchIds.includes(selectedBranch);
+    })
+    .sort((a, b) => {
+      if (sortBy === "name") {
+        return a.category_name.localeCompare(b.category_name);
+      }
+      const aDate = new Date(a.created_at || 0).getTime();
+      const bDate = new Date(b.created_at || 0).getTime();
+      return sortBy === "oldest" ? aDate - bDate : bDate - aDate;
+    });
 
   useEffect(() => {
     fetchAllData();
@@ -124,6 +160,7 @@ export default function SetupFlowPage() {
 
               // Get all category IDs with the same name
               let categoryIds: number[] = [];
+              let branchIds: number[] = [];
               if (allCategoriesResponse.success) {
                 const allCats =
                   allCategoriesResponse.data.data ||
@@ -134,6 +171,14 @@ export default function SetupFlowPage() {
                     (c: Category) => c.category_name === category.category_name
                   )
                   .map((c: Category) => c.category_id);
+                branchIds = allCats
+                  .filter(
+                    (c: Category) => c.category_name === category.category_name
+                  )
+                  .map((c: Category) => c.branch_id)
+                  .filter((id: number | undefined | null) =>
+                    Number.isInteger(id)
+                  ) as number[];
               }
 
               // If no matching categories found, use the current category_id
@@ -220,6 +265,11 @@ export default function SetupFlowPage() {
               return {
                 ...category,
                 products,
+                branch_ids: branchIds.length
+                  ? branchIds
+                  : category.branch_id
+                  ? [category.branch_id]
+                  : branches.map((b) => b.branch_id),
               };
             } catch (err) {
               console.error(
@@ -233,12 +283,6 @@ export default function SetupFlowPage() {
 
         setCategories(categoriesWithProducts);
 
-        // Auto-expand first category
-        if (categoriesWithProducts.length > 0) {
-          setExpandedCategories(
-            new Set([categoriesWithProducts[0].category_id])
-          );
-        }
       }
     } catch (err: any) {
       setError(err.message || "Failed to load data");
@@ -287,66 +331,57 @@ export default function SetupFlowPage() {
     setRefreshing(false);
   };
 
-  const toggleCategory = (categoryId: number) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(categoryId)) {
-      newExpanded.delete(categoryId);
-    } else {
-      newExpanded.add(categoryId);
-    }
-    setExpandedCategories(newExpanded);
-  };
-
-  const handleToggleProductBranch = async (
-    productId: number,
-    branchId: number,
-    currentStatus: number
+  const handleToggleCategoryActive = async (
+    categoryId: number,
+    currentStatus: number,
+    branchId?: number | null
   ) => {
+    const newStatus = currentStatus === 1 ? 0 : 1;
+    const action = newStatus === 1 ? "activate" : "deactivate";
+
+    if (!confirm(`Are you sure you want to ${action} this category?`)) return;
+
+    setCategories((prev) =>
+      prev.map((cat) =>
+        cat.category_id === categoryId ? { ...cat, is_active: newStatus } : cat
+      )
+    );
+
     try {
-      const newStatus = currentStatus === 1 ? 0 : 1;
-      const response: ApiResponse<any> = await makeAuthenticatedRequest(
-        `/products/${productId}/branches/${branchId}`,
+      const response = await makeAuthenticatedRequest(
+        `/categories/${categoryId}`,
         {
           method: "PUT",
           body: JSON.stringify({
-            is_available: newStatus,
+            is_active: newStatus,
             store_id: user?.store_id,
+            branch_id: branchId ?? undefined,
           }),
         },
         true,
         user?.store_id,
-        user?.branch_id
+        branchId ?? undefined
       );
 
-      if (response.success) {
-        // Update local state immediately for better UX
+      if (!response.success) {
         setCategories((prev) =>
-          prev.map((cat) => ({
-            ...cat,
-            products: cat.products?.map((prod) =>
-              prod.product_id === productId
-                ? {
-                    ...prod,
-                    branchAssignments: prod.branchAssignments?.map((ba) =>
-                      ba.branch_id === branchId
-                        ? { ...ba, is_available: newStatus }
-                        : ba
-                    ),
-                  }
-                : prod
-            ),
-          }))
+          prev.map((cat) =>
+            cat.category_id === categoryId
+              ? { ...cat, is_active: currentStatus }
+              : cat
+          )
         );
-      } else {
-        throw new Error(
-          response.message || "Failed to update branch assignment"
-        );
+        alert(response.message || `Failed to ${action} category`);
       }
     } catch (err: any) {
-      setError(err.message || "Failed to update branch assignment");
-      console.error("Toggle product branch error:", err);
-      // Refresh data on error to ensure consistency
-      await fetchAllData();
+      setCategories((prev) =>
+        prev.map((cat) =>
+          cat.category_id === categoryId
+            ? { ...cat, is_active: currentStatus }
+            : cat
+        )
+      );
+      alert(err.message || `Failed to ${action} category`);
     }
   };
 
@@ -393,7 +428,7 @@ export default function SetupFlowPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className={`text-3xl font-bold ${headingClass} mb-2`}>
-                My Products
+                Product Categories
               </h1>
               <p className={textClass}>
                 Manage your products, categories, and variants with branch-wise
@@ -418,13 +453,198 @@ export default function SetupFlowPage() {
                 />
                 Refresh
               </button>
-              <button
-                onClick={() => router.push("/categories/new")}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-              >
-                <Plus size={18} />
-                Add Category
-              </button>
+            </div>
+          </div>
+
+          {/* Search / Filter / Sort */}
+          <div
+            className={`rounded-xl border p-6 mb-6 shadow-sm ${
+              isDark
+                ? "bg-gray-800/50 border-gray-700/50"
+                : "bg-white border-gray-200"
+            }`}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+              <div className="lg:col-span-4">
+                <label
+                  className={`block text-sm font-medium mb-2 ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
+                >
+                  Search
+                </label>
+                <div className="relative">
+                  <Search
+                    size={18}
+                    className={`absolute left-3 top-3 ${
+                      isDark ? "text-gray-400" : "text-gray-400"
+                    }`}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search by category name or description..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                      isDark
+                        ? "bg-gray-800/80 border-gray-700/50 text-white placeholder-gray-500"
+                        : "bg-gray-50 border-gray-200 text-gray-900"
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="lg:col-span-2">
+                <label
+                  className={`block text-sm font-medium mb-2 ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
+                >
+                  Branch
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedBranch || ""}
+                    onChange={(e) =>
+                      setSelectedBranch(
+                        e.target.value ? parseInt(e.target.value, 10) : null
+                      )
+                    }
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer transition-all duration-200 ${
+                      isDark
+                        ? "bg-gray-800/80 border-gray-700/50 text-white"
+                        : "bg-gray-50 border-gray-200 text-gray-900"
+                    }`}
+                  >
+                    <option value="">All Branches</option>
+                    {branches.map((branch) => (
+                      <option key={branch.branch_id} value={branch.branch_id}>
+                        {branch.branch_name}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    className={`absolute right-3 top-3.5 pointer-events-none ${
+                      isDark ? "text-gray-400" : "text-gray-400"
+                    }`}
+                    width="16"
+                    height="16"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="lg:col-span-2">
+                <label
+                  className={`block text-sm font-medium mb-2 ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
+                >
+                  Status
+                </label>
+                <div className="relative">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) =>
+                      setStatusFilter(
+                        e.target.value as "all" | "active" | "inactive"
+                      )
+                    }
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer transition-all duration-200 ${
+                      isDark
+                        ? "bg-gray-800/80 border-gray-700/50 text-white"
+                        : "bg-gray-50 border-gray-200 text-gray-900"
+                    }`}
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                  <svg
+                    className="absolute right-3 top-3.5 pointer-events-none text-gray-400"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="lg:col-span-2">
+                <label
+                  className={`block text-sm font-medium mb-2 ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
+                >
+                  Sort By
+                </label>
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) =>
+                      setSortBy(
+                        e.target.value as "newest" | "oldest" | "name"
+                      )
+                    }
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer transition-all duration-200 ${
+                      isDark
+                        ? "bg-gray-800/80 border-gray-700/50 text-white"
+                        : "bg-gray-50 border-gray-200 text-gray-900"
+                    }`}
+                  >
+                    <option value="newest">Date (Newest First)</option>
+                    <option value="oldest">Date (Oldest First)</option>
+                    <option value="name">Name (A-Z)</option>
+                  </select>
+                  <svg
+                    className={`absolute right-3 top-3.5 pointer-events-none ${
+                      isDark ? "text-gray-400" : "text-gray-400"
+                    }`}
+                    width="16"
+                    height="16"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="lg:col-span-2 flex items-end">
+                <button
+                  onClick={() => router.push("/categories/new")}
+                  className="w-full px-6 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-indigo-600 hover:bg-indigo-700 text-white whitespace-nowrap"
+                >
+                  <Plus size={20} />
+                  Add Category
+                </button>
+              </div>
+            </div>
+
+            <div
+              className={`text-sm mt-4 ${
+                isDark ? "text-gray-300" : "text-gray-600"
+              }`}
+            >
+              Showing {filteredCategories.length} of {categories.length}{" "}
+              categories
             </div>
           </div>
 
@@ -492,32 +712,34 @@ export default function SetupFlowPage() {
               theme={isDark}
               onAdd={() => router.push("/categories/new")}
             />
+          ) : filteredCategories.length === 0 ? (
+            <div
+              className={`rounded-lg border p-6 text-center ${
+                isDark
+                  ? "bg-gray-900/40 border-gray-700 text-gray-300"
+                  : "bg-gray-50 border-gray-200 text-gray-600"
+              }`}
+            >
+              No categories match your search or filters.
+            </div>
           ) : (
             <div className="space-y-4">
-              {categories.map((category) => (
+              {filteredCategories.map((category) => (
                 <CategorySection
                   key={category.category_id}
                   category={category}
-                  branches={branches}
-                  isExpanded={expandedCategories.has(category.category_id)}
-                  onToggle={() => toggleCategory(category.category_id)}
                   onEditCategory={() =>
                     router.push(`/categories/${category.category_id}/edit`)
                   }
-                  onToggleProductBranch={handleToggleProductBranch}
-                  onAddProduct={() =>
-                    router.push(
-                      `/products/new?category_id=${category.category_id}`
+                  onViewCategory={() =>
+                    router.push(`/categories/${category.category_id}`)
+                  }
+                  onToggleCategoryActive={() =>
+                    handleToggleCategoryActive(
+                      category.category_id,
+                      category.is_active ?? 0,
+                      category.branch_id
                     )
-                  }
-                  onViewProduct={(productId) =>
-                    router.push(`/products/${productId}`)
-                  }
-                  onEditProduct={(productId) =>
-                    router.push(`/products/${productId}/edit`)
-                  }
-                  onAddVariant={(productId) =>
-                    router.push(`/product-variants/new?product_id=${productId}`)
                   }
                   theme={isDark}
                 />
@@ -592,31 +814,15 @@ function SummaryCard({
 
 function CategorySection({
   category,
-  branches,
-  isExpanded,
-  onToggle,
   onEditCategory,
-  onToggleProductBranch,
-  onAddProduct,
-  onViewProduct,
-  onEditProduct,
-  onAddVariant,
+  onViewCategory,
+  onToggleCategoryActive,
   theme,
 }: {
   category: CategoryWithProducts;
-  branches: Branch[];
-  isExpanded: boolean;
-  onToggle: () => void;
   onEditCategory: () => void;
-  onToggleProductBranch: (
-    productId: number,
-    branchId: number,
-    currentStatus: number
-  ) => Promise<void>;
-  onAddProduct: () => void;
-  onViewProduct: (productId: number) => void;
-  onEditProduct: (productId: number) => void;
-  onAddVariant: (productId: number) => void;
+  onViewCategory: () => void;
+  onToggleCategoryActive: () => void;
   theme: boolean;
 }) {
   const isDark = theme;
@@ -624,31 +830,33 @@ function CategorySection({
 
   return (
     <div
-      className={`border rounded-lg ${
-        isDark ? "border-gray-700 bg-gray-800/50" : "border-gray-200 bg-gray-50"
+      className={`border rounded-lg transition ${
+        category.is_active
+          ? isDark
+            ? "border-gray-700 bg-gray-800/30"
+            : "border-gray-200 bg-white"
+          : isDark
+          ? "border-gray-800 bg-gray-900/40 opacity-70"
+          : "border-gray-200 bg-gray-100 opacity-70"
       }`}
     >
-      {/* Category Header */}
-      <div className="flex items-center">
-        <button
-          onClick={onToggle}
-          className={`flex-1 px-6 py-4 flex items-center justify-between hover:bg-opacity-50 transition-colors ${
-            isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"
-          }`}
-        >
-          <div className="flex items-center gap-4 flex-1">
+      <div className="p-4">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div className="flex items-start gap-4 flex-1 text-left">
             <Folder
-              size={24}
+              size={22}
               className={isDark ? "text-blue-400" : "text-blue-600"}
             />
-            <div className="text-left flex-1">
-              <h3
-                className={`text-lg font-semibold ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                {category.category_name}
-              </h3>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <h3
+                  className={`text-lg font-semibold ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  {category.category_name}
+                </h3>
+              </div>
               <p
                 className={`text-sm ${
                   isDark ? "text-gray-400" : "text-gray-600"
@@ -658,332 +866,58 @@ function CategorySection({
                 product{products.length !== 1 ? "s" : ""}
               </p>
             </div>
-            <span
-              className={`text-xs px-3 py-1 rounded-full font-medium ${
-                category.is_active
-                  ? isDark
-                    ? "bg-green-900/40 text-green-300"
-                    : "bg-green-100 text-green-800"
-                  : isDark
-                  ? "bg-gray-700 text-gray-300"
-                  : "bg-gray-200 text-gray-700"
-              }`}
-            >
-              {category.is_active ? "● Active" : "● Inactive"}
-            </span>
-          </div>
-          <ChevronRight
-            size={20}
-            className={`${
-              isDark ? "text-gray-400" : "text-gray-600"
-            } transition-transform ${isExpanded ? "rotate-90" : ""}`}
-          />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEditCategory();
-          }}
-          className={`px-4 py-4 flex items-center transition-colors ${
-            isDark
-              ? "hover:bg-indigo-900/40 text-indigo-400"
-              : "hover:bg-indigo-100 text-indigo-600"
-          }`}
-          title="Edit Category"
-        >
-          <Edit2 size={18} />
-        </button>
-      </div>
-
-      {/* Products List */}
-      {isExpanded && (
-        <div
-          className={`border-t ${
-            isDark ? "border-gray-700" : "border-gray-200"
-          } p-4`}
-        >
-          {products.length === 0 ? (
-            <div className="text-center py-8">
-              <p
-                className={`${isDark ? "text-gray-400" : "text-gray-600"} mb-4`}
-              >
-                No products in this category
-              </p>
-              <button
-                onClick={onAddProduct}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 mx-auto"
-              >
-                <Plus size={16} />
-                Add Product
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {products.map((product) => (
-                <ProductSection
-                  key={product.product_id}
-                  product={product}
-                  branches={branches}
-                  onToggleBranch={onToggleProductBranch}
-                  onView={onViewProduct}
-                  onEdit={onEditProduct}
-                  onAddVariant={onAddVariant}
-                  theme={isDark}
-                />
-              ))}
-              <button
-                onClick={onAddProduct}
-                className={`w-full py-3 border-2 border-dashed rounded-lg flex items-center justify-center gap-2 transition-colors ${
-                  isDark
-                    ? "border-gray-700 hover:border-indigo-600 hover:bg-indigo-900/20 text-gray-400 hover:text-indigo-400"
-                    : "border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600"
-                }`}
-              >
-                <Plus size={18} />
-                Add Product to {category.category_name}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ProductSection({
-  product,
-  branches,
-  onToggleBranch,
-  onView,
-  onEdit,
-  onAddVariant,
-  theme,
-}: {
-  product: ProductWithVariants;
-  branches: Branch[];
-  onToggleBranch: (
-    productId: number,
-    branchId: number,
-    currentStatus: number
-  ) => Promise<void>;
-  onView: (productId: number) => void;
-  onEdit: (productId: number) => void;
-  onAddVariant: (productId: number) => void;
-  theme: boolean;
-}) {
-  const isDark = theme;
-  const variants = product.variants || [];
-  const branchAssignments =
-    product.branchAssignments ||
-    branches.map((b) => ({
-      branch_id: b.branch_id,
-      branch_name: b.branch_name,
-      is_available: 0,
-    }));
-
-  return (
-    <div
-      className={`border rounded-lg ${
-        isDark ? "border-gray-700 bg-gray-800/30" : "border-gray-200 bg-white"
-      }`}
-    >
-      <div className="p-4">
-        {/* Product Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <Package
-                size={20}
-                className={isDark ? "text-green-400" : "text-green-600"}
-              />
-              <h4
-                className={`font-semibold ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                {product.product_name}
-              </h4>
-              <span
-                className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  product.is_active == 1
-                    ? isDark
-                      ? "bg-green-900/40 text-green-300"
-                      : "bg-green-100 text-green-800"
-                    : isDark
-                    ? "bg-gray-700 text-gray-300"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                {product.is_active == 1 ? "Active" : "Inactive"}
-              </span>
-            </div>
-            <p
-              className={`text-sm ${
-                isDark ? "text-gray-400" : "text-gray-600"
-              } mb-2`}
-            >
-              {product.product_description || "No description"}
-            </p>
-            <p
-              className={`text-sm font-semibold ${
-                isDark ? "text-white" : "text-gray-900"
-              }`}
-            >
-              Base Price: ₹
-              {parseFloat(product.base_price?.toString() || "0").toFixed(2)}
-            </p>
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onView(product.product_id)}
-              className={`p-2 rounded-lg transition-colors ${
+              onClick={onViewCategory}
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                 isDark
-                  ? "hover:bg-blue-900/40 text-blue-400"
-                  : "hover:bg-blue-100 text-blue-600"
+                  ? "text-blue-400 hover:bg-blue-900/40"
+                  : "text-blue-600 hover:bg-blue-50"
               }`}
-              title="View"
+              title="View Category"
             >
               <Eye size={18} />
             </button>
             <button
-              onClick={() => onEdit(product.product_id)}
-              className={`p-2 rounded-lg transition-colors ${
-                isDark
-                  ? "hover:bg-indigo-900/40 text-indigo-400"
-                  : "hover:bg-indigo-100 text-indigo-600"
-              }`}
-              title="Edit"
-            >
-              <Edit2 size={18} />
-            </button>
-          </div>
-        </div>
-
-        {/* Branch Assignments */}
-        <div className="mb-4">
-          <p
-            className={`text-xs font-medium mb-2 ${
-              isDark ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            Branch Availability:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {branchAssignments.map((assignment) => {
-              const isAvailable = assignment.is_available === 1;
-              return (
-                <button
-                  key={assignment.branch_id}
-                  onClick={() =>
-                    onToggleBranch(
-                      product.product_id,
-                      assignment.branch_id,
-                      assignment.is_available
-                    )
-                  }
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-                    isAvailable
-                      ? isDark
-                        ? "bg-green-900/40 text-green-300 hover:bg-green-900/60"
-                        : "bg-green-100 text-green-800 hover:bg-green-200"
-                      : isDark
-                      ? "bg-gray-700/50 text-gray-400 hover:bg-gray-700"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  {isAvailable ? (
-                    <CheckCircle2 size={14} />
-                  ) : (
-                    <XCircle size={14} />
-                  )}
-                  {assignment.branch_name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Variants */}
-        <div
-          className={`border-t ${
-            isDark ? "border-gray-700" : "border-gray-200"
-          } pt-4`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <p
-              className={`text-xs font-medium ${
-                isDark ? "text-gray-400" : "text-gray-600"
-              }`}
-            >
-              Variants ({variants.length}):
-            </p>
-            <button
-              onClick={() => onAddVariant(product.product_id)}
-              className={`text-xs px-2 py-1 rounded transition-colors ${
+              onClick={onEditCategory}
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                 isDark
                   ? "text-indigo-400 hover:bg-indigo-900/40"
                   : "text-indigo-600 hover:bg-indigo-50"
               }`}
+              title="Edit Category"
             >
-              <Plus size={14} className="inline mr-1" />
-              Add Variant
+              <Edit2 size={18} />
             </button>
-          </div>
-          {variants.length === 0 ? (
-            <p
-              className={`text-xs ${
-                isDark ? "text-gray-500" : "text-gray-500"
-              } italic`}
-            >
-              No variants yet
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {variants.map((variant) => (
-                <div
-                  key={variant.variant_id}
-                  className={`flex items-center justify-between p-2 rounded ${
-                    isDark ? "bg-gray-700/30" : "bg-gray-50"
+            <button
+              type="button"
+              onClick={onToggleCategoryActive}
+              role="switch"
+              aria-checked={category.is_active === 1}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                category.is_active === 1
+                  ? "bg-green-500"
+                  : isDark
+                  ? "bg-gray-700"
+                  : "bg-gray-300"
+              }`}
+              title={
+                category.is_active === 1
+                  ? "Deactivate category"
+                  : "Activate category"
+              }
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    category.is_active === 1 ? "translate-x-6" : "translate-x-1"
                   }`}
-                >
-                  <div>
-                    <p
-                      className={`text-sm font-medium ${
-                        isDark ? "text-white" : "text-gray-900"
-                      }`}
-                    >
-                      {variant.variant_name}
-                    </p>
-                    <p
-                      className={`text-xs ${
-                        isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
-                    >
-                      ₹
-                      {parseFloat(
-                        variant.variant_price?.toString() || "0"
-                      ).toFixed(2)}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      variant.is_active == 1
-                        ? isDark
-                          ? "bg-green-900/40 text-green-300"
-                          : "bg-green-100 text-green-800"
-                        : isDark
-                        ? "bg-gray-700 text-gray-300"
-                        : "bg-gray-200 text-gray-700"
-                    }`}
-                  >
-                    {variant.is_active == 1 ? "Active" : "Inactive"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+                />
+              </button>
+          </div>
         </div>
       </div>
+
     </div>
   );
 }

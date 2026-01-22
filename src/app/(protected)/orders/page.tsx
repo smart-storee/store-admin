@@ -29,9 +29,6 @@ import {
   RefreshCw,
   ArrowUpRight,
   Download,
-  ArrowUp,
-  ArrowDown,
-  ChevronsUpDown,
   CreditCard,
 } from "lucide-react";
 import Link from "next/link";
@@ -400,25 +397,12 @@ export default function OrdersPage() {
     dateFrom ||
     dateTo;
 
-  const handleSort = (column: string) => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(column);
-      setSortOrder("desc");
-    }
+  const handleSortChange = (value: string) => {
+    const [field, order] = value.split(":");
+    if (!field || !order) return;
+    setSortBy(field);
+    setSortOrder(order as "asc" | "desc");
     setCurrentPage(1);
-  };
-
-  const getSortIcon = (column: string) => {
-    if (sortBy !== column) {
-      return <ChevronsUpDown size={14} className="opacity-50" />;
-    }
-    return sortOrder === "asc" ? (
-      <ArrowUp size={14} />
-    ) : (
-      <ArrowDown size={14} />
-    );
   };
 
   const setDatePreset = (preset: string) => {
@@ -752,7 +736,30 @@ export default function OrdersPage() {
                     Manage and track all customer orders
                   </p>
                 </div>
-                <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <div className="relative w-full sm:w-64">
+                    <Search
+                      size={18}
+                      className={`absolute left-3 top-3 ${
+                        isDarkMode ? "text-slate-400" : "text-gray-400"
+                      }`}
+                    />
+                    <input
+                      type="text"
+                      aria-label="Search orders"
+                      placeholder="Order #, customer name, phone..."
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className={`w-full h-10 pl-10 pr-4 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                        isDarkMode
+                          ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+                          : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      }`}
+                    />
+                  </div>
                   <button
                     onClick={handleExport}
                     disabled={exporting || loading || orders.length === 0}
@@ -804,6 +811,23 @@ export default function OrdersPage() {
                     />
                     <span className="hidden sm:inline">Refresh</span>
                   </button>
+                  <select
+                    value={`${sortBy}:${sortOrder}`}
+                    onChange={(e) => handleSortChange(e.target.value)}
+                    className={`h-10 px-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                      isDarkMode
+                        ? "bg-slate-700 border-slate-600 text-white"
+                        : "bg-white border-gray-300 text-gray-900"
+                    }`}
+                    aria-label="Sort orders"
+                  >
+                    <option value="created_at:desc">Date (Newest First)</option>
+                    <option value="created_at:asc">Date (Oldest First)</option>
+                    <option value="total_amount:desc">Amount (High to Low)</option>
+                    <option value="total_amount:asc">Amount (Low to High)</option>
+                    <option value="order_status:asc">Status (A-Z)</option>
+                    <option value="order_status:desc">Status (Z-A)</option>
+                  </select>
                   <button
                     onClick={() => setShowFilters(!showFilters)}
                     className={`flex items-center justify-center gap-2 px-4 py-2 h-10 text-sm font-medium rounded-lg border transition-all duration-200 ${
@@ -984,38 +1008,7 @@ export default function OrdersPage() {
                   </div>
 
                   {/* Main Filters Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-                    <div>
-                      <label
-                        className={`block text-sm font-medium ${
-                          isDarkMode ? "text-slate-300" : "text-gray-700"
-                        } mb-2`}
-                      >
-                        Search
-                      </label>
-                      <div className="relative">
-                        <Search
-                          size={18}
-                          className={`absolute left-3 top-3 ${
-                            isDarkMode ? "text-slate-400" : "text-gray-400"
-                          }`}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Order #, customer name, phone..."
-                          value={searchTerm}
-                          onChange={(e) => {
-                            setSearchTerm(e.target.value);
-                            setCurrentPage(1);
-                          }}
-                          className={`w-full h-10 pl-10 pr-4 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
-                            isDarkMode
-                              ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
-                              : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                          }`}
-                        />
-                      </div>
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                     <div>
                       <label
                         className={`block text-sm font-medium ${
@@ -1324,73 +1317,25 @@ export default function OrdersPage() {
                           Items
                         </th>
                         <th
-                          onClick={() => handleSort("total_amount")}
-                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors ${
-                            sortBy === "total_amount"
-                              ? isDarkMode
-                                ? "bg-blue-900/30 text-blue-300"
-                                : "bg-blue-50 text-blue-700"
-                              : isDarkMode
-                              ? "text-slate-300 hover:bg-slate-700"
-                              : "text-gray-700 hover:bg-gray-100"
+                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${
+                            isDarkMode ? "text-slate-300" : "text-gray-700"
                           }`}
                         >
-                          <div className="flex items-center gap-1.5">
-                            Amount
-                            <span
-                              className={
-                                sortBy === "total_amount" ? "" : "opacity-50"
-                              }
-                            >
-                              {getSortIcon("total_amount")}
-                            </span>
-                          </div>
+                          Amount
                         </th>
                         <th
-                          onClick={() => handleSort("order_status")}
-                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors ${
-                            sortBy === "order_status"
-                              ? isDarkMode
-                                ? "bg-blue-900/30 text-blue-300"
-                                : "bg-blue-50 text-blue-700"
-                              : isDarkMode
-                              ? "text-slate-300 hover:bg-slate-700"
-                              : "text-gray-700 hover:bg-gray-100"
+                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${
+                            isDarkMode ? "text-slate-300" : "text-gray-700"
                           }`}
                         >
-                          <div className="flex items-center gap-1.5">
-                            Status
-                            <span
-                              className={
-                                sortBy === "order_status" ? "" : "opacity-50"
-                              }
-                            >
-                              {getSortIcon("order_status")}
-                            </span>
-                          </div>
+                          Status
                         </th>
                         <th
-                          onClick={() => handleSort("created_at")}
-                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell cursor-pointer transition-colors ${
-                            sortBy === "created_at"
-                              ? isDarkMode
-                                ? "bg-blue-900/30 text-blue-300"
-                                : "bg-blue-50 text-blue-700"
-                              : isDarkMode
-                              ? "text-slate-300 hover:bg-slate-700"
-                              : "text-gray-700 hover:bg-gray-100"
+                          className={`px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell ${
+                            isDarkMode ? "text-slate-300" : "text-gray-700"
                           }`}
                         >
-                          <div className="flex items-center gap-1.5">
-                            Date
-                            <span
-                              className={
-                                sortBy === "created_at" ? "" : "opacity-50"
-                              }
-                            >
-                              {getSortIcon("created_at")}
-                            </span>
-                          </div>
+                          Date
                         </th>
                         <th
                           className={`px-4 sm:px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider ${

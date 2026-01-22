@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Edit2, Plus, ArrowLeft } from "lucide-react";
 import { makeAuthenticatedRequest } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,17 +14,23 @@ import {
   Category,
   Branch,
   ProductVariant,
+  Uom,
 } from "@/types";
 
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const returnTo = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+  const encodedReturnTo = encodeURIComponent(returnTo);
   const { user } = useAuth();
   const { theme } = useTheme();
   const [product, setProduct] = useState<Product | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [uoms, setUoms] = useState<Uom[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +38,7 @@ export default function EditProductPage() {
     product_name: "",
     product_description: "",
     base_price: 0,
+    uom_id: 0,
     category_id: 0,
     branch_id: 0,
     is_active: 1,
@@ -96,6 +103,7 @@ export default function EditProductPage() {
             product_name: prod.product_name,
             product_description: prod.product_description || "",
             base_price: prod.base_price,
+            uom_id: prod.uom_id || 0,
             category_id: prod.category_id,
             branch_id: prod.branch_id || 0,
             is_active: prod.is_active,
@@ -203,6 +211,22 @@ export default function EditProductPage() {
             branchesResponse.message || "Failed to fetch branches"
           );
         }
+
+        // Fetch UOMs
+        const uomsResponse: ApiResponse<{ data: Uom[] }> =
+          await makeAuthenticatedRequest(
+            "/uoms",
+            {},
+            true,
+            user?.store_id,
+            user?.branch_id || undefined
+          );
+
+        if (uomsResponse.success) {
+          setUoms(uomsResponse.data.data || uomsResponse.data);
+        } else {
+          throw new Error(uomsResponse.message || "Failed to fetch UOMs");
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load product data");
         console.error("Product edit fetch error:", err);
@@ -237,6 +261,16 @@ export default function EditProductPage() {
         ...prev,
         [name]: finalValue,
       }));
+    } else if (name === "uom_id") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parseInt(value) || 0,
+      }));
+    } else if (name === "is_vegetarian") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parseInt(value) || 0,
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -269,6 +303,12 @@ export default function EditProductPage() {
       return;
     }
 
+    if (!formData.uom_id || formData.uom_id === 0) {
+      setError("Please select a UOM");
+      setSaving(false);
+      return;
+    }
+
     // Validate that at least one branch is selected
     if (selectedBranches.length === 0) {
       setError("Please select at least one branch");
@@ -282,6 +322,7 @@ export default function EditProductPage() {
         product_name: formData.product_name,
         product_description: formData.product_description,
         base_price: formData.base_price,
+        uom_id: formData.uom_id,
         category_id: formData.category_id,
         product_image: formData.product_image,
         is_active: formData.is_active,
@@ -482,6 +523,30 @@ export default function EditProductPage() {
 
                   <div className="col-span-6 sm:col-span-3">
                     <label
+                      htmlFor="uom_id"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      UOM *
+                    </label>
+                    <select
+                      id="uom_id"
+                      name="uom_id"
+                      value={formData.uom_id}
+                      onChange={handleChange}
+                      required
+                      className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    >
+                      <option value="">Select UOM</option>
+                      {uoms.map((uom) => (
+                        <option key={uom.uom_id} value={uom.uom_id}>
+                          {uom.uom_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="col-span-6 sm:col-span-3">
+                    <label
                       htmlFor="category_id"
                       className="block text-sm font-medium text-gray-700"
                     >
@@ -603,44 +668,43 @@ export default function EditProductPage() {
                   </div>
 
                   <div className="col-span-6 sm:col-span-2">
-                    <label
-                      htmlFor="serves_count"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Serves Count
-                    </label>
-                    <input
-                      type="number"
-                      id="serves_count"
-                      name="serves_count"
-                      value={formData.serves_count}
-                      onChange={handleChange}
-                      min="1"
-                      className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                    />
-                  </div>
-
-                  <div className="col-span-6 sm:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Options
                     </label>
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.is_vegetarian === 1}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              is_vegetarian: e.target.checked ? 1 : 0,
-                            }))
-                          }
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-gray-700">
-                          Vegetarian
-                        </span>
-                      </label>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          Diet Type
+                        </p>
+                        <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="is_vegetarian"
+                              value="1"
+                              checked={formData.is_vegetarian === 1}
+                              onChange={handleChange}
+                              className="h-4 w-4 rounded-full border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="text-sm text-gray-700">
+                              Vegetarian
+                            </span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="is_vegetarian"
+                              value="0"
+                              checked={formData.is_vegetarian === 0}
+                              onChange={handleChange}
+                              className="h-4 w-4 rounded-full border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="text-sm text-gray-700">
+                              Non Vegetarian
+                            </span>
+                          </label>
+                        </div>
+                      </div>
                       <label className="flex items-center space-x-2">
                         <input
                           type="checkbox"
@@ -706,7 +770,7 @@ export default function EditProductPage() {
                   <button
                     onClick={() =>
                       router.push(
-                        `/product-variants/new?product_id=${params.id}`
+                        `/product-variants/new?product_id=${params.id}&returnTo=${encodedReturnTo}`
                       )
                     }
                     className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2"
@@ -908,7 +972,7 @@ export default function EditProductPage() {
                       <button
                         onClick={() =>
                           router.push(
-                            `/product-variants/new?product_id=${params.id}`
+                            `/product-variants/new?product_id=${params.id}&returnTo=${encodedReturnTo}`
                           )
                         }
                         className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2 mx-auto"

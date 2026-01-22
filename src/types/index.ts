@@ -155,6 +155,8 @@ export interface Product {
   category_id: number;
   category_name: string;
   base_price: number;
+  uom_id?: number;
+  uom_name?: string;
   total_stock: number;
   total_sold: number;
   is_active: number;
@@ -174,9 +176,15 @@ export interface CreateProductRequest {
   product_description: string;
   product_image: string;
   base_price: number;
+  uom_id?: number;
   serves_count?: number;
   is_vegetarian?: number;
   is_bestseller?: number;
+}
+
+export interface Uom {
+  uom_id: number;
+  uom_name: string;
 }
 
 // Product Variant types
@@ -186,6 +194,8 @@ export interface ProductVariant {
   product_name?: string;
   variant_name: string;
   variant_price: number;
+  uom_id?: number;
+  uom_name?: string;
   variant_description?: string;
   sku?: string;
   barcode?: string;
@@ -497,6 +507,7 @@ export interface InventoryItem {
   product_id: number;
   product_name: string;
   product_description?: string;
+  product_image?: string;
   product_active: boolean;
   category_id?: number;
   category_name?: string;

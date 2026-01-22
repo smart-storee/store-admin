@@ -76,13 +76,14 @@ export default function EditOrderPage() {
     setSaving(true);
 
     try {
-      const response: ApiResponse<{ data: any }> = 
+      const response: ApiResponse<{ data: any }> =
         await makeAuthenticatedRequest(
-          `/orders/${params.id}`,
+          `/orders/${params.id}/status`,
           {
             method: 'PUT',
             body: JSON.stringify({
-              ...formData,
+              order_status: formData.order_status,
+              notes: formData.delivery_notes || undefined,
               store_id: user?.store_id,
               branch_id: user?.branch_id || null,
             }),
