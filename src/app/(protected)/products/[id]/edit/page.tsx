@@ -885,6 +885,9 @@ export default function EditProductPage() {
                                   }`}
                                 >
                                   ₹{variant.variant_price}
+                                  {variant.uom_name
+                                    ? ` / ${variant.uom_name}`
+                                    : ""}
                                 </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
@@ -920,7 +923,7 @@ export default function EditProductPage() {
                                   <button
                                     onClick={() =>
                                       router.push(
-                                        `/product-variants/${variant.variant_id}/edit`
+                                        `/product-variants/${variant.variant_id}/edit?returnTo=${encodedReturnTo}`
                                       )
                                     }
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors ${
@@ -936,7 +939,7 @@ export default function EditProductPage() {
                                   <button
                                     onClick={() =>
                                       router.push(
-                                        `/product-variants/${variant.variant_id}`
+                                        `/product-variants/${variant.variant_id}?returnTo=${encodedReturnTo}`
                                       )
                                     }
                                     className={`px-3 py-1.5 rounded-md transition-colors ${

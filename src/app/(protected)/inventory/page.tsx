@@ -66,6 +66,7 @@ export default function InventoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 20;
 
   // Bulk update
   const [bulkUpdates, setBulkUpdates] = useState<Map<number, number>>(
@@ -175,66 +176,46 @@ export default function InventoryPage() {
     user,
   ]);
 
-  // Update filtered inventory when currentPage, searchTerm, or filters change
+  // Sort current page results locally
   useEffect(() => {
-    if (inventory.length > 0) {
-      // Apply search filtering again when page changes (in case search term changed)
-      let filteredData = [...inventory];
-
-      if (searchTerm) {
-        const lowerSearchTerm = searchTerm.toLowerCase();
-        filteredData = filteredData.filter(item =>
-          item.product_name.toLowerCase().includes(lowerSearchTerm) ||
-          item.variant_name.toLowerCase().includes(lowerSearchTerm) ||
-          (item.category_name && item.category_name.toLowerCase().includes(lowerSearchTerm)) ||
-          (item.branch_name && item.branch_name.toLowerCase().includes(lowerSearchTerm))
-        );
-      }
-
-      if (sortBy === "stock_low") {
-        filteredData.sort((a, b) => a.stock - b.stock);
-      } else if (sortBy === "stock_high") {
-        filteredData.sort((a, b) => b.stock - a.stock);
-      } else {
-        filteredData.sort((a, b) =>
-          a.product_name.localeCompare(b.product_name)
-        );
-      }
-
-      // Apply pagination to the filtered data
-      const startIndex = (currentPage - 1) * 50;
-      const endIndex = startIndex + 50;
-      const paginatedInventory = filteredData.slice(startIndex, endIndex);
-      setFilteredInventory(paginatedInventory);
-
-      // Update total counts based on current filtered data
-      setTotalCount(filteredData.length);
-      setTotalPages(Math.ceil(filteredData.length / 50));
+    if (inventory.length === 0) {
+      setFilteredInventory([]);
+      return;
     }
-  }, [
-    currentPage,
-    inventory,
-    searchTerm,
-    selectedBranch,
-    selectedCategory,
-    selectedProduct,
-    selectedVariant,
-    lowStockOnly,
-    outOfStockOnly,
-    lowStockThreshold,
-    sortBy,
-  ]);
+
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    let filtered = [...inventory];
+    if (normalizedSearch) {
+      filtered = filtered.filter((item) =>
+        item.product_name.toLowerCase().includes(normalizedSearch) ||
+        item.variant_name.toLowerCase().includes(normalizedSearch) ||
+        (item.category_name &&
+          item.category_name.toLowerCase().includes(normalizedSearch)) ||
+        (item.branch_name &&
+          item.branch_name.toLowerCase().includes(normalizedSearch))
+      );
+    }
+
+    if (sortBy === "stock_low") {
+      filtered.sort((a, b) => a.stock - b.stock);
+    } else if (sortBy === "stock_high") {
+      filtered.sort((a, b) => b.stock - a.stock);
+    } else {
+      filtered.sort((a, b) => a.product_name.localeCompare(b.product_name));
+    }
+    setFilteredInventory(filtered);
+  }, [inventory, sortBy, searchTerm]);
 
   const fetchInventory = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch all inventory items to allow client-side filtering
+      // Fetch inventory using server-side search and filters
       const params = new URLSearchParams({
         store_id: user?.store_id?.toString() || "",
-        page: "1",  // Fetch all items
-        limit: "100", // Maximum allowed limit
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
         low_stock_threshold: lowStockThreshold.toString(),
       });
 
@@ -256,6 +237,9 @@ export default function InventoryPage() {
       if (outOfStockOnly) {
         params.append("out_of_stock_only", "true");
       }
+      if (searchTerm) {
+        params.append("search", searchTerm);
+      }
 
       const response: any = await makeAuthenticatedRequest(
         `/inventory?${params.toString()}`
@@ -271,14 +255,16 @@ export default function InventoryPage() {
 
         console.log("Parsed Inventory Data:", inventoryData);
 
-        // Store all inventory data (before filtering)
         setInventory(inventoryData);
-
-        // Update total counts based on unfiltered data
-        setTotalCount(inventoryData.length);
-        setTotalPages(Math.ceil(inventoryData.length / 50));
-
-        // The actual filtering and pagination will be handled by the useEffect
+        setFilteredInventory(inventoryData);
+        const pagination = response.pagination || response.data?.pagination;
+        const total = pagination?.total ?? inventoryData.length;
+        const totalPages =
+          pagination?.totalPages ||
+          pagination?.total_pages ||
+          Math.max(1, Math.ceil(total / pageSize));
+        setTotalCount(total);
+        setTotalPages(totalPages);
       } else {
         throw new Error(response.message || "Failed to fetch inventory");
       }
@@ -558,18 +544,30 @@ export default function InventoryPage() {
       }
     >();
 
-    categories.forEach((category) => {
-      const categoryKey = `id:${category.category_id}`;
-      if (!groups.has(categoryKey)) {
-        groups.set(categoryKey, {
-          key: categoryKey,
-          categoryId: category.category_id,
-          categoryName: category.category_name,
-          isActive: category.is_active ?? 1,
-          products: new Map(),
-        });
-      }
-    });
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const hasFilters =
+      normalizedSearch.length > 0 ||
+      selectedBranch ||
+      selectedCategory ||
+      selectedProduct ||
+      selectedVariant ||
+      lowStockOnly ||
+      outOfStockOnly;
+
+    if (!hasFilters) {
+      categories.forEach((category) => {
+        const categoryKey = `id:${category.category_id}`;
+        if (!groups.has(categoryKey)) {
+          groups.set(categoryKey, {
+            key: categoryKey,
+            categoryId: category.category_id,
+            categoryName: category.category_name,
+            isActive: category.is_active ?? 1,
+            products: new Map(),
+          });
+        }
+      });
+    }
 
     filteredInventory.forEach((item) => {
       const categoryName = item.category_name || "Uncategorized";
@@ -618,7 +616,17 @@ export default function InventoryPage() {
         ),
       }))
       .sort((a, b) => a.categoryName.localeCompare(b.categoryName));
-  }, [filteredInventory, categories]);
+  }, [
+    filteredInventory,
+    categories,
+    searchTerm,
+    selectedBranch,
+    selectedCategory,
+    selectedProduct,
+    selectedVariant,
+    lowStockOnly,
+    outOfStockOnly,
+  ]);
 
   useEffect(() => {
     if (!showStockModal) return;
@@ -1299,6 +1307,9 @@ export default function InventoryPage() {
                                                       </div>
                                                       <div className="text-xs text-gray-500 dark:text-gray-400">
                                                         ₹{item.variant_price}
+                                                        {item.uom_name
+                                                          ? ` / ${item.uom_name}`
+                                                          : ""}
                                                       </div>
                                                     </div>
                                                   </td>
@@ -1352,33 +1363,53 @@ export default function InventoryPage() {
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="bg-gray-50 dark:bg-slate-700 px-6 py-4 flex items-center justify-between">
-                    <div className="text-sm text-gray-700 dark:text-gray-300">
-                      Showing {filteredInventory.length} of {totalCount} items
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          setCurrentPage((p) => Math.max(1, p - 1))
-                        }
-                        disabled={currentPage === 1}
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 disabled:opacity-50"
-                      >
-                        Previous
-                      </button>
-                      <span className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        Page {currentPage} of {totalPages}
-                      </span>
-                      <button
-                        onClick={() =>
-                          setCurrentPage((p) => Math.min(totalPages, p + 1))
-                        }
-                        disabled={currentPage === totalPages}
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 disabled:opacity-50"
-                      >
-                        Next
-                      </button>
+                {totalPages >= 1 && (
+                  <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-700 dark:text-gray-300">
+                        Showing{" "}
+                        <span className="font-medium">
+                          {(currentPage - 1) * pageSize + 1}
+                        </span>{" "}
+                        to{" "}
+                        <span className="font-medium">
+                          {Math.min(currentPage * pageSize, totalCount)}
+                        </span>{" "}
+                        of <span className="font-medium">{totalCount}</span>{" "}
+                        results
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setCurrentPage(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className="relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
+                        >
+                          Previous
+                        </button>
+                        {Array.from(
+                          { length: totalPages },
+                          (_, i) => i + 1
+                        ).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                              currentPage === page
+                                ? "z-10 bg-indigo-50 text-indigo-600 border border-indigo-500 dark:bg-indigo-600 dark:text-white"
+                                : "bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setCurrentPage(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className="relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
+                        >
+                          Next
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

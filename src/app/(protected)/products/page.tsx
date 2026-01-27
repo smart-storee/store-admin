@@ -17,12 +17,14 @@ const ProductsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive"
   >("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name">("newest");
   const [refreshing, setRefreshing] = useState(false);
+  const pageSize = 20;
   const { user } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -85,7 +87,7 @@ const ProductsPage = () => {
 
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: "10",
+        limit: pageSize.toString(),
         ...(searchTerm && { search: searchTerm }),
       });
 
@@ -114,16 +116,23 @@ const ProductsPage = () => {
           ? responseData
           : responseData.data || [];
 
-        const pagination = responseData.pagination ||
-          response.pagination || {
-            total: productsData.length,
-            total_pages: 1,
-            current_page: currentPage,
-            limit: 10,
-          };
+        const pagination = responseData.pagination || response.pagination || {};
+        const totalRaw =
+          pagination.total ??
+          pagination.total_items ??
+          pagination.totalItems ??
+          productsData.length;
+        const total = Number(totalRaw) || productsData.length;
+        const limitRaw = pagination.limit ?? pageSize;
+        const limit = Number(limitRaw) || pageSize;
+        const totalPagesRaw =
+          pagination.total_pages ?? pagination.totalPages ?? pagination.pages;
+        const totalPagesValue =
+          Number(totalPagesRaw) || Math.ceil(total / limit) || 1;
 
         setProducts(productsData);
-        // setPagination(pagination);
+        setTotalCount(total);
+        setTotalPages(totalPagesValue);
       } else {
         throw new Error(response?.message || "Failed to fetch products");
       }
@@ -499,116 +508,82 @@ const ProductsPage = () => {
                 )}
 
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {totalPages >= 1 && (
                   <div
-                    className={`px-4 py-3 flex items-center justify-between border-t ${
-                      isDark
-                        ? "bg-gray-800 border-gray-700"
-                        : "bg-white border-gray-200"
-                    } sm:px-6`}
+                    className={`bg-gray-50 px-4 py-3 sm:px-6 ${
+                      isDark ? "bg-gray-700" : "bg-white"
+                    }`}
                   >
-                    <div className="flex-1 flex justify-between sm:hidden">
-                      <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md ${
-                          currentPage === 1
-                            ? isDark
-                              ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                              : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                            : isDark
-                            ? "bg-gray-700 text-white hover:bg-gray-600"
-                            : "bg-white text-gray-700 hover:bg-gray-50"
+                    <div className="flex items-center justify-between">
+                      <div
+                        className={`text-sm ${
+                          isDark ? "text-gray-300" : "text-gray-700"
                         }`}
                       >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className={`ml-3 relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md ${
-                          currentPage === totalPages
-                            ? isDark
-                              ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                              : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                            : isDark
-                            ? "bg-gray-700 text-white hover:bg-gray-600"
-                            : "bg-white text-gray-700 hover:bg-gray-50"
-                        }`}
-                      >
-                        Next
-                      </button>
-                    </div>
-                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                      <div>
-                        <p
-                          className={`text-sm ${
-                            isDark ? "text-gray-300" : "text-gray-700"
+                        Showing{" "}
+                        <span className="font-medium">
+                          {(currentPage - 1) * pageSize + 1}
+                        </span>{" "}
+                        to{" "}
+                        <span className="font-medium">
+                          {Math.min(currentPage * pageSize, totalCount)}
+                        </span>{" "}
+                        of <span className="font-medium">{totalCount}</span>{" "}
+                        results
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                            currentPage === 1
+                              ? isDark
+                                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : isDark
+                              ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                              : "bg-white text-gray-700 hover:bg-gray-50"
                           }`}
                         >
-                          Showing page{" "}
-                          <span className="font-medium">{currentPage}</span> of{" "}
-                          <span className="font-medium">{totalPages}</span>
-                        </p>
-                      </div>
-                      <div>
-                        <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                          Previous
+                        </button>
+
+                        {Array.from(
+                          { length: totalPages },
+                          (_, i) => i + 1
+                        ).map((page) => (
                           <button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className={`relative inline-flex items-center px-2 py-2 rounded-l-md border text-sm font-medium ${
-                              currentPage === 1
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                              currentPage === page
                                 ? isDark
-                                  ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                  ? "z-10 bg-indigo-600 text-white"
+                                  : "z-10 bg-indigo-50 text-indigo-600 border border-indigo-500"
                                 : isDark
                                 ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
-                                : "bg-white text-gray-500 hover:bg-gray-50"
+                                : "bg-white text-gray-700 hover:bg-gray-50"
                             }`}
                           >
-                            <span className="sr-only">Previous</span>
-                            &larr;
+                            {page}
                           </button>
+                        ))}
 
-                          {/* Page numbers */}
-                          {Array.from(
-                            { length: totalPages },
-                            (_, i) => i + 1
-                          ).map((page) => (
-                            <button
-                              key={page}
-                              onClick={() => handlePageChange(page)}
-                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                currentPage === page
-                                  ? isDark
-                                    ? "z-10 bg-indigo-600 border-indigo-600 text-white"
-                                    : "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
-                                  : isDark
-                                  ? "bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600"
-                                  : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                              }`}
-                            >
-                              {page}
-                            </button>
-                          ))}
-
-                          <button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className={`relative inline-flex items-center px-2 py-2 rounded-r-md border text-sm font-medium ${
-                              currentPage === totalPages
-                                ? isDark
-                                  ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                : isDark
-                                ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
-                                : "bg-white text-gray-500 hover:bg-gray-50"
-                            }`}
-                          >
-                            <span className="sr-only">Next</span>
-                            &rarr;
-                          </button>
-                        </nav>
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                            currentPage === totalPages
+                              ? isDark
+                                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : isDark
+                              ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                              : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          Next
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -707,8 +682,7 @@ function ProductCard({
                   isDark ? "text-gray-400" : "text-gray-600"
                 } mb-1`}
               >
-                {product.category_name || "Uncategorized"} • Serves{" "}
-                {product.serves_count || 1}
+                {product.category_name || "Uncategorized"}
               </p>
               <p
                 className={`text-sm ${

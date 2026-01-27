@@ -457,6 +457,7 @@ export default function ProductDetailPage() {
                             {parseFloat(
                               String(variant.variant_price || 0)
                             ).toFixed(2)}
+                            {variant.uom_name ? ` / ${variant.uom_name}` : ""}
                           </p>
                           <p
                             className={`text-sm ${

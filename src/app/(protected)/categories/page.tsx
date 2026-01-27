@@ -38,6 +38,10 @@ export default function CategoriesPage() {
   const [expandedBranches, setExpandedBranches] = useState<Set<number>>(
     new Set()
   );
+  const [branchPages, setBranchPages] = useState<Map<number, number>>(
+    new Map()
+  );
+  const pageSize = 20;
   const { user } = useAuth();
   const { theme } = useTheme();
   const isDarkMode = theme === "dark";
@@ -149,6 +153,14 @@ export default function CategoriesPage() {
     fetchCategories();
   }, [user?.store_id, selectedBranch, branches]);
 
+  useEffect(() => {
+    const nextPages = new Map<number, number>();
+    categoriesByBranch.forEach((_, branchId) => {
+      nextPages.set(branchId, 1);
+    });
+    setBranchPages(nextPages);
+  }, [categoriesByBranch, searchTerm, selectedBranch]);
+
   const handleDeleteCategory = async (categoryId: number) => {
     if (
       !confirm(
@@ -191,6 +203,19 @@ export default function CategoriesPage() {
       newExpanded.add(branchId);
     }
     setExpandedBranches(newExpanded);
+  };
+
+  const handleBranchPageChange = (
+    branchId: number,
+    newPage: number,
+    totalPages: number
+  ) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setBranchPages((prev) => {
+      const next = new Map(prev);
+      next.set(branchId, newPage);
+      return next;
+    });
   };
 
   const filteredCategories = (categories: CategoryWithBranch[]) => {
@@ -391,6 +416,22 @@ export default function CategoriesPage() {
               {Array.from(categoriesByBranch.entries()).map(
                 ([branchId, { branch_name, categories }]) => {
                   const filtered = filteredCategories(categories);
+                  const totalPages = Math.max(
+                    1,
+                    Math.ceil(filtered.length / pageSize)
+                  );
+                  const currentPage = Math.min(
+                    branchPages.get(branchId) ?? 1,
+                    totalPages
+                  );
+                  const startIndex = (currentPage - 1) * pageSize;
+                  const endIndex = startIndex + pageSize;
+                  const pagedCategories = filtered.slice(
+                    startIndex,
+                    endIndex
+                  );
+                  const startItem = filtered.length === 0 ? 0 : startIndex + 1;
+                  const endItem = Math.min(endIndex, filtered.length);
                   if (selectedBranch && selectedBranch !== branchId)
                     return null;
 
@@ -434,7 +475,7 @@ export default function CategoriesPage() {
                             </div>
                           ) : (
                             <ul className={`divide-y ${t.cardBorder}`}>
-                              {filtered.map((category, idx) => (
+                              {pagedCategories.map((category, idx) => (
                                 <li
                                   key={category.category_id}
                                   className={`${t.categoryRow} transition-all duration-200`}
@@ -530,6 +571,105 @@ export default function CategoriesPage() {
                               ))}
                             </ul>
                           )}
+                          <div
+                            className={`bg-gray-50 px-6 py-4 sm:px-6 ${
+                              theme === "dark" ? "bg-gray-700" : "bg-white"
+                            } border-t ${t.cardBorder}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div
+                                className={`text-sm ${
+                                  theme === "dark"
+                                    ? "text-gray-300"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                Showing{" "}
+                                <span className="font-medium">
+                                  {startItem}
+                                </span>{" "}
+                                to{" "}
+                                <span className="font-medium">{endItem}</span>{" "}
+                                of{" "}
+                                <span className="font-medium">
+                                  {filtered.length}
+                                </span>{" "}
+                                results
+                              </div>
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() =>
+                                    handleBranchPageChange(
+                                      branchId,
+                                      currentPage - 1,
+                                      totalPages
+                                    )
+                                  }
+                                  disabled={currentPage === 1}
+                                  className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                                    currentPage === 1
+                                      ? theme === "dark"
+                                        ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                      : theme === "dark"
+                                      ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                                      : "bg-white text-gray-700 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  Previous
+                                </button>
+
+                                {Array.from(
+                                  { length: totalPages },
+                                  (_, i) => i + 1
+                                ).map((page) => (
+                                  <button
+                                    key={`${branchId}-page-${page}`}
+                                    onClick={() =>
+                                      handleBranchPageChange(
+                                        branchId,
+                                        page,
+                                        totalPages
+                                      )
+                                    }
+                                    className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                                      currentPage === page
+                                        ? theme === "dark"
+                                          ? "z-10 bg-indigo-600 text-white"
+                                          : "z-10 bg-indigo-50 text-indigo-600 border border-indigo-500"
+                                        : theme === "dark"
+                                        ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                                        : "bg-white text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                  >
+                                    {page}
+                                  </button>
+                                ))}
+
+                                <button
+                                  onClick={() =>
+                                    handleBranchPageChange(
+                                      branchId,
+                                      currentPage + 1,
+                                      totalPages
+                                    )
+                                  }
+                                  disabled={currentPage === totalPages}
+                                  className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                                    currentPage === totalPages
+                                      ? theme === "dark"
+                                        ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                      : theme === "dark"
+                                      ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                                      : "bg-white text-gray-700 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>

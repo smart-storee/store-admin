@@ -62,6 +62,7 @@ export default function CommunicationLogsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 20;
 
   // Filters
   const [channelFilter, setChannelFilter] = useState<string>("all");
@@ -791,77 +792,52 @@ export default function CommunicationLogsPage() {
                 </div>
 
                 {/* Pagination */}
-                <div
-                  className={`mt-6 flex items-center justify-between ${
-                    isDark ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  <div className="text-sm">
-                    Showing{" "}
-                    <span className="font-semibold">
-                      {(currentPage - 1) * 20 + 1}
-                    </span>{" "}
-                    to{" "}
-                    <span className="font-semibold">
-                      {Math.min(currentPage * 20, totalCount)}
-                    </span>{" "}
-                    of <span className="font-semibold">{totalCount}</span> logs
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className={`p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        isDark
-                          ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
-                          : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-                    <div className="flex items-center gap-1">
-                      {Array.from(
-                        { length: Math.min(5, totalPages) },
-                        (_, i) => {
-                          let pageNum;
-                          if (totalPages <= 5) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 2) {
-                            pageNum = totalPages - 4 + i;
-                          } else {
-                            pageNum = currentPage - 2 + i;
-                          }
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => handlePageChange(pageNum)}
-                              className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-colors ${
-                                currentPage === pageNum
-                                  ? "bg-blue-600 text-white"
-                                  : isDark
-                                  ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                  : "bg-white text-gray-700 hover:bg-gray-50"
-                              }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        }
-                      )}
+                <div className="bg-gray-50 px-6 py-4 dark:bg-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      Showing{" "}
+                      <span className="font-medium">
+                        {(currentPage - 1) * pageSize + 1}
+                      </span>{" "}
+                      to{" "}
+                      <span className="font-medium">
+                        {Math.min(currentPage * pageSize, totalCount)}
+                      </span>{" "}
+                      of <span className="font-medium">{totalCount}</span>{" "}
+                      results
                     </div>
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage >= totalPages}
-                      className={`p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        isDark
-                          ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
-                          : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      <ChevronRight size={18} />
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
+                      >
+                        Previous
+                      </button>
+                      {Array.from(
+                        { length: totalPages },
+                        (_, i) => i + 1
+                      ).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                            currentPage === page
+                              ? "z-10 bg-indigo-50 text-indigo-600 border border-indigo-500 dark:bg-indigo-600 dark:text-white"
+                              : "bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
+                      >
+                        Next
+                      </button>
+                    </div>
                   </div>
                 </div>
               </>

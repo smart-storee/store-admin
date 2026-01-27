@@ -39,6 +39,7 @@ interface OrderStats {
   confirmed: number;
   preparing: number;
   ready: number;
+  out_for_delivery: number;
   delivered: number;
   cancelled: number;
 }
@@ -65,6 +66,7 @@ export default function OrdersPage() {
     confirmed: 0,
     preparing: 0,
     ready: 0,
+    out_for_delivery: 0,
     delivered: 0,
     cancelled: 0,
   });
@@ -214,6 +216,9 @@ export default function OrdersPage() {
           preparing: ordersData.filter((o) => o.order_status === "preparing")
             .length,
           ready: ordersData.filter((o) => o.order_status === "ready").length,
+          out_for_delivery: ordersData.filter(
+            (o) => o.order_status === "out_for_delivery"
+          ).length,
           delivered: ordersData.filter((o) => o.order_status === "delivered")
             .length,
           cancelled: ordersData.filter((o) => o.order_status === "cancelled")
@@ -863,7 +868,7 @@ export default function OrdersPage() {
 
           <div className="px-3 sm:px-6 py-4 sm:py-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4 mb-6">
               {[
                 {
                   label: "Total",
@@ -894,6 +899,12 @@ export default function OrdersPage() {
                   value: orderStats.ready,
                   status: "ready",
                   color: "indigo",
+                },
+                {
+                  label: "Out for Delivery",
+                  value: orderStats.out_for_delivery,
+                  status: "out_for_delivery",
+                  color: "sky",
                 },
                 {
                   label: "Delivered",
@@ -1718,97 +1729,80 @@ export default function OrdersPage() {
             )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {totalPages >= 1 && (
               <div
-                className={`${
-                  isDarkMode
-                    ? "bg-slate-800 border-slate-700"
-                    : "bg-white border-gray-200"
-                } rounded-lg border mt-6 px-6 py-4 flex items-center justify-between`}
+                className={`bg-gray-50 px-6 py-4 ${
+                  isDarkMode ? "bg-gray-700" : "bg-white"
+                }`}
               >
-                <div
-                  className={`text-sm ${
-                    isDarkMode ? "text-slate-400" : "text-gray-600"
-                  }`}
-                >
-                  Showing{" "}
-                  <span
-                    className={`font-semibold ${
-                      isDarkMode ? "text-white" : "text-gray-900"
+                <div className="flex items-center justify-between">
+                  <div
+                    className={`text-sm ${
+                      isDarkMode ? "text-gray-300" : "text-gray-700"
                     }`}
                   >
-                    {(currentPage - 1) * itemsPerPage + 1}
-                  </span>{" "}
-                  to{" "}
-                  <span
-                    className={`font-semibold ${
-                      isDarkMode ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    {Math.min(currentPage * itemsPerPage, totalCount)}
-                  </span>{" "}
-                  of{" "}
-                  <span
-                    className={`font-semibold ${
-                      isDarkMode ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    {totalCount}
-                  </span>{" "}
-                  orders
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`h-10 w-10 flex items-center justify-center rounded-lg border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      isDarkMode
-                        ? "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
-                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-                      return (
+                    Showing{" "}
+                    <span className="font-medium">
+                      {(currentPage - 1) * itemsPerPage + 1}
+                    </span>{" "}
+                    to{" "}
+                    <span className="font-medium">
+                      {Math.min(currentPage * itemsPerPage, totalCount)}
+                    </span>{" "}
+                    of <span className="font-medium">{totalCount}</span>{" "}
+                    results
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                        currentPage === 1
+                          ? isDarkMode
+                            ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                            : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : isDarkMode
+                          ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
                         <button
-                          key={pageNum}
-                          onClick={() => handlePageChange(pageNum)}
-                          className={`h-10 px-3 rounded-lg font-medium text-sm transition-all duration-200 ${
-                            currentPage === pageNum
-                              ? "bg-blue-600 text-white"
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                            currentPage === page
+                              ? isDarkMode
+                                ? "z-10 bg-indigo-600 text-white"
+                                : "z-10 bg-indigo-50 text-indigo-600 border border-indigo-500"
                               : isDarkMode
-                              ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                              ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
                               : "bg-white text-gray-700 hover:bg-gray-50"
                           }`}
                         >
-                          {pageNum}
+                          {page}
                         </button>
-                      );
-                    })}
+                      )
+                    )}
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                        currentPage === totalPages
+                          ? isDarkMode
+                            ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                            : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : isDarkMode
+                          ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      Next
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`h-10 w-10 flex items-center justify-center rounded-lg border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      isDarkMode
-                        ? "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
-                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <ChevronRight size={16} />
-                  </button>
                 </div>
               </div>
             )}

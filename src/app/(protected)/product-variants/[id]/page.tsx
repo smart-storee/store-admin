@@ -212,7 +212,10 @@ export default function ProductVariantDetailPage() {
               </button>
               <button
                 onClick={() =>
-                  router.push(`/product-variants/${params.id}/edit`)
+                  router.push(
+                    `/product-variants/${params.id}/edit` +
+                      (returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : "")
+                  )
                 }
                 className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
               >
@@ -320,6 +323,7 @@ export default function ProductVariantDetailPage() {
                       {parseFloat(String(variant.variant_price || 0)).toFixed(
                         2
                       )}
+                      {variant.uom_name ? ` / ${variant.uom_name}` : ""}
                     </dd>
                   </div>
                   <div
