@@ -258,8 +258,8 @@ export default function EditProductVariantPage() {
         );
 
       if (response.success) {
-        // Redirect back to the product page showing the updated variant
-        router.push(`/products/${formData.product_id}`);
+        // Redirect back to where the user came from when available
+        router.push(returnTo || `/products/${formData.product_id}`);
       } else {
         throw new Error(response.message || "Failed to update product variant");
       }
@@ -553,9 +553,9 @@ export default function EditProductVariantPage() {
                       value={formData.uom_id}
                       onChange={handleChange}
                       required
-                      className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
+                      className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border transition-colors ${
                         isDarkMode
-                          ? "bg-gray-700 border-gray-600 text-white"
+                          ? "bg-gray-700 border-gray-600 text-gray-100"
                           : "bg-white border-gray-300 text-gray-900"
                       }`}
                     >
@@ -616,7 +616,11 @@ export default function EditProductVariantPage() {
               >
                 <button
                   type="button"
-                  onClick={() => router.push(`/products/${variant.product_id}`)}
+                  onClick={() =>
+                    router.push(
+                      returnTo || `/products/${variant.product_id}`
+                    )
+                  }
                   className={`py-2 px-4 border rounded-md text-sm font-medium ${
                     isDarkMode
                       ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"

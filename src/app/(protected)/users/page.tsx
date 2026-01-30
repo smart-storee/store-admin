@@ -20,6 +20,7 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [hoveredUser, setHoveredUser] = useState<number | null>(null);
+  const pageSize = 20;
   const { user } = useAuth();
   const { features } = useStore();
 
@@ -34,7 +35,7 @@ export default function UsersPage() {
 
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '10',
+        limit: pageSize.toString(),
       });
 
       if (user?.store_id) {
@@ -390,41 +391,80 @@ export default function UsersPage() {
           )}
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className={`${t.cardBg} border ${t.cardBorder} rounded-xl mt-8 px-6 py-4 flex items-center justify-between`}>
-              <div className={`text-sm ${t.textSecondary}`}>
-                Showing <span className={`font-semibold ${t.text}`}>{(currentPage - 1) * 10 + 1}</span> to{' '}
-                <span className={`font-semibold ${t.text}`}>{Math.min(currentPage * 10, totalCount)}</span> of{' '}
-                <span className={`font-semibold ${t.text}`}>{totalCount}</span> users
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`p-2 rounded-lg border ${t.cardBorder} ${t.button.secondary} disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300`}
+          {totalPages >= 1 && (
+            <div
+              className={`bg-gray-50 px-6 py-4 ${
+                isDarkMode ? "bg-gray-700" : "bg-white"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div
+                  className={`text-sm ${
+                    isDarkMode ? "text-gray-300" : "text-gray-700"
+                  }`}
                 >
-                  <ChevronLeft size={18} />
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  Showing{" "}
+                  <span className="font-medium">
+                    {(currentPage - 1) * pageSize + 1}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-medium">
+                    {Math.min(currentPage * pageSize, totalCount)}
+                  </span>{" "}
+                  of <span className="font-medium">{totalCount}</span>{" "}
+                  results
+                </div>
+                <div className="flex space-x-2">
                   <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all duration-300 ${
-                      currentPage === page
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : t.button.secondary
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                      currentPage === 1
+                        ? isDarkMode
+                          ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                          : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : isDarkMode
+                        ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
                     }`}
                   >
-                    {page}
+                    Previous
                   </button>
-                ))}
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`p-2 rounded-lg border ${t.cardBorder} ${t.button.secondary} disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300`}
-                >
-                  <ChevronRight size={18} />
-                </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                          currentPage === page
+                            ? isDarkMode
+                              ? "z-10 bg-indigo-600 text-white"
+                              : "z-10 bg-indigo-50 text-indigo-600 border border-indigo-500"
+                            : isDarkMode
+                            ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                            : "bg-white text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                      currentPage === totalPages
+                        ? isDarkMode
+                          ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                          : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : isDarkMode
+                        ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
           )}

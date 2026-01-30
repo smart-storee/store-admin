@@ -56,6 +56,8 @@ export default function SetupFlowPage() {
   >("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name">("newest");
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
     category_name: "",
@@ -225,6 +227,24 @@ export default function SetupFlowPage() {
       const bDate = new Date(b.created_at || 0).getTime();
       return sortBy === "oldest" ? aDate - bDate : bDate - aDate;
     });
+
+  const totalCount = filteredCategories.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const pagedCategories = filteredCategories.slice(startIndex, endIndex);
+  const startItem = totalCount === 0 ? 0 : startIndex + 1;
+  const endItem = Math.min(endIndex, totalCount);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, sortBy, selectedBranch]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   useEffect(() => {
     fetchAllData();
@@ -851,7 +871,7 @@ export default function SetupFlowPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredCategories.map((category) => (
+              {pagedCategories.map((category) => (
                 <CategorySection
                   key={category.category_id}
                   category={category}
@@ -869,6 +889,71 @@ export default function SetupFlowPage() {
                   theme={isDark}
                 />
               ))}
+              {totalPages >= 1 && (
+                <div className="bg-gray-50 px-6 py-4 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      Showing{" "}
+                      <span className="font-medium">{startItem}</span> to{" "}
+                      <span className="font-medium">{endItem}</span> of{" "}
+                      <span className="font-medium">{totalCount}</span>{" "}
+                      results
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                          currentPage === 1
+                            ? isDark
+                              ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : isDark
+                            ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                            : "bg-white text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        Previous
+                      </button>
+                      {Array.from(
+                        { length: totalPages },
+                        (_, i) => i + 1
+                      ).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                            currentPage === page
+                              ? isDark
+                                ? "z-10 bg-indigo-600 text-white"
+                                : "z-10 bg-indigo-50 text-indigo-600 border border-indigo-500"
+                              : isDark
+                              ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                              : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                          currentPage === totalPages
+                            ? isDark
+                              ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : isDark
+                            ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                            : "bg-white text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

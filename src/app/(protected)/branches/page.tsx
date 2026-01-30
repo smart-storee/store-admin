@@ -41,6 +41,7 @@ export default function BranchesPage() {
   >("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name">("newest");
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const pageSize = 20;
   const { user } = useAuth();
   const { theme } = useTheme();
 
@@ -90,13 +91,13 @@ export default function BranchesPage() {
         }
 
         // Apply pagination after client-side filtering
-        const startIndex = (currentPage - 1) * 10;
-        const endIndex = startIndex + 10;
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
         const paginatedBranches = branchesData.slice(startIndex, endIndex);
 
         setBranches(paginatedBranches);
         setTotalCount(branchesData.length);
-        setTotalPages(Math.ceil(branchesData.length / 10));
+        setTotalPages(Math.ceil(branchesData.length / pageSize));
 
         setError(null);
       } else {
@@ -699,59 +700,82 @@ export default function BranchesPage() {
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {totalPages >= 1 && (
                   <div
-                    className={`bg-gradient-to-r ${t.table.headerBg} border-t ${t.table.border} px-6 py-4 flex items-center justify-between`}
+                    className={`bg-gray-50 px-6 py-4 ${
+                      theme === "dark" ? "bg-gray-700" : "bg-white"
+                    }`}
                   >
-                    <div className={`text-sm ${t.textSecondary}`}>
-                      Showing{" "}
-                      <span className={`font-semibold ${t.text}`}>
-                        {(currentPage - 1) * 10 + 1}
-                      </span>{" "}
-                      to{" "}
-                      <span className={`font-semibold ${t.text}`}>
-                        {Math.min(currentPage * 10, totalCount)}
-                      </span>{" "}
-                      of{" "}
-                      <span className={`font-semibold ${t.text}`}>
-                        {totalCount}
-                      </span>{" "}
-                      branches
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage == 1}
-                        className={`p-2 rounded-lg border ${t.cardBorder} ${t.button.secondary} disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300`}
+                    <div className="flex items-center justify-between">
+                      <div
+                        className={`text-sm ${
+                          theme === "dark" ? "text-gray-300" : "text-gray-700"
+                        }`}
                       >
-                        <ChevronLeft size={18} />
-                      </button>
+                        Showing{" "}
+                        <span className="font-medium">
+                          {(currentPage - 1) * pageSize + 1}
+                        </span>{" "}
+                        to{" "}
+                        <span className="font-medium">
+                          {Math.min(currentPage * pageSize, totalCount)}
+                        </span>{" "}
+                        of <span className="font-medium">{totalCount}</span>{" "}
+                        results
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                            currentPage === 1
+                              ? theme === "dark"
+                                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : theme === "dark"
+                              ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                              : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          Previous
+                        </button>
 
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                        (page) => (
-                          <button
-                            key={page}
-                            onClick={() => handlePageChange(page)}
-                            className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all duration-300 ${
-                              currentPage === page
-                                ? "bg-blue-600 text-white shadow-md"
-                                : isDarkMode
-                                ? `${t.textSecondary} hover:bg-slate-700/50`
-                                : `${t.textSecondary} hover:bg-slate-100`
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        )
-                      )}
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                          (page) => (
+                            <button
+                              key={page}
+                              onClick={() => handlePageChange(page)}
+                              className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                                currentPage === page
+                                  ? theme === "dark"
+                                    ? "z-10 bg-indigo-600 text-white"
+                                    : "z-10 bg-indigo-50 text-indigo-600 border border-indigo-500"
+                                  : theme === "dark"
+                                  ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                                  : "bg-white text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          )
+                        )}
 
-                      <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className={`p-2 rounded-lg border ${t.cardBorder} ${t.button.secondary} disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300`}
-                      >
-                        <ChevronRight size={18} />
-                      </button>
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                            currentPage === totalPages
+                              ? theme === "dark"
+                                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : theme === "dark"
+                              ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                              : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          Next
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

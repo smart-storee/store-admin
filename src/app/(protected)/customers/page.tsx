@@ -26,6 +26,7 @@ export default function CustomersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const pageSize = 20;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -142,21 +143,26 @@ export default function CustomersPage() {
     let filteredData = [...customers];
 
     if (searchTerm) {
-      const lowerSearchTerm = searchTerm.toLowerCase();
-      filteredData = filteredData.filter(customer =>
-        customer.name.toLowerCase().includes(lowerSearchTerm) ||
-        (customer.email && customer.email.toLowerCase().includes(lowerSearchTerm)) ||
-        (customer.phone && customer.phone.toLowerCase().includes(lowerSearchTerm))
-      );
+      const lowerSearchTerm = searchTerm.trim().toLowerCase();
+      filteredData = filteredData.filter((customer) => {
+        const name = customer.name ? customer.name.toLowerCase() : "";
+        const email = customer.email ? customer.email.toLowerCase() : "";
+        const phone = customer.phone ? customer.phone.toLowerCase() : "";
+        return (
+          name.includes(lowerSearchTerm) ||
+          email.includes(lowerSearchTerm) ||
+          phone.includes(lowerSearchTerm)
+        );
+      });
     }
 
     // Update pagination based on filtered results
     setTotalCount(filteredData.length);
-    setTotalPages(Math.ceil(filteredData.length / 10));
+    setTotalPages(Math.ceil(filteredData.length / pageSize));
 
     // Calculate current page results after filtering
-    const startIndex = (currentPage - 1) * 10;
-    const endIndex = startIndex + 10;
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
     const paginatedCustomers = filteredData.slice(startIndex, endIndex);
     setFilteredCustomers(paginatedCustomers);
   }, [customers, searchTerm, currentPage]);
@@ -558,7 +564,7 @@ export default function CustomersPage() {
                 </ul>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {totalPages >= 1 && (
                   <div
                     className={`bg-gray-50 px-4 py-3 sm:px-6 ${
                       theme === "dark" ? "bg-gray-700" : "bg-white"
@@ -572,11 +578,11 @@ export default function CustomersPage() {
                       >
                         Showing{" "}
                         <span className="font-medium">
-                          {(currentPage - 1) * 10 + 1}
+                          {(currentPage - 1) * pageSize + 1}
                         </span>{" "}
                         to{" "}
                         <span className="font-medium">
-                          {Math.min(currentPage * 10, totalCount)}
+                          {Math.min(currentPage * pageSize, totalCount)}
                         </span>{" "}
                         of <span className="font-medium">{totalCount}</span>{" "}
                         results

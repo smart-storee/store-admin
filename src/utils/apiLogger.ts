@@ -191,7 +191,7 @@ export const logApiResponse = (
   });
 };
 
-// Log an API error
+// Log an API errornpm runndn
 export const logApiError = (
   method: string,
   url: string,

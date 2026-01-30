@@ -21,6 +21,7 @@ export default function EditCategoryPage() {
     category_image: "",
     is_active: 1,
   });
+  const [originalCategoryName, setOriginalCategoryName] = useState("");
   const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
   const [categoryBranchMap, setCategoryBranchMap] = useState<
     Map<number, number>
@@ -97,6 +98,7 @@ export default function EditCategoryPage() {
           category_image: category.category_image || "",
           is_active: category.is_active ? 1 : 0,
         });
+        setOriginalCategoryName(category.category_name || "");
 
         console.log("Set form data:", {
           category_name: category.category_name || "",
@@ -129,13 +131,20 @@ export default function EditCategoryPage() {
             .map((cat: any) => cat.branch_id)
             .filter((id: number) => id !== undefined && id !== null);
 
-          setSelectedBranches(branchIdsWithCategory);
+          const resolvedBranchIds = new Set(branchIdsWithCategory);
+          if (category.branch_id) {
+            resolvedBranchIds.add(category.branch_id);
+          }
+          setSelectedBranches(Array.from(resolvedBranchIds));
           const branchMap = new Map<number, number>();
           sameNameCategories.forEach((cat: Category) => {
             if (cat.branch_id) {
               branchMap.set(cat.branch_id, cat.category_id);
             }
           });
+          if (category.branch_id) {
+            branchMap.set(category.branch_id, category.category_id);
+          }
           setCategoryBranchMap(branchMap);
 
           // Set select all only if we have branches loaded
@@ -208,6 +217,9 @@ export default function EditCategoryPage() {
     try {
       // Update/create category for each selected branch
       const responses = [];
+      const normalizedOriginalName = originalCategoryName.trim().toLowerCase();
+      const normalizedName = formData.category_name.trim().toLowerCase();
+      const nameChanged = normalizedName !== normalizedOriginalName;
 
       for (const branchId of selectedBranches) {
         const existingCategoryId = categoryBranchMap.get(branchId);
@@ -215,18 +227,21 @@ export default function EditCategoryPage() {
         // Update existing or create new
         if (existingCategoryId) {
           // Update existing category
+          const updateBody: Record<string, unknown> = {
+            description: formData.description,
+            category_image: formData.category_image,
+            is_active: formData.is_active,
+            store_id: user?.store_id,
+            branch_id: branchId,
+          };
+          if (nameChanged) {
+            updateBody.category_name = formData.category_name;
+          }
           const response = await makeAuthenticatedRequest(
             `/categories/${existingCategoryId}`,
             {
               method: "PUT",
-              body: JSON.stringify({
-                category_name: formData.category_name,
-                description: formData.description,
-                category_image: formData.category_image,
-                is_active: formData.is_active,
-                store_id: user?.store_id,
-                branch_id: branchId,
-              }),
+              body: JSON.stringify(updateBody),
             },
             true,
             user?.store_id,

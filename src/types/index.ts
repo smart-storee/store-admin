@@ -503,6 +503,8 @@ export interface InventoryItem {
   variant_id: number;
   variant_name: string;
   variant_price: number;
+  uom_id?: number;
+  uom_name?: string;
   variant_active: boolean;
   product_id: number;
   product_name: string;

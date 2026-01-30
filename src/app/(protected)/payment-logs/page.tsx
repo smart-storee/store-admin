@@ -72,6 +72,7 @@ export default function PaymentLogsPage() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateOrderId, setUpdateOrderId] = useState<number | null>(null);
   const [updateOrderStatus, setUpdateOrderStatus] = useState<string>("");
+  const pageSize = 20;
 
   useEffect(() => {
     if (user?.store_id) {
@@ -276,11 +277,11 @@ export default function PaymentLogsPage() {
 
     // Apply search filter
     if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
+      const normalizedSearch = searchTerm.trim().toLowerCase();
       return (
-        (log.txn_id?.toLowerCase().includes(searchLower) ?? false) ||
-        (log.order_number?.toLowerCase().includes(searchLower) ?? false) ||
-        (log.order_id?.toString().includes(searchTerm) ?? false)
+        (log.txn_id?.toLowerCase().includes(normalizedSearch) ?? false) ||
+        (log.order_number?.toLowerCase().includes(normalizedSearch) ?? false) ||
+        (log.order_id?.toString().includes(normalizedSearch) ?? false)
       );
     }
     return true;
@@ -822,41 +823,49 @@ export default function PaymentLogsPage() {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 px-6 py-4">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+              {totalPages >= 1 && (
+                <div className="bg-gray-50 px-6 py-4 dark:bg-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
                       Showing{" "}
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {filteredLogs.length}
+                      <span className="font-medium">
+                        {(currentPage - 1) * pageSize + 1}
                       </span>{" "}
-                      of{" "}
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {activeTab === "cod"
-                          ? codPaymentCount
-                          : onlinePaymentCount}
+                      to{" "}
+                      <span className="font-medium">
+                        {Math.min(currentPage * pageSize, totalCount)}
                       </span>{" "}
-                      {activeTab === "cod" ? "COD" : "Online"} payment logs
+                      of <span className="font-medium">{totalCount}</span>{" "}
+                      results
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex space-x-2">
                       <button
-                        onClick={() =>
-                          setCurrentPage((p) => Math.max(1, p - 1))
-                        }
+                        onClick={() => setCurrentPage(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors font-medium text-sm"
+                        className="relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                       >
                         Previous
                       </button>
-                      <span className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Page {currentPage} of {totalPages}
-                      </span>
+                      {Array.from(
+                        { length: totalPages },
+                        (_, i) => i + 1
+                      ).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                            currentPage === page
+                              ? "z-10 bg-indigo-50 text-indigo-600 border border-indigo-500 dark:bg-indigo-600 dark:text-white"
+                              : "bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
                       <button
-                        onClick={() =>
-                          setCurrentPage((p) => Math.min(totalPages, p + 1))
-                        }
+                        onClick={() => setCurrentPage(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors font-medium text-sm"
+                        className="relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                       >
                         Next
                       </button>
