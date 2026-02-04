@@ -184,10 +184,17 @@ export default function ReportsPage() {
 
   const handleDateRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setDateRange(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setDateRange((prev) => {
+      const next = { ...prev, [name]: value };
+      if (next.startDate && next.endDate && next.startDate > next.endDate) {
+        if (name === "startDate") {
+          next.endDate = next.startDate;
+        } else {
+          next.startDate = next.endDate;
+        }
+      }
+      return next;
+    });
   };
 
   const handleBranchChange = (branchId: number | null) => {
@@ -523,6 +530,7 @@ export default function ReportsPage() {
                     name="startDate"
                     value={dateRange.startDate}
                     onChange={handleDateRangeChange}
+                    max={dateRange.endDate || undefined}
                     className={`w-full px-4 py-2 rounded-lg border ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                   />
                 </div>
@@ -537,6 +545,7 @@ export default function ReportsPage() {
                     name="endDate"
                     value={dateRange.endDate}
                     onChange={handleDateRangeChange}
+                    min={dateRange.startDate || undefined}
                     className={`w-full px-4 py-2 rounded-lg border ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                   />
                 </div>

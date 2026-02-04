@@ -80,6 +80,13 @@ export default function OrdersPage() {
   const { theme } = useTheme();
   const isDarkMode = theme === "dark";
 
+  const normalizeDateRange = (nextFrom: string, nextTo: string) => {
+    if (nextFrom && nextTo && nextFrom > nextTo) {
+      return { from: nextFrom, to: nextFrom };
+    }
+    return { from: nextFrom, to: nextTo };
+  };
+
   useEffect(() => {
     const fetchBranches = async () => {
       try {
@@ -1097,9 +1104,16 @@ export default function OrdersPage() {
                         type="date"
                         value={dateFrom}
                         onChange={(e) => {
-                          setDateFrom(e.target.value);
+                          const nextFrom = e.target.value;
+                          const { from, to } = normalizeDateRange(
+                            nextFrom,
+                            dateTo
+                          );
+                          setDateFrom(from);
+                          setDateTo(to);
                           setCurrentPage(1);
                         }}
+                        max={dateTo || undefined}
                         className={`w-full h-10 px-4 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
                           isDarkMode
                             ? "bg-slate-700 border-slate-600 text-white"
@@ -1119,9 +1133,16 @@ export default function OrdersPage() {
                         type="date"
                         value={dateTo}
                         onChange={(e) => {
-                          setDateTo(e.target.value);
+                          const nextTo = e.target.value;
+                          const { from, to } = normalizeDateRange(
+                            dateFrom,
+                            nextTo
+                          );
+                          setDateFrom(from);
+                          setDateTo(to);
                           setCurrentPage(1);
                         }}
+                        min={dateFrom || undefined}
                         className={`w-full h-10 px-4 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
                           isDarkMode
                             ? "bg-slate-700 border-slate-600 text-white"

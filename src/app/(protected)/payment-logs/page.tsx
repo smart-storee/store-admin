@@ -74,6 +74,13 @@ export default function PaymentLogsPage() {
   const [updateOrderStatus, setUpdateOrderStatus] = useState<string>("");
   const pageSize = 20;
 
+  const normalizeDateRange = (nextFrom: string, nextTo: string) => {
+    if (nextFrom && nextTo && nextFrom > nextTo) {
+      return { from: nextFrom, to: nextFrom };
+    }
+    return { from: nextFrom, to: nextTo };
+  };
+
   useEffect(() => {
     if (user?.store_id) {
       fetchPaymentLogs();
@@ -498,9 +505,16 @@ export default function PaymentLogsPage() {
                     type="date"
                     value={dateFrom}
                     onChange={(e) => {
-                      setDateFrom(e.target.value);
+                      const nextFrom = e.target.value;
+                      const { from, to } = normalizeDateRange(
+                        nextFrom,
+                        dateTo
+                      );
+                      setDateFrom(from);
+                      setDateTo(to);
                       setCurrentPage(1);
                     }}
+                    max={dateTo || undefined}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
@@ -512,9 +526,16 @@ export default function PaymentLogsPage() {
                     type="date"
                     value={dateTo}
                     onChange={(e) => {
-                      setDateTo(e.target.value);
+                      const nextTo = e.target.value;
+                      const { from, to } = normalizeDateRange(
+                        dateFrom,
+                        nextTo
+                      );
+                      setDateFrom(from);
+                      setDateTo(to);
                       setCurrentPage(1);
                     }}
+                    min={dateFrom || undefined}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>

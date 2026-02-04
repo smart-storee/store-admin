@@ -35,6 +35,13 @@ const EditCouponPage = () => {
 
   const isDark = theme === 'dark';
 
+  const normalizeDateTimeRange = (nextStart: string, nextEnd: string) => {
+    if (nextStart && nextEnd && nextStart > nextEnd) {
+      return { start: nextStart, end: nextStart };
+    }
+    return { start: nextStart, end: nextEnd };
+  };
+
   useEffect(() => {
     fetchCoupon();
     fetchBranches();
@@ -367,7 +374,15 @@ const EditCouponPage = () => {
                     type="datetime-local"
                     required
                     value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    onChange={(e) => {
+                      const nextStart = e.target.value;
+                      const { start, end } = normalizeDateTimeRange(
+                        nextStart,
+                        formData.end_date
+                      );
+                      setFormData({ ...formData, start_date: start, end_date: end });
+                    }}
+                    max={formData.end_date || undefined}
                     className={`w-full px-3 py-2 border rounded-lg ${
                       isDark
                         ? 'bg-gray-700 border-gray-600 text-white'
@@ -383,7 +398,15 @@ const EditCouponPage = () => {
                     type="datetime-local"
                     required
                     value={formData.end_date}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    onChange={(e) => {
+                      const nextEnd = e.target.value;
+                      const { start, end } = normalizeDateTimeRange(
+                        formData.start_date,
+                        nextEnd
+                      );
+                      setFormData({ ...formData, start_date: start, end_date: end });
+                    }}
+                    min={formData.start_date || undefined}
                     className={`w-full px-3 py-2 border rounded-lg ${
                       isDark
                         ? 'bg-gray-700 border-gray-600 text-white'

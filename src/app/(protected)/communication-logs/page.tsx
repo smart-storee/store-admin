@@ -152,6 +152,13 @@ export default function CommunicationLogsPage() {
       ? pushCount
       : smsCount + pushCount;
 
+  const normalizeDateRange = (nextFrom: string, nextTo: string) => {
+    if (nextFrom && nextTo && nextFrom > nextTo) {
+      return { from: nextFrom, to: nextFrom };
+    }
+    return { from: nextFrom, to: nextTo };
+  };
+
   const fetchLogs = async () => {
     try {
       setLoading(true);
@@ -473,9 +480,16 @@ export default function CommunicationLogsPage() {
                     type="date"
                     value={dateFrom}
                     onChange={(e) => {
-                      setDateFrom(e.target.value);
+                      const nextFrom = e.target.value;
+                      const { from, to } = normalizeDateRange(
+                        nextFrom,
+                        dateTo
+                      );
+                      setDateFrom(from);
+                      setDateTo(to);
                       setCurrentPage(1);
                     }}
+                    max={dateTo || undefined}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       isDark
                         ? "bg-gray-700 border-gray-600 text-white"
@@ -497,9 +511,16 @@ export default function CommunicationLogsPage() {
                     type="date"
                     value={dateTo}
                     onChange={(e) => {
-                      setDateTo(e.target.value);
+                      const nextTo = e.target.value;
+                      const { from, to } = normalizeDateRange(
+                        dateFrom,
+                        nextTo
+                      );
+                      setDateFrom(from);
+                      setDateTo(to);
                       setCurrentPage(1);
                     }}
+                    min={dateFrom || undefined}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       isDark
                         ? "bg-gray-700 border-gray-600 text-white"
