@@ -224,6 +224,21 @@ export default function OrderDetailPage() {
                             {order.order_status.replace("_", " ").toUpperCase()}
                           </span>
                         </div>
+                        {order.order_status === "cancelled" &&
+                          order.cancel_note && (
+                            <>
+                              <div>
+                                <span className="text-sm text-gray-500">
+                                  Cancel Note:
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-sm text-gray-900">
+                                  {order.cancel_note}
+                                </span>
+                              </div>
+                            </>
+                          )}
                       </div>
                     </div>
                   </div>

@@ -279,6 +279,7 @@ export interface Order {
   items_count: number;
   items?: OrderItem[];
   review?: Review | null;
+  cancel_note?: string | null;
   created_at: string;
 }
 
