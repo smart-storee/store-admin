@@ -10,6 +10,45 @@ import { FeatureGuard } from "@/components/FeatureGuard";
 import { ApiResponse } from "@/types";
 import { ArrowLeft } from "lucide-react";
 
+const INDIAN_STATES = [
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Lakshadweep",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Puducherry",
+];
+
 export default function NewBranchPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -57,6 +96,12 @@ export default function NewBranchPage() {
         ...prev,
         [name]: numericValue,
       }));
+    } else if (name === "pincode") {
+      const cleaned = value.replace(/\D/g, "").slice(0, 6);
+      setFormData((prev) => ({
+        ...prev,
+        pincode: cleaned,
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -71,6 +116,13 @@ export default function NewBranchPage() {
     setLoading(true);
 
     try {
+      const pincodeValue = String(formData.pincode || "").trim();
+      const cleanedPincode = pincodeValue.replace(/\D/g, "");
+      if (cleanedPincode.length !== 6) {
+        setError("PIN Code must be exactly 6 digits");
+        setLoading(false);
+        return;
+      }
       const response: ApiResponse<null> = await makeAuthenticatedRequest(
         "/branches",
         {
@@ -82,7 +134,7 @@ export default function NewBranchPage() {
             city: formData.city,
             state: formData.state,
             country: formData.country,
-            pincode: formData.pincode,
+            pincode: cleanedPincode,
             branch_phone: formData.branch_phone,
             latitude: formData.latitude || null,
             longitude: formData.longitude || null,
@@ -299,8 +351,7 @@ export default function NewBranchPage() {
                   >
                     State
                   </label>
-                  <input
-                    type="text"
+                  <select
                     id="state"
                     name="state"
                     value={formData.state}
@@ -310,7 +361,14 @@ export default function NewBranchPage() {
                         ? "bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500"
                         : "border-gray-300"
                     }`}
-                  />
+                  >
+                    <option value="">Select state</option>
+                    {INDIAN_STATES.map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="col-span-6 sm:col-span-2">
@@ -329,6 +387,9 @@ export default function NewBranchPage() {
                     value={formData.pincode}
                     onChange={handleChange}
                     required
+                    inputMode="numeric"
+                    pattern="\\d{6}"
+                    maxLength={6}
                     className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
                       isDarkMode
                         ? "bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500"
