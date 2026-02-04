@@ -185,7 +185,7 @@ export default function ProductDetailPage() {
                     }`}>
                       <img
                         src={
-                          product.product_image || "/placeholder-product.jpg"
+                          product.product_image || "/placeholder-product.svg"
                         }
                         alt={product.product_name}
                         className="w-full h-auto object-contain object-center"
@@ -195,7 +195,7 @@ export default function ProductDetailPage() {
                         }}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
-                            "/placeholder-product.jpg";
+                            "/placeholder-product.svg";
                         }}
                       />
                     </div>
