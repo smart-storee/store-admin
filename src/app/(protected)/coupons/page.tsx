@@ -138,7 +138,13 @@ const CouponsPage = () => {
 
     if (!coupon.is_active) {
       return (
-        <span className="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-700">
+        <span
+          className={`px-2 py-1 text-xs rounded-full ${
+            isDark
+              ? "bg-gray-700 text-gray-200"
+              : "bg-gray-200 text-gray-700"
+          }`}
+        >
           Inactive
         </span>
       );
@@ -146,7 +152,13 @@ const CouponsPage = () => {
 
     if (now < startDate) {
       return (
-        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
+        <span
+          className={`px-2 py-1 text-xs rounded-full ${
+            isDark
+              ? "bg-blue-900/40 text-blue-200"
+              : "bg-blue-100 text-blue-700"
+          }`}
+        >
           Upcoming
         </span>
       );
@@ -154,14 +166,24 @@ const CouponsPage = () => {
 
     if (now > endDate) {
       return (
-        <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">
+        <span
+          className={`px-2 py-1 text-xs rounded-full ${
+            isDark ? "bg-red-900/40 text-red-200" : "bg-red-100 text-red-700"
+          }`}
+        >
           Expired
         </span>
       );
     }
 
     return (
-      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
+      <span
+        className={`px-2 py-1 text-xs rounded-full ${
+          isDark
+            ? "bg-green-900/40 text-green-200"
+            : "bg-green-100 text-green-700"
+        }`}
+      >
         Active
       </span>
     );
