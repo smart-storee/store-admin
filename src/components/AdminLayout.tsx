@@ -644,7 +644,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       }}
     >
       {/* Mobile sidebar */}
-      <div className="md:hidden">
+      <div className="lg:hidden">
         {/* Mobile header with theme toggle */}
         <div
           className="fixed top-0 left-0 right-0 shadow-sm z-40 px-4 py-3 flex items-center justify-between"
@@ -866,8 +866,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
       {/* Desktop sidebar */}
       <div
-        className={`hidden md:flex md:flex-col md:fixed md:inset-y-0 transition-all duration-300 ${
-          sidebarCollapsed ? "md:w-20" : "md:w-64"
+        className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 transition-all duration-300 ${
+          sidebarCollapsed ? "lg:w-20" : "lg:w-64"
         }`}
         style={{
           backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
@@ -1096,13 +1096,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       {/* Main content */}
       <div
         className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ${
-          sidebarCollapsed ? "md:pl-20" : "md:pl-64"
+          sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
         }`}
       >
-        <div className="md:pr-4">
+        <div className="lg:pr-4">
           {/* Top header with branch selector */}
           <div
-            className="shadow-sm hidden md:block"
+            className="shadow-sm hidden lg:block"
             style={{
               backgroundColor: isDarkMode ? "#1e293b" : "#FFFFFF",
               borderBottom: isDarkMode
@@ -1291,7 +1291,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
 
         <main className="flex-1">
-          <div className="pt-16 md:pt-10 py-10">
+          <div className="pt-16 lg:pt-10 py-10">
             <div className="px-4 sm:px-6 md:px-8">{children}</div>
           </div>
         </main>
