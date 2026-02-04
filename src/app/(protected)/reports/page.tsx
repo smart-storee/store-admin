@@ -48,12 +48,10 @@ export default function ReportsPage() {
 
   const toNumber = (value: unknown) => {
     if (typeof value === 'number' && Number.isFinite(value)) return value;
-    if (typeof value === 'string') {
-      const normalized = value.replace(/,/g, '').trim();
-      const parsed = Number(normalized);
-      return Number.isFinite(parsed) ? parsed : 0;
-    }
-    return 0;
+    if (value === null || value === undefined) return 0;
+    const normalized = String(value).replace(/[^0-9.-]/g, '');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
   };
 
   const formatCount = (value: unknown) =>
@@ -61,11 +59,21 @@ export default function ReportsPage() {
       Math.trunc(toNumber(value))
     );
 
-  const formatCurrency = (value: unknown, digits = 2) =>
-    new Intl.NumberFormat('en-IN', {
-      minimumFractionDigits: digits,
-      maximumFractionDigits: digits,
-    }).format(toNumber(value));
+  const formatCurrency = (value: unknown, digits = 2) => {
+    const num = toNumber(value);
+    const fixed = num.toFixed(digits);
+    const [whole, frac] = fixed.split('.');
+    const sign = whole.startsWith('-') ? '-' : '';
+    const absWhole = sign ? whole.slice(1) : whole;
+    const last3 = absWhole.slice(-3);
+    const rest = absWhole.slice(0, -3);
+    const withGroups =
+      rest.length > 0
+        ? `${rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',')},${last3}`
+        : last3;
+    const formatted = `${sign}${withGroups}`;
+    return frac !== undefined ? `${formatted}.${frac}` : formatted;
+  };
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -190,6 +198,7 @@ export default function ReportsPage() {
     if (!reportData) return;
 
     try {
+      const pdfCurrencyPrefix = 'INR ';
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -285,8 +294,8 @@ export default function ReportsPage() {
       const summaryData = [
         ['Metric', 'Value'],
         ['Total Orders', formatCount(reportData.total_orders)],
-        ['Total Revenue', `₹${formatCurrency(reportData.total_revenue, 2)}`],
-        ['Average Order Value', `₹${formatCurrency(reportData.avg_order_value, 2)}`],
+        ['Total Revenue', `${pdfCurrencyPrefix}${formatCurrency(reportData.total_revenue, 2)}`],
+        ['Average Order Value', `${pdfCurrencyPrefix}${formatCurrency(reportData.avg_order_value, 2)}`],
       ];
 
       autoTable(pdf, {
@@ -344,7 +353,7 @@ export default function ReportsPage() {
           ...reportData.monthly_summary.map((month) => [
             month.month,
             formatCount(month.total_orders),
-            `₹${formatCurrency(month.total_revenue, 2)}`,
+            `${pdfCurrencyPrefix}${formatCurrency(month.total_revenue, 2)}`,
           ]),
         ];
 
@@ -375,7 +384,7 @@ export default function ReportsPage() {
           ['Date', 'Revenue'],
           ...dailyDataToShow.map((day) => [
             new Date(day.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
-            `₹${formatCurrency(day.revenue, 2)}`,
+            `${pdfCurrencyPrefix}${formatCurrency(day.revenue, 2)}`,
           ]),
         ];
 
