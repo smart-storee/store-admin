@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { makeAuthenticatedRequest } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { RoleGuard } from '@/components/RoleGuard';
-import { ApiResponse, Branch } from '@/types';
+import { ApiResponse } from '@/types';
 
 // Predefined notification templates
 const PREDEFINED_TEMPLATES = [
@@ -74,6 +75,8 @@ const NOTIFICATION_TYPES = [
 
 export default function NotificationsPage() {
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -84,12 +87,14 @@ export default function NotificationsPage() {
   const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   const handleTemplateSelect = (template: typeof PREDEFINED_TEMPLATES[number]) => {
     setTitle(template.title);
     setMessage(template.message);
     setImageUrl(template.image_url);
     setDeepLink(template.deep_link);
+    setSelectedTemplateId(template.id);
   };
 
   const handleClearTemplate = () => {
@@ -97,6 +102,7 @@ export default function NotificationsPage() {
     setMessage('');
     setImageUrl('');
     setDeepLink('');
+    setSelectedTemplateId(null);
   };
 
   const handleSendNotification = async () => {
@@ -173,33 +179,45 @@ export default function NotificationsPage() {
     >
       <div className="">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Push Notifications</h1>
-          <p className="text-gray-600">Send customized push notifications to your customers</p>
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Push Notifications</h1>
+          <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Send customized push notifications to your customers</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Predefined Templates */}
           <div className="lg:col-span-1">
-            <div className="bg-white shadow rounded-lg p-6">
+            <div className={`shadow rounded-xl p-6 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'}`}>
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-medium text-gray-900">Predefined Templates</h2>
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Predefined Templates</h2>
                 <button
                   type="button"
                   onClick={handleClearTemplate}
-                  className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 px-3 py-1 rounded-md"
+                  className={`text-sm px-3 py-1 rounded-md transition-colors ${
+                    isDark
+                      ? 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
                 >
                   Clear
                 </button>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[520px] overflow-auto pr-1">
                 {PREDEFINED_TEMPLATES.map((template) => (
                   <div
                     key={template.id}
-                    className="border border-gray-200 rounded-md p-4 hover:bg-gray-50 cursor-pointer"
+                    className={`rounded-lg p-4 cursor-pointer border transition-all ${
+                      selectedTemplateId === template.id
+                        ? isDark
+                          ? 'border-indigo-400/70 bg-indigo-500/10'
+                          : 'border-indigo-400 bg-indigo-50'
+                        : isDark
+                        ? 'border-slate-700 bg-slate-800/60 hover:bg-slate-700/60'
+                        : 'border-gray-200 bg-white hover:bg-gray-50'
+                    }`}
                     onClick={() => handleTemplateSelect(template)}
                   >
-                    <h3 className="font-medium text-gray-900">{template.title}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{template.message}</p>
+                    <h3 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{template.title}</h3>
+                    <p className={`text-sm mt-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{template.message}</p>
                   </div>
                 ))}
               </div>
@@ -208,18 +226,18 @@ export default function NotificationsPage() {
 
           {/* Right Column - Notification Form */}
           <div className="lg:col-span-2">
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Create Notification</h2>
+            <div className={`shadow rounded-xl p-6 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'}`}>
+              <h2 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Create Notification</h2>
               
               {sendResult && (
-                <div className={`mb-4 p-3 rounded-md ${sendResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                <div className={`mb-4 p-3 rounded-md ${sendResult.success ? (isDark ? 'bg-green-900/30 text-green-300' : 'bg-green-100 text-green-800') : (isDark ? 'bg-red-900/30 text-red-300' : 'bg-red-100 text-red-800')}`}>
                   {sendResult.message}
                 </div>
               )}
 
               <div className="grid grid-cols-1 gap-y-4">
                 <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="title" className={`block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
                     Title *
                   </label>
                   <input
@@ -227,13 +245,15 @@ export default function NotificationsPage() {
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className={`mt-1 block w-full rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                      isDark ? 'bg-slate-700 border border-slate-600 text-white placeholder-slate-400' : 'border border-gray-300 text-gray-900'
+                    }`}
                     placeholder="Enter notification title"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="message" className={`block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
                     Message *
                   </label>
                   <textarea
@@ -241,13 +261,15 @@ export default function NotificationsPage() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     rows={3}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className={`mt-1 block w-full rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                      isDark ? 'bg-slate-700 border border-slate-600 text-white placeholder-slate-400' : 'border border-gray-300 text-gray-900'
+                    }`}
                     placeholder="Enter notification message"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="image_url" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="image_url" className={`block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
                     Image URL (optional)
                   </label>
                   <input
@@ -255,7 +277,9 @@ export default function NotificationsPage() {
                     id="image_url"
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className={`mt-1 block w-full rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                      isDark ? 'bg-slate-700 border border-slate-600 text-white placeholder-slate-400' : 'border border-gray-300 text-gray-900'
+                    }`}
                     placeholder="https://example.com/image.jpg"
                   />
                   {imageUrl && (
@@ -263,7 +287,7 @@ export default function NotificationsPage() {
                       <img 
                         src={imageUrl} 
                         alt="Preview" 
-                        className="h-32 w-32 object-cover rounded-md border border-gray-300"
+                        className={`h-32 w-32 object-cover rounded-md border ${isDark ? 'border-slate-600' : 'border-gray-300'}`}
                         onError={(e) => (e.currentTarget.style.display = 'none')}
                       />
                     </div>
@@ -272,14 +296,16 @@ export default function NotificationsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="notification_type" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="notification_type" className={`block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
                       Notification Type
                     </label>
                     <select
                       id="notification_type"
                       value={notificationType}
                       onChange={(e) => setNotificationType(e.target.value)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className={`mt-1 block w-full rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                        isDark ? 'bg-slate-700 border border-slate-600 text-white' : 'border border-gray-300 text-gray-900'
+                      }`}
                     >
                       {NOTIFICATION_TYPES.map((type) => (
                         <option key={type.value} value={type.value}>
@@ -290,14 +316,16 @@ export default function NotificationsPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="target_audience" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="target_audience" className={`block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
                       Target Audience
                     </label>
                     <select
                       id="target_audience"
                       value={targetAudience}
                       onChange={(e) => setTargetAudience(e.target.value)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className={`mt-1 block w-full rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                        isDark ? 'bg-slate-700 border border-slate-600 text-white' : 'border border-gray-300 text-gray-900'
+                      }`}
                     >
                       {AUDIENCE_OPTIONS.map((audience) => (
                         <option key={audience.value} value={audience.value}>
