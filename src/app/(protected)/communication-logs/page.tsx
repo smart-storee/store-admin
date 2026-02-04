@@ -63,6 +63,12 @@ export default function CommunicationLogsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 20;
+  const [stats, setStats] = useState<{
+    sms: Record<string, number>;
+    push: Record<string, number>;
+    whatsapp: Record<string, number>;
+    email: Record<string, number>;
+  } | null>(null);
 
   // Filters
   const [channelFilter, setChannelFilter] = useState<string>("all");
@@ -74,6 +80,7 @@ export default function CommunicationLogsPage() {
 
   useEffect(() => {
     fetchLogs();
+    fetchStats();
   }, [
     currentPage,
     channelFilter,
@@ -83,6 +90,67 @@ export default function CommunicationLogsPage() {
     searchTerm,
     user?.store_id,
   ]);
+
+  const fetchStats = async () => {
+    try {
+      const params = new URLSearchParams({
+        store_id: user?.store_id?.toString() || "",
+      });
+
+      if (channelFilter !== "all") {
+        params.append("channel", channelFilter);
+      }
+      if (statusFilter !== "all") {
+        params.append("status", statusFilter);
+      }
+      if (dateFrom) {
+        params.append("date_from", dateFrom);
+      }
+      if (dateTo) {
+        params.append("date_to", dateTo);
+      }
+      if (searchTerm) {
+        params.append("search", searchTerm);
+      }
+
+      const response = await makeAuthenticatedRequest(
+        `/communication-logs/stats?${params.toString()}`,
+        {},
+        true,
+        user?.store_id,
+        user?.branch_id || undefined
+      );
+
+      if (response.success) {
+        setStats(response.data || null);
+      }
+    } catch (err) {
+      console.error("Error fetching communication stats:", err);
+    }
+  };
+
+  const sumChannel = (channelKey: keyof NonNullable<typeof stats>) => {
+    if (!stats?.[channelKey]) return 0;
+    return Object.values(stats[channelKey]).reduce(
+      (acc, val) => acc + (Number(val) || 0),
+      0
+    );
+  };
+
+  const smsCount = sumChannel("sms");
+  const pushCount = sumChannel("push");
+  const deliveredCount =
+    (stats?.sms?.delivered || 0) +
+    (stats?.sms?.read || 0) +
+    (stats?.push?.delivered || 0) +
+    (stats?.push?.read || 0);
+
+  const totalLogsSummary =
+    channelFilter === "sms"
+      ? smsCount
+      : channelFilter === "push"
+      ? pushCount
+      : smsCount + pushCount;
 
   const fetchLogs = async () => {
     try {
@@ -463,7 +531,7 @@ export default function CommunicationLogsPage() {
                         isDark ? "text-white" : "text-gray-900"
                       }`}
                     >
-                      {totalCount}
+                      {totalLogsSummary}
                     </p>
                   </div>
                   <MessageSquare
@@ -492,7 +560,7 @@ export default function CommunicationLogsPage() {
                         isDark ? "text-white" : "text-gray-900"
                       }`}
                     >
-                      {logs.filter((l) => l.channel === "sms").length}
+                      {smsCount}
                     </p>
                   </div>
                   <MessageSquare
@@ -521,7 +589,7 @@ export default function CommunicationLogsPage() {
                         isDark ? "text-white" : "text-gray-900"
                       }`}
                     >
-                      {logs.filter((l) => l.channel === "push").length}
+                      {pushCount}
                     </p>
                   </div>
                   <Bell
@@ -550,11 +618,7 @@ export default function CommunicationLogsPage() {
                         isDark ? "text-white" : "text-gray-900"
                       }`}
                     >
-                      {
-                        logs.filter(
-                          (l) => l.status === "delivered" || l.status === "read"
-                        ).length
-                      }
+                      {deliveredCount}
                     </p>
                   </div>
                   <CheckCircle
