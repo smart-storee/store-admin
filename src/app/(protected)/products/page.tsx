@@ -702,7 +702,7 @@ function ProductCard({
                     isDark ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  ₹{parseFloat(product.base_price?.toString() || "0").toFixed(2)}
+                  {product.total_variants ?? 0} variants
                 </p>
                 <p
                   className={`text-sm ${

@@ -159,6 +159,7 @@ export interface Product {
   uom_name?: string;
   total_stock: number;
   total_sold: number;
+  total_variants?: number;
   is_active: number;
   branch_id?: number;
   branch_name?: string;
