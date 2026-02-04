@@ -271,17 +271,25 @@ export default function PaymentLogsPage() {
   };
 
   // Filter logs based on search term only (API handles tab filtering)
+  const normalizeText = (value?: string | null) =>
+    value ? value.toLowerCase().trim().replace(/^#/, "") : "";
+  const normalizeDigits = (value: string) => value.replace(/\D/g, "");
+
   const filteredLogs = paymentLogs.filter((log) => {
     // Filter out null/undefined logs
     if (!log) return false;
 
     // Apply search filter
     if (searchTerm) {
-      const normalizedSearch = searchTerm.trim().toLowerCase();
+      const normalizedSearch = normalizeText(searchTerm);
+      const searchDigits = normalizeDigits(searchTerm);
       return (
-        (log.txn_id?.toLowerCase().includes(normalizedSearch) ?? false) ||
-        (log.order_number?.toLowerCase().includes(normalizedSearch) ?? false) ||
-        (log.order_id?.toString().includes(normalizedSearch) ?? false)
+        (normalizeText(log.txn_id).includes(normalizedSearch) ?? false) ||
+        (normalizeText(log.order_number).includes(normalizedSearch) ??
+          false) ||
+        (searchDigits
+          ? log.order_id?.toString().includes(searchDigits)
+          : false)
       );
     }
     return true;
