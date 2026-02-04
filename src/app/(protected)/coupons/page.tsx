@@ -17,6 +17,10 @@ const CouponsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterActive, setFilterActive] = useState<string>("all"); // 'all', 'active', 'inactive'
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 20;
   const { user } = useAuth();
   const { theme } = useTheme();
   const { features } = useStore();
@@ -49,7 +53,12 @@ const CouponsPage = () => {
   // Fetch coupons
   useEffect(() => {
     fetchCoupons();
-  }, [selectedBranch, filterActive, user]);
+  }, [selectedBranch, filterActive, user, currentPage]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedBranch, filterActive]);
 
   const fetchCoupons = async () => {
     try {
@@ -59,6 +68,8 @@ const CouponsPage = () => {
       const params = new URLSearchParams({
         store_id: user?.store_id?.toString() || "",
       });
+      params.append("page", currentPage.toString());
+      params.append("limit", pageSize.toString());
 
       if (selectedBranch) {
         params.append("branch_id", selectedBranch.toString());
@@ -80,6 +91,11 @@ const CouponsPage = () => {
           ? response.data
           : (response.data as { data: Coupon[] })?.data || [];
         setCoupons(couponsData);
+        const pagination = (response as any).pagination;
+        const total = Number(pagination?.total) || couponsData.length;
+        const limit = Number(pagination?.limit) || pageSize;
+        setTotalCount(total);
+        setTotalPages(Math.max(1, Math.ceil(total / limit)));
       } else {
         throw new Error(response?.message || "Failed to fetch coupons");
       }
@@ -541,6 +557,76 @@ const CouponsPage = () => {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Pagination */}
+                {totalPages >= 1 && (
+                  <div
+                    className={`px-6 py-4 ${
+                      isDark ? "bg-gray-700" : "bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div
+                        className={`text-sm ${
+                          isDark ? "text-gray-300" : "text-gray-700"
+                        }`}
+                      >
+                        Showing{" "}
+                        <span className="font-medium">
+                          {(currentPage - 1) * pageSize + 1}
+                        </span>{" "}
+                        to{" "}
+                        <span className="font-medium">
+                          {Math.min(currentPage * pageSize, totalCount)}
+                        </span>{" "}
+                        of <span className="font-medium">{totalCount}</span>{" "}
+                        results
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setCurrentPage(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                            isDark
+                              ? "bg-gray-700 text-gray-200 hover:bg-gray-600 disabled:bg-gray-700 disabled:text-gray-400"
+                              : "bg-white text-gray-700 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400"
+                          } disabled:cursor-not-allowed`}
+                        >
+                          Previous
+                        </button>
+                        {Array.from(
+                          { length: totalPages },
+                          (_, i) => i + 1
+                        ).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                              currentPage === page
+                                ? "z-10 bg-indigo-50 text-indigo-600 border border-indigo-500 dark:bg-indigo-600 dark:text-white"
+                                : isDark
+                                  ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                                  : "bg-white text-gray-700 hover:bg-gray-50"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setCurrentPage(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className={`relative inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                            isDark
+                              ? "bg-gray-700 text-gray-200 hover:bg-gray-600 disabled:bg-gray-700 disabled:text-gray-400"
+                              : "bg-white text-gray-700 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400"
+                          } disabled:cursor-not-allowed`}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
