@@ -46,6 +46,27 @@ export default function ReportsPage() {
   const [storeName, setStoreName] = useState<string>('');
   const [storeLogo, setStoreLogo] = useState<string>('');
 
+  const toNumber = (value: unknown) => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const normalized = value.replace(/,/g, '').trim();
+      const parsed = Number(normalized);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return 0;
+  };
+
+  const formatCount = (value: unknown) =>
+    new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(
+      Math.trunc(toNumber(value))
+    );
+
+  const formatCurrency = (value: unknown, digits = 2) =>
+    new Intl.NumberFormat('en-IN', {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    }).format(toNumber(value));
+
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -263,9 +284,9 @@ export default function ReportsPage() {
       
       const summaryData = [
         ['Metric', 'Value'],
-        ['Total Orders', reportData.total_orders.toString()],
-        ['Total Revenue', `₹${reportData.total_revenue.toLocaleString('en-IN')}`],
-        ['Average Order Value', `₹${reportData.avg_order_value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+        ['Total Orders', formatCount(reportData.total_orders)],
+        ['Total Revenue', `₹${formatCurrency(reportData.total_revenue, 2)}`],
+        ['Average Order Value', `₹${formatCurrency(reportData.avg_order_value, 2)}`],
       ];
 
       autoTable(pdf, {
@@ -322,8 +343,8 @@ export default function ReportsPage() {
           ['Month', 'Total Orders', 'Total Revenue'],
           ...reportData.monthly_summary.map((month) => [
             month.month,
-            month.total_orders.toString(),
-            `₹${month.total_revenue.toLocaleString('en-IN')}`,
+            formatCount(month.total_orders),
+            `₹${formatCurrency(month.total_revenue, 2)}`,
           ]),
         ];
 
@@ -354,7 +375,7 @@ export default function ReportsPage() {
           ['Date', 'Revenue'],
           ...dailyDataToShow.map((day) => [
             new Date(day.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
-            `₹${day.revenue.toLocaleString('en-IN')}`,
+            `₹${formatCurrency(day.revenue, 2)}`,
           ]),
         ];
 
@@ -555,7 +576,7 @@ export default function ReportsPage() {
                       </div>
                       <div className="ml-4">
                         <p className={`text-sm ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>Total Orders</p>
-                        <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{reportData.total_orders}</p>
+                        <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{formatCount(reportData.total_orders)}</p>
                       </div>
                     </div>
                   </div>
@@ -569,7 +590,7 @@ export default function ReportsPage() {
                       </div>
                       <div className="ml-4">
                         <p className={`text-sm ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>Total Revenue</p>
-                        <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>₹{reportData.total_revenue.toLocaleString('en-IN')}</p>
+                        <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>₹{formatCurrency(reportData.total_revenue, 2)}</p>
                       </div>
                     </div>
                   </div>
@@ -583,7 +604,7 @@ export default function ReportsPage() {
                       </div>
                       <div className="ml-4">
                         <p className={`text-sm ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`}>Avg. Order Value</p>
-                        <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>₹{reportData.avg_order_value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>₹{formatCurrency(reportData.avg_order_value, 2)}</p>
                       </div>
                     </div>
                   </div>
@@ -687,8 +708,8 @@ export default function ReportsPage() {
                         {reportData.monthly_summary.map((monthData, index) => (
                           <tr key={index} className={index % 2 === 0 ? (theme === 'dark' ? 'bg-gray-800' : 'bg-white') : (theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50')}>
                             <td className={`px-6 py-4 whitespace-nowrap ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}>{monthData.month}</td>
-                            <td className={`px-6 py-4 whitespace-nowrap ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}>{monthData.total_orders}</td>
-                            <td className={`px-6 py-4 whitespace-nowrap ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}>₹{monthData.total_revenue.toLocaleString('en-IN')}</td>
+                            <td className={`px-6 py-4 whitespace-nowrap ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}>{formatCount(monthData.total_orders)}</td>
+                            <td className={`px-6 py-4 whitespace-nowrap ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}>₹{formatCurrency(monthData.total_revenue, 2)}</td>
                           </tr>
                         ))}
                       </tbody>
