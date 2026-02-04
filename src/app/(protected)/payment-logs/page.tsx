@@ -492,21 +492,6 @@ export default function PaymentLogsPage() {
                 )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Order ID
-                  </label>
-                  <input
-                    type="number"
-                    value={orderIdFilter}
-                    onChange={(e) => {
-                      setOrderIdFilter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    placeholder="Filter by Order ID"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     From Date
                   </label>
                   <input
