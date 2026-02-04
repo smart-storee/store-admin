@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Category, Branch, ApiResponse } from "@/types";
 import { FeatureGuard } from "@/components/FeatureGuard";
+import ListPageHeader from "@/components/ListPageHeader";
 import {
   Plus,
   Search,
@@ -269,30 +270,19 @@ export default function CategoriesPage() {
   return (
     <FeatureGuard feature="categories_enabled">
       <div className="min-h-screen transition-colors duration-300">
-        {/* Header */}
-        <div
-          className={`${t.headerBg} border-b ${t.cardBorder} sticky top-0 z-40 backdrop-blur-xl transition-all duration-300`}
-        >
-          <div className="px-8 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Categories Management
-                </h1>
-                <p className={`${t.textSecondary} text-sm mt-1`}>
-                  Organize and manage product categories by branch
-                </p>
-              </div>
-              <button
-                onClick={() => (window.location.href = "/categories/new")}
-                className={`${t.button.primary} px-6 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
-              >
-                <Plus size={20} />
-                Add New Category
-              </button>
-            </div>
-          </div>
-        </div>
+        <ListPageHeader
+          title="Categories"
+          subtitle="Organize and manage product categories by branch."
+          actions={
+            <button
+              onClick={() => (window.location.href = "/categories/new")}
+              className={`${t.button.primary} px-6 py-2 h-10 rounded-lg font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
+            >
+              <Plus size={20} />
+              Add New Category
+            </button>
+          }
+        />
 
         <div className="px-8 py-8">
           {/* Search and Filter */}

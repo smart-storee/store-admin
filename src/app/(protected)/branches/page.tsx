@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { RoleGuard } from "@/components/RoleGuard";
 import { FeatureGuard } from "@/components/FeatureGuard";
+import ListPageHeader from "@/components/ListPageHeader";
 import {
   MapPin,
   Plus,
@@ -274,6 +275,10 @@ export default function BranchesPage() {
         }
       >
         <div className="min-h-screen transition-colors duration-300">
+          <ListPageHeader
+            title="Branches"
+            subtitle="Manage store branches, addresses, and availability."
+          />
           <div className="py-1">
             {/* Combined Header with Search and Filter Bar */}
             <div

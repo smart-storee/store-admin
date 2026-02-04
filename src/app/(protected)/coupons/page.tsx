@@ -9,6 +9,7 @@ import { FeatureGuard } from "@/components/FeatureGuard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useStore } from "@/contexts/StoreContext";
+import ListPageHeader from "@/components/ListPageHeader";
 
 const CouponsPage = () => {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -238,32 +239,19 @@ const CouponsPage = () => {
             isDark ? "bg-gray-900" : "bg-gray-50"
           } min-h-screen`}
         >
-          <div className="max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <div>
-                <h1
-                  className={`text-3xl font-bold ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Coupons
-                </h1>
-                <p
-                  className={`mt-1 ${
-                    isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Manage discount coupons for your store
-                </p>
-              </div>
+          <ListPageHeader
+            title="Coupons"
+            subtitle="Manage discount coupons for your store."
+            actions={
               <button
                 onClick={() => router.push("/coupons/new")}
-                className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-md hover:shadow-lg"
+                className="w-full sm:w-auto px-6 py-2 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-md hover:shadow-lg"
               >
                 + Create Coupon
               </button>
-            </div>
+            }
+          />
+          <div className="max-w-7xl mx-auto">
 
             {/* Filters */}
             <div

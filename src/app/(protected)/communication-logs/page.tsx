@@ -7,6 +7,7 @@ import { RoleGuard } from "@/components/RoleGuard";
 import { FeatureGuard } from "@/components/FeatureGuard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import ListPageHeader from "@/components/ListPageHeader";
 import {
   MessageSquare,
   Smartphone,
@@ -351,23 +352,11 @@ export default function CommunicationLogsPage() {
             isDark ? "bg-gray-900" : "bg-gray-50"
           } min-h-screen`}
         >
+          <ListPageHeader
+            title="Communication Logs"
+            subtitle="View SMS and push notification details, delivery status, and recipient information."
+          />
           <div className="max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="mb-6">
-              <h1
-                className={`text-3xl font-bold ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Communication Logs
-              </h1>
-              <p
-                className={`mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}
-              >
-                View SMS and push notification details, delivery status, and
-                recipient information
-              </p>
-            </div>
 
             {/* Filters */}
             <div

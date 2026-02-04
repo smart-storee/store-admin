@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { makeAuthenticatedRequest } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { RoleGuard } from "@/components/RoleGuard";
+import ListPageHeader from "@/components/ListPageHeader";
 import { ApiResponse, Review } from "@/types";
 import {
   Star,
@@ -196,20 +197,11 @@ export default function ReviewsPage() {
   return (
     <RoleGuard requiredPermissions={["view_reports"]}>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+        <ListPageHeader
+          title="Product Reviews"
+          subtitle="Manage and moderate customer reviews."
+        />
         <div className="p-4 sm:p-6 space-y-6">
-          {/* Header */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                  Product Reviews
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Manage and moderate customer reviews
-                </p>
-              </div>
-            </div>
-          </div>
 
           {/* Filters */}
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">

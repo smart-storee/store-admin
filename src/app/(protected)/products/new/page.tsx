@@ -31,7 +31,7 @@ export default function NewProductPage() {
     is_active: 1,
     product_image: "",
     serves_count: 1,
-    is_vegetarian: 0,
+    is_vegetarian: null as number | null,
     is_bestseller: 0,
   });
 
@@ -135,7 +135,7 @@ export default function NewProductPage() {
     } else if (name === "is_vegetarian") {
       setFormData((prev) => ({
         ...prev,
-        [name]: parseInt(value) || 0,
+        [name]: value === "" ? null : parseInt(value),
       }));
     } else {
       setFormData((prev) => ({
@@ -476,6 +476,23 @@ export default function NewProductPage() {
                           Diet Type
                         </p>
                         <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="is_vegetarian"
+                              value=""
+                              checked={formData.is_vegetarian === null}
+                              onChange={handleChange}
+                              className={`h-4 w-4 rounded-full border-gray-300 dark:border-gray-600 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400`}
+                            />
+                            <span
+                              className={`text-sm ${
+                                isDarkMode ? "text-gray-300" : "text-gray-700"
+                              }`}
+                            >
+                              None
+                            </span>
+                          </label>
                           <label className="flex items-center gap-2">
                             <input
                               type="radio"

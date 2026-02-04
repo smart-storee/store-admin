@@ -44,7 +44,7 @@ export default function EditProductPage() {
     is_active: 1,
     product_image: "",
     serves_count: 1,
-    is_vegetarian: 0,
+    is_vegetarian: null as number | null,
     is_bestseller: 0,
   });
   const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
@@ -109,11 +109,11 @@ export default function EditProductPage() {
             is_active: prod.is_active,
             product_image: prod.product_image || "",
             serves_count: prod.serves_count ?? 1,
-            // Handle is_vegetarian: use 0 if null/undefined, otherwise use the actual value (0 or 1)
+            // Handle is_vegetarian: allow null for "None"
             is_vegetarian:
               prod.is_vegetarian !== null && prod.is_vegetarian !== undefined
                 ? Number(prod.is_vegetarian)
-                : 0,
+                : null,
             // Handle is_bestseller: use 0 if null/undefined, otherwise use the actual value (0 or 1)
             is_bestseller:
               prod.is_bestseller !== null && prod.is_bestseller !== undefined
@@ -269,7 +269,7 @@ export default function EditProductPage() {
     } else if (name === "is_vegetarian") {
       setFormData((prev) => ({
         ...prev,
-        [name]: parseInt(value) || 0,
+        [name]: value === "" ? null : parseInt(value),
       }));
     } else {
       setFormData((prev) => ({
@@ -677,6 +677,17 @@ export default function EditProductPage() {
                           Diet Type
                         </p>
                         <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="is_vegetarian"
+                              value=""
+                              checked={formData.is_vegetarian === null}
+                              onChange={handleChange}
+                              className="h-4 w-4 rounded-full border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="text-sm text-gray-700">None</span>
+                          </label>
                           <label className="flex items-center gap-2">
                             <input
                               type="radio"

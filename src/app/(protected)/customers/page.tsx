@@ -7,6 +7,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useStore } from "@/contexts/StoreContext";
 import { RoleGuard } from "@/components/RoleGuard";
 import { ApiResponse, Customer, Branch, Pagination } from "@/types";
+import ListPageHeader from "@/components/ListPageHeader";
 
 interface CustomerWithBranch extends Customer {
   branch_name?: string;
@@ -245,16 +246,11 @@ export default function CustomersPage() {
         </div>
       }
     >
-      <div className={` ${theme === "dark" ? "bg-gray-900" : "bg-white"}`}>
-        <div className="flex justify-between items-center mb-6">
-          <h1
-            className={`text-2xl font-bold ${
-              theme === "dark" ? "text-white" : "text-gray-900"
-            }`}
-          >
-            Customer Management
-          </h1>
-        </div>
+      <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} min-h-screen`}>
+        <ListPageHeader
+          title="Customers"
+          subtitle="Manage customer records and engagement."
+        />
 
         {/* Stats Summary */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

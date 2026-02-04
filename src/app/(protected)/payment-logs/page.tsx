@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { makeAuthenticatedRequest } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { RoleGuard } from "@/components/RoleGuard";
 import { ApiResponse } from "@/types";
 import {
@@ -24,6 +25,7 @@ import {
   Info,
 } from "lucide-react";
 import Link from "next/link";
+import ListPageHeader from "@/components/ListPageHeader";
 
 interface PaymentLog {
   log_id: number;
@@ -52,6 +54,7 @@ interface PaymentLogsResponse {
 
 export default function PaymentLogsPage() {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [paymentLogs, setPaymentLogs] = useState<PaymentLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -378,43 +381,44 @@ export default function PaymentLogsPage() {
   return (
     <RoleGuard requiredPermissions={["manage_orders"]}>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+        <ListPageHeader
+          title="Payment Logs"
+          subtitle="View and track all payment transactions."
+          actions={
+            <>
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className={`flex items-center justify-center gap-2 px-4 py-2 h-10 text-sm font-medium rounded-lg border transition-all duration-200 ${
+                  theme === "dark"
+                    ? "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                }`}
+                title="Refresh"
+              >
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-4 py-2 h-10 rounded-lg transition-colors font-medium text-sm ${
+                  showFilters
+                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                    : theme === "dark"
+                    ? "bg-slate-700 text-slate-200 hover:bg-slate-600"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+              </button>
+            </>
+          }
+        />
         <div className="p-4 sm:p-6 space-y-6">
-          {/* Header */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                  Payment Logs
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  View and track all payment transactions
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                  className="p-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50"
-                  title="Refresh"
-                >
-                  <RefreshCw
-                    className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`}
-                  />
-                </button>
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-colors font-medium text-sm ${
-                    showFilters
-                      ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                      : "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600"
-                  }`}
-                >
-                  <Filter className="h-4 w-4" />
-                  Filters
-                </button>
-              </div>
-            </div>
-          </div>
 
           {/* Tab Navigation */}
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
