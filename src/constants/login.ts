@@ -1,4 +1,4 @@
-import loginImage from "@/assets/images/login-logo.png";
+import loginImage from "@/assets/images/login-logo.jpeg";
 import favicon from "@/assets/images/favicon.png";
 
 /**
