@@ -126,14 +126,14 @@ export default function OrderDetailPage() {
                     Order #{order.order_number}
                   </h3>
                   <div className="flex space-x-3">
-                    <button
+                    {/* <button
                       onClick={() =>
                         router.push(`/orders/${order.order_id}/edit`)
                       }
                       className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
                     >
                       Edit Order
-                    </button>
+                    </button> */}
                     <button
                       onClick={() => router.push("/orders")}
                       className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
