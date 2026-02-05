@@ -15,6 +15,7 @@ import {
   Branch,
   ProductVariant,
   Uom,
+  TaxRate,
 } from "@/types";
 
 export default function EditProductPage() {
@@ -31,6 +32,7 @@ export default function EditProductPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [uoms, setUoms] = useState<Uom[]>([]);
+  const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +48,7 @@ export default function EditProductPage() {
     serves_count: 1,
     is_vegetarian: null as number | null,
     is_bestseller: 0,
+    tax_id: null as number | null,
   });
   const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
   const [selectAllBranches, setSelectAllBranches] = useState(false);
@@ -119,6 +122,10 @@ export default function EditProductPage() {
               prod.is_bestseller !== null && prod.is_bestseller !== undefined
                 ? Number(prod.is_bestseller)
                 : 0,
+            tax_id:
+              prod.tax_id !== null && prod.tax_id !== undefined
+                ? Number(prod.tax_id)
+                : null,
           });
 
           console.log("Loaded product data:", {
@@ -227,6 +234,20 @@ export default function EditProductPage() {
         } else {
           throw new Error(uomsResponse.message || "Failed to fetch UOMs");
         }
+
+        // Fetch Tax Rates
+        const taxRatesResponse: ApiResponse<{ data: TaxRate[] }> =
+          await makeAuthenticatedRequest(
+            `/tax-rates?store_id=${user?.store_id}`,
+            {},
+            true,
+            user?.store_id,
+            user?.branch_id || undefined
+          );
+
+        if (taxRatesResponse.success) {
+          setTaxRates(taxRatesResponse.data.data || taxRatesResponse.data);
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load product data");
         console.error("Product edit fetch error:", err);
@@ -267,6 +288,11 @@ export default function EditProductPage() {
         [name]: parseInt(value) || 0,
       }));
     } else if (name === "is_vegetarian") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value === "" ? null : parseInt(value),
+      }));
+    } else if (name === "tax_id") {
       setFormData((prev) => ({
         ...prev,
         [name]: value === "" ? null : parseInt(value),
@@ -329,6 +355,7 @@ export default function EditProductPage() {
         serves_count: formData.serves_count,
         is_vegetarian: formData.is_vegetarian, // Explicitly include
         is_bestseller: formData.is_bestseller, // Explicitly include
+        tax_id: formData.tax_id,
         branch_ids: selectedBranches,
         store_id: user?.store_id,
       };
@@ -402,7 +429,7 @@ export default function EditProductPage() {
             theme === "dark" ? "bg-gray-900" : "bg-gray-50"
           }`}
         >
-          <div className="max-w-4xl mx-auto p-6">
+          <div className="mx-auto p-6">
             {/* Header with action buttons */}
             <div className="mb-6">
               <button
@@ -501,7 +528,7 @@ export default function EditProductPage() {
                     ></textarea>
                   </div>
 
-                  <div className="col-span-6 sm:col-span-3">
+                  {/* <div className="col-span-6 sm:col-span-3">
                     <label
                       htmlFor="base_price"
                       className="block text-sm font-medium text-gray-700"
@@ -519,6 +546,30 @@ export default function EditProductPage() {
                       step="0.01"
                       className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
                     />
+                  </div> */}
+
+                  <div className="col-span-6 sm:col-span-3">
+                    <label
+                      htmlFor="tax_id"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      GST Rate
+                    </label>
+                    <select
+                      id="tax_id"
+                      name="tax_id"
+                      value={formData.tax_id ?? ""}
+                      onChange={handleChange}
+                      className="mt-1 block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    >
+                      <option value="">Use store default</option>
+                      {taxRates.map((rate) => (
+                        <option key={rate.tax_id} value={rate.tax_id}>
+                          {Number(rate.gst_percent).toFixed(2)}%
+                          {rate.description ? ` - ${rate.description}` : ""}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="col-span-6 sm:col-span-3">

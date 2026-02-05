@@ -157,6 +157,7 @@ export interface Product {
   base_price: number;
   uom_id?: number;
   uom_name?: string;
+  tax_id?: number | null;
   total_stock: number;
   total_sold: number;
   total_variants?: number;
@@ -178,6 +179,7 @@ export interface CreateProductRequest {
   product_image: string;
   base_price: number;
   uom_id?: number;
+  tax_id?: number | null;
   serves_count?: number;
   is_vegetarian?: number;
   is_bestseller?: number;
@@ -275,6 +277,13 @@ export interface Order {
   coupon_code?: string;
   coupon_type?: string;
   platform_fee: number;
+  tax_summary?: {
+    taxable_amount: number;
+    tax_rate: number;
+    cgst_amount: number;
+    sgst_amount: number;
+    total_gst_amount: number;
+  } | null;
   total_amount: number;
   items_count: number;
   items?: OrderItem[];
@@ -352,6 +361,13 @@ export interface OrderDetail {
   subtotal: number;
   delivery_charge: number;
   platform_fee: number;
+  tax_summary?: {
+    taxable_amount: number;
+    tax_rate: number;
+    cgst_amount: number;
+    sgst_amount: number;
+    total_gst_amount: number;
+  } | null;
   total_amount: number;
   status_timeline: Array<{
     status: string;
@@ -412,8 +428,24 @@ export interface AppSettings {
   platform_fee: number;
   is_cod_enabled: number;
   is_online_payment_enabled: number;
+  tax_enabled?: number;
+  tax_type?: "inclusive" | "exclusive";
+  tax_rate?: number;
+  tax_rounding?: "line_item" | "cart_total";
+  tax_apply_on_delivery?: number;
+  tax_split_type?: "cgst_sgst" | "single";
+  tax_scope?: "store" | "product";
+  product_tax_fallback?: number;
   maintenance_mode: number;
   created_at: string;
+}
+
+export interface TaxRate {
+  tax_id: number;
+  store_id: number;
+  gst_percent: number;
+  description?: string | null;
+  is_active: number;
 }
 
 export interface StoreSettings {

@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { RoleGuard } from "@/components/RoleGuard";
 import { FeatureGuard } from "@/components/FeatureGuard";
-import { ApiResponse, Category, Branch, Uom } from "@/types";
+import { ApiResponse, Category, Branch, Uom, TaxRate } from "@/types";
 import { Plus } from "lucide-react";
 
 export default function NewProductPage() {
@@ -18,6 +18,7 @@ export default function NewProductPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [uoms, setUoms] = useState<Uom[]>([]);
+  const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +34,7 @@ export default function NewProductPage() {
     serves_count: 1,
     is_vegetarian: null as number | null,
     is_bestseller: 0,
+    tax_id: null as number | null,
   });
 
   useEffect(() => {
@@ -93,6 +95,20 @@ export default function NewProductPage() {
         } else {
           throw new Error(uomsResponse.message || "Failed to fetch UOMs");
         }
+
+        // Fetch Tax Rates
+        const taxRatesResponse: ApiResponse<{ data: TaxRate[] }> =
+          await makeAuthenticatedRequest(
+            `/tax-rates?store_id=${user?.store_id}`,
+            {},
+            true,
+            user?.store_id,
+            user?.branch_id || undefined
+          );
+
+        if (taxRatesResponse.success) {
+          setTaxRates(taxRatesResponse.data.data || taxRatesResponse.data);
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load data");
         console.error("New product fetch error:", err);
@@ -133,6 +149,11 @@ export default function NewProductPage() {
         [name]: parseInt(value) || 0,
       }));
     } else if (name === "is_vegetarian") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value === "" ? null : parseInt(value),
+      }));
+    } else if (name === "tax_id") {
       setFormData((prev) => ({
         ...prev,
         [name]: value === "" ? null : parseInt(value),
@@ -193,6 +214,7 @@ export default function NewProductPage() {
             serves_count: formData.serves_count,
             is_vegetarian: formData.is_vegetarian,
             is_bestseller: formData.is_bestseller,
+            tax_id: formData.tax_id,
             store_id: user?.store_id,
           }),
         },
@@ -248,8 +270,8 @@ export default function NewProductPage() {
           </div>
         }
       >
-        <div className="min-h-screen pb-20">
-          <div className="max-w-4xl mx-auto p-6">
+        <div className="">
+          <div className="">
             {/* Header with action buttons */}
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -369,7 +391,7 @@ export default function NewProductPage() {
                     />
                   </div>
 
-                  <div className="col-span-1 sm:col-span-1">
+                  {/* <div className="col-span-1 sm:col-span-1">
                     <label
                       htmlFor="base_price"
                       className={`block text-sm font-medium ${
@@ -393,6 +415,36 @@ export default function NewProductPage() {
                           : "bg-white border-gray-300 text-gray-900"
                       }`}
                     />
+                  </div> */}
+
+                  <div className="col-span-1 sm:col-span-1">
+                    <label
+                      htmlFor="tax_id"
+                      className={`block text-sm font-medium ${
+                        isDarkMode ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      GST Rate
+                    </label>
+                    <select
+                      id="tax_id"
+                      name="tax_id"
+                      value={formData.tax_id ?? ""}
+                      onChange={handleChange}
+                      className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm p-2 border transition-colors ${
+                        isDarkMode
+                          ? "bg-gray-700 border-gray-600 text-gray-100"
+                          : "bg-white border-gray-300 text-gray-900"
+                      }`}
+                    >
+                      <option value="">Use store default</option>
+                      {taxRates.map((rate) => (
+                        <option key={rate.tax_id} value={rate.tax_id}>
+                          {Number(rate.gst_percent).toFixed(2)}%
+                          {rate.description ? ` - ${rate.description}` : ""}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="col-span-1 sm:col-span-1">

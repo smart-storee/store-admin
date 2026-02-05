@@ -7,7 +7,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useStore } from "@/contexts/StoreContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { RoleGuard } from "@/components/RoleGuard";
-import { ApiResponse, AppSettings } from "@/types";
+import { ApiResponse, AppSettings, TaxRate } from "@/types";
 
 interface ExtendedAppSettings extends AppSettings {
   splash_background_url?: string;
@@ -23,6 +23,14 @@ interface ExtendedAppSettings extends AppSettings {
   merchant_salt?: string;
   merchant_secret_key?: string;
   merchant_enviroment?: string;
+  tax_enabled?: number;
+  tax_type?: "inclusive" | "exclusive";
+  tax_rate?: number;
+  tax_rounding?: "line_item" | "cart_total";
+  tax_apply_on_delivery?: number;
+  tax_split_type?: "cgst_sgst" | "single";
+  tax_scope?: "store" | "product";
+  product_tax_fallback?: number;
 }
 
 export default function SettingsPage() {
@@ -35,7 +43,7 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "general" | "payment" | "maintenance" | "splash" | "features"
+    "general" | "payment" | "tax" | "maintenance" | "splash" | "features"
   >("general");
   const { theme, toggleTheme } = useTheme();
   const [localFeatures, setLocalFeatures] = useState({
@@ -79,7 +87,20 @@ export default function SettingsPage() {
     merchant_salt: "",
     merchant_secret_key: "",
     merchant_enviroment: "1",
+    tax_enabled: 1,
+    tax_type: "inclusive",
+    tax_rate: 0,
+    tax_rounding: "line_item",
+    tax_apply_on_delivery: 0,
+    tax_split_type: "cgst_sgst",
+    tax_scope: "store",
+    product_tax_fallback: 1,
     created_at: new Date().toISOString(),
+  });
+  const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
+  const [newTaxRate, setNewTaxRate] = useState({
+    gst_percent: "",
+    description: "",
   });
 
   useEffect(() => {
@@ -103,6 +124,17 @@ export default function SettingsPage() {
             ...data,
             primary_color: data.primary_color?.replace("#", "") || "F59E0B",
             secondary_color: data.secondary_color?.replace("#", "") || "cd0a7b",
+            tax_enabled: data.tax_enabled ?? 1,
+            tax_type: data.tax_type || "inclusive",
+            tax_rate:
+              data.tax_rate !== undefined && data.tax_rate !== null
+                ? Number(data.tax_rate)
+                : 0,
+            tax_rounding: data.tax_rounding || "line_item",
+            tax_apply_on_delivery: data.tax_apply_on_delivery ?? 0,
+            tax_split_type: data.tax_split_type || "cgst_sgst",
+            tax_scope: data.tax_scope || "store",
+            product_tax_fallback: data.product_tax_fallback ?? 1,
           });
         } else {
           throw new Error(response.message || "Failed to fetch store settings");
@@ -119,6 +151,92 @@ export default function SettingsPage() {
       fetchSettings();
     }
   }, [user?.store_id, features]);
+
+  useEffect(() => {
+    const fetchTaxRates = async () => {
+      try {
+        const response: ApiResponse<{ data: TaxRate[] }> =
+          await makeAuthenticatedRequest(
+            `/tax-rates?store_id=${user?.store_id}`,
+            {},
+            true,
+            user?.store_id,
+            user?.branch_id || undefined
+          );
+
+        if (response.success) {
+          setTaxRates(response.data.data || response.data);
+        }
+      } catch (err) {
+        console.error("Load tax rates error:", err);
+      }
+    };
+
+    if (user?.store_id) {
+      fetchTaxRates();
+    }
+  }, [user?.store_id, user?.branch_id]);
+
+  const handleAddTaxRate = async () => {
+    setError(null);
+    try {
+      const gstValue = parseFloat(newTaxRate.gst_percent);
+      if (isNaN(gstValue) || gstValue <= 0) {
+        setError("GST rate must be greater than 0");
+        return;
+      }
+
+      const response: ApiResponse<TaxRate> = await makeAuthenticatedRequest(
+        `/tax-rates`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            store_id: user?.store_id,
+            gst_percent: gstValue,
+            description: newTaxRate.description?.trim() || null,
+          }),
+        },
+        true,
+        user?.store_id,
+        user?.branch_id || undefined
+      );
+
+      if (response.success) {
+        setTaxRates((prev) => [
+          response.data.data || response.data,
+          ...prev,
+        ]);
+        setNewTaxRate({ gst_percent: "", description: "" });
+      } else {
+        throw new Error(response.message || "Failed to add GST rate");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to add GST rate");
+    }
+  };
+
+  const handleDeleteTaxRate = async (taxId: number) => {
+    setError(null);
+    try {
+      const response: ApiResponse<null> = await makeAuthenticatedRequest(
+        `/tax-rates/${taxId}?store_id=${user?.store_id}`,
+        {
+          method: "DELETE",
+        },
+        true,
+        user?.store_id,
+        user?.branch_id || undefined
+      );
+
+      if (response.success) {
+        setTaxRates((prev) => prev.filter((rate) => rate.tax_id !== taxId));
+      } else {
+        throw new Error(response.message || "Failed to delete GST rate");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to delete GST rate");
+    }
+  };
 
   // Load store features when available
   useEffect(() => {
@@ -156,13 +274,18 @@ export default function SettingsPage() {
         [name]:
           name.includes("enabled") ||
           name.includes("mode") ||
-          name.includes("active")
+          name.includes("active") ||
+          name.startsWith("tax_")
             ? checked
               ? 1
               : 0
             : checked,
       }));
-    } else if (name.includes("amount") || name.includes("fee")) {
+    } else if (
+      name.includes("amount") ||
+      name.includes("fee") ||
+      name.includes("tax_rate")
+    ) {
       setSettings((prev) => ({
         ...prev,
         [name]: parseFloat(value) || 0,
@@ -258,6 +381,14 @@ export default function SettingsPage() {
         merchant_salt: settings.merchant_salt,
         merchant_secret_key: settings.merchant_secret_key,
         merchant_enviroment: settings.merchant_enviroment,
+        tax_enabled: settings.tax_enabled,
+        tax_type: settings.tax_type,
+        tax_rate: settings.tax_rate,
+        tax_rounding: settings.tax_rounding,
+        tax_apply_on_delivery: settings.tax_apply_on_delivery,
+        tax_split_type: settings.tax_split_type,
+        tax_scope: settings.tax_scope,
+        product_tax_fallback: settings.product_tax_fallback,
       };
 
       const response: ApiResponse<null> = await makeAuthenticatedRequest(
@@ -460,6 +591,7 @@ export default function SettingsPage() {
                 { id: "general", label: "General", icon: "⚙️" },
                 { id: "splash", label: "Splash Screen", icon: "🖼️" },
                 { id: "payment", label: "Payment", icon: "💳" },
+                { id: "tax", label: "Tax", icon: "🧾" },
                 { id: "maintenance", label: "Maintenance", icon: "⚠️" },
                 // { id: "features", label: "Features", icon: "🔧" },
               ].map((tab) => (
@@ -1222,6 +1354,326 @@ export default function SettingsPage() {
                     payment method must be enabled for customers to place
                     orders.
                   </p>
+                </div>
+              </div>
+            )}
+
+            {/* Tax Tab */}
+            {activeTab === "tax" && (
+              <div className="p-6 sm:p-8 space-y-6">
+                <div className="space-y-4">
+                  <div
+                    className={`flex items-center p-4 border rounded-lg ${hoverClass} transition ${
+                      isDarkMode ? "border-slate-700" : "border-gray-200"
+                    }`}
+                  >
+                    <input
+                      id="tax_enabled"
+                      name="tax_enabled"
+                      type="checkbox"
+                      checked={settings.tax_enabled === 1}
+                      onChange={handleChange}
+                      className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <div className="ml-4 flex-1">
+                      <label
+                        htmlFor="tax_enabled"
+                        className={`text-sm font-semibold ${textPrimary} cursor-pointer`}
+                      >
+                        Enable GST
+                      </label>
+                      <p className={`text-xs ${textTertiary} mt-1`}>
+                        Apply GST to all items at checkout
+                      </p>
+                    </div>
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        settings.tax_enabled === 1
+                          ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200"
+                          : "bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300"
+                      }`}
+                    >
+                      {settings.tax_enabled === 1 ? "Enabled" : "Disabled"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <label
+                      htmlFor="tax_scope"
+                      className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                    >
+                      Tax Scope
+                    </label>
+                    <select
+                      id="tax_scope"
+                      name="tax_scope"
+                      value={settings.tax_scope || "store"}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                    >
+                      <option value="store">Store-wide</option>
+                      <option value="product">Per product</option>
+                    </select>
+                    <p className={`text-xs ${textTertiary} mt-2`}>
+                      Store-wide uses a single GST rate. Per product allows
+                      different GST rates per item.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="tax_type"
+                      className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                    >
+                      Tax Type
+                    </label>
+                    <select
+                      id="tax_type"
+                      name="tax_type"
+                      value={settings.tax_type || "inclusive"}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                    >
+                      <option value="inclusive">Inclusive</option>
+                      <option value="exclusive">Exclusive</option>
+                    </select>
+                    <p className={`text-xs ${textTertiary} mt-2`}>
+                      Inclusive keeps prices unchanged and shows GST included.
+                      Exclusive adds GST at checkout.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="tax_rate"
+                      className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                    >
+                      Default Tax Rate (%)
+                    </label>
+                    <input
+                      type="number"
+                      id="tax_rate"
+                      name="tax_rate"
+                      min="0"
+                      step="0.01"
+                      value={settings.tax_rate ?? 0}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                    />
+                    <p className={`text-xs ${textTertiary} mt-2`}>
+                      Used for store-wide tax and as fallback when a product has
+                      no GST rate.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="tax_rounding"
+                      className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                    >
+                      Rounding
+                    </label>
+                    <select
+                      id="tax_rounding"
+                      name="tax_rounding"
+                      value={settings.tax_rounding || "line_item"}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                    >
+                      <option value="line_item">Per line item</option>
+                      <option value="cart_total">Cart total</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="tax_split_type"
+                      className={`block text-sm font-semibold ${textPrimary} mb-2`}
+                    >
+                      GST Split
+                    </label>
+                    <select
+                      id="tax_split_type"
+                      name="tax_split_type"
+                      value={settings.tax_split_type || "cgst_sgst"}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                    >
+                      <option value="cgst_sgst">CGST + SGST</option>
+                      <option value="single">Single</option>
+                    </select>
+                  </div>
+                </div>
+
+                {settings.tax_scope === "product" && (
+                  <div
+                    className={`flex items-center p-4 border rounded-lg ${hoverClass} transition ${
+                      isDarkMode ? "border-slate-700" : "border-gray-200"
+                    }`}
+                  >
+                    <input
+                      id="product_tax_fallback"
+                      name="product_tax_fallback"
+                      type="checkbox"
+                      checked={settings.product_tax_fallback === 1}
+                      onChange={handleChange}
+                      className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <div className="ml-4 flex-1">
+                      <label
+                        htmlFor="product_tax_fallback"
+                        className={`text-sm font-semibold ${textPrimary} cursor-pointer`}
+                      >
+                        Fallback to Default Tax Rate
+                      </label>
+                      <p className={`text-xs ${textTertiary} mt-1`}>
+                        If a product has no GST rate, use the default tax rate.
+                      </p>
+                    </div>
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        settings.product_tax_fallback === 1
+                          ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200"
+                          : "bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300"
+                      }`}
+                    >
+                      {settings.product_tax_fallback === 1
+                        ? "Enabled"
+                        : "Disabled"}
+                    </div>
+                  </div>
+                )}
+
+                <div
+                  className={`flex items-center p-4 border rounded-lg ${hoverClass} transition ${
+                    isDarkMode ? "border-slate-700" : "border-gray-200"
+                  }`}
+                >
+                  <input
+                    id="tax_apply_on_delivery"
+                    name="tax_apply_on_delivery"
+                    type="checkbox"
+                    checked={settings.tax_apply_on_delivery === 1}
+                    onChange={handleChange}
+                    className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <div className="ml-4 flex-1">
+                    <label
+                      htmlFor="tax_apply_on_delivery"
+                      className={`text-sm font-semibold ${textPrimary} cursor-pointer`}
+                    >
+                      Apply GST on Delivery Charge
+                    </label>
+                    <p className={`text-xs ${textTertiary} mt-1`}>
+                      Leave off if delivery charges are non-taxable
+                    </p>
+                  </div>
+                  <div
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      settings.tax_apply_on_delivery === 1
+                        ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200"
+                        : "bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    {settings.tax_apply_on_delivery === 1 ? "Enabled" : "Disabled"}
+                  </div>
+                </div>
+
+                <div
+                  className={`border rounded-lg ${
+                    isDarkMode ? "border-slate-700" : "border-gray-200"
+                  }`}
+                >
+                  <div
+                    className={`px-4 py-3 border-b ${
+                      isDarkMode ? "border-slate-700" : "border-gray-200"
+                    }`}
+                  >
+                    <h4 className={`text-sm font-semibold ${textPrimary}`}>
+                      GST Rates
+                    </h4>
+                    <p className={`text-xs ${textTertiary} mt-1`}>
+                      Manage GST slabs for products (e.g., 5%, 10%).
+                    </p>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <input
+                        type="number"
+                        name="gst_percent"
+                        min="0"
+                        step="0.01"
+                        placeholder="GST %"
+                        value={newTaxRate.gst_percent}
+                        onChange={(e) =>
+                          setNewTaxRate((prev) => ({
+                            ...prev,
+                            gst_percent: e.target.value,
+                          }))
+                        }
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                      />
+                      <input
+                        type="text"
+                        name="description"
+                        placeholder="Description (optional)"
+                        value={newTaxRate.description}
+                        onChange={(e) =>
+                          setNewTaxRate((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
+                        }
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${inputBgClass}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddTaxRate}
+                        className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition"
+                      >
+                        Add Rate
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {taxRates.length === 0 ? (
+                        <p className={`text-xs ${textTertiary}`}>
+                          No GST rates added yet.
+                        </p>
+                      ) : (
+                        taxRates.map((rate) => (
+                          <div
+                            key={rate.tax_id}
+                            className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
+                              isDarkMode
+                                ? "border-slate-700 bg-slate-900"
+                                : "border-gray-200 bg-gray-50"
+                            }`}
+                          >
+                            <div>
+                              <p className={`text-sm ${textPrimary}`}>
+                                {Number(rate.gst_percent).toFixed(2)}%
+                              </p>
+                              {rate.description && (
+                                <p className={`text-xs ${textTertiary}`}>
+                                  {rate.description}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTaxRate(rate.tax_id)}
+                              className="text-xs text-red-600 hover:text-red-700"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

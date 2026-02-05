@@ -543,6 +543,55 @@ export default function OrderDetailPage() {
                             ₹{order.platform_fee || "0.00"}
                           </span>
                         </div>
+                        {order.tax_summary &&
+                          order.tax_summary.total_gst_amount > 0 && (
+                            <>
+                              {(order.tax_summary.cgst_amount > 0 ||
+                                order.tax_summary.sgst_amount > 0) && (
+                                <>
+                                  <div className="flex justify-between">
+                                    <span className="text-sm text-gray-500">
+                                      CGST
+                                    </span>
+                                    <span className="text-sm text-gray-900">
+                                      ₹
+                                      {Number(
+                                        order.tax_summary.cgst_amount || 0
+                                      ).toFixed(2)}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-sm text-gray-500">
+                                      SGST
+                                    </span>
+                                    <span className="text-sm text-gray-900">
+                                      ₹
+                                      {Number(
+                                        order.tax_summary.sgst_amount || 0
+                                      ).toFixed(2)}
+                                    </span>
+                                  </div>
+                                </>
+                              )}
+                              {order.tax_summary.cgst_amount === 0 &&
+                                order.tax_summary.sgst_amount === 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-sm text-gray-500">
+                                      GST
+                                      {order.tax_summary.tax_rate
+                                        ? ` (${order.tax_summary.tax_rate}%)`
+                                        : ""}
+                                    </span>
+                                    <span className="text-sm text-gray-900">
+                                      ₹
+                                      {Number(
+                                        order.tax_summary.total_gst_amount || 0
+                                      ).toFixed(2)}
+                                    </span>
+                                  </div>
+                                )}
+                            </>
+                          )}
                         {order.discount_amount && order.discount_amount > 0 && (
                           <>
                             <div className="flex justify-between">
