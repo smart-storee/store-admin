@@ -403,8 +403,11 @@ export default function EditBranchPage() {
                     value={formData.pincode}
                     onChange={handleChange}
                     required
-                    // inputMode="numeric"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    minLength={6}
                     maxLength={6}
+                    title="Enter a 6-digit PIN code"
                     className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border ${
                       theme === 'dark'
                         ? 'bg-slate-800/80 border-slate-700/50 text-white placeholder-slate-500'
