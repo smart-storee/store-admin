@@ -386,21 +386,6 @@ export default function OrderDetailPage() {
                                 {review.rating}/5
                               </span>
                             </div>
-                            <span
-                              className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                review.is_approved === 1
-                                  ? "bg-green-100 text-green-800"
-                                  : review.is_approved === 2
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {review.is_approved === 1
-                                ? "Approved"
-                                : review.is_approved === 2
-                                ? "Rejected"
-                                : "Pending"}
-                            </span>
                           </div>
                           <p className="text-sm text-gray-700 mb-3">
                             {review.review_text}

@@ -356,20 +356,8 @@ export default function ReviewsPage() {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                  review.is_approved === 1
-                                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                                    : review.is_approved === 2
-                                    ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                                    : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-                                }`}
-                              >
-                                {review.is_approved === 1
-                                  ? "Approved"
-                                  : review.is_approved === 2
-                                  ? "Rejected"
-                                  : "Pending"}
+                              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                                Submitted
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -402,7 +390,7 @@ export default function ReviewsPage() {
                                     setShowStatusModal(true);
                                   }}
                                   className="p-2 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 rounded-lg transition-all"
-                                  title="Update Status"
+                                  title="Reply"
                                 >
                                   <MessageSquare className="h-5 w-5" />
                                 </button>
@@ -552,26 +540,6 @@ export default function ReviewsPage() {
                     )}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Status
-                      </label>
-                      <span
-                        className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                          selectedReview.is_approved === 1
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                            : selectedReview.is_approved === 2
-                            ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-                        }`}
-                      >
-                        {selectedReview.is_approved === 1
-                          ? "Approved"
-                          : selectedReview.is_approved === 2
-                          ? "Rejected"
-                          : "Pending"}
-                      </span>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Reviewed On
                       </label>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -614,7 +582,7 @@ export default function ReviewsPage() {
                 <div className="px-6 py-5 border-b border-gray-200 dark:border-slate-700">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                      Update Review Status
+                      Reply to Review
                     </h2>
                     <button
                       onClick={() => {
@@ -643,25 +611,11 @@ export default function ReviewsPage() {
                   </div>
                   <div className="flex items-center gap-3 pt-4">
                     <button
-                      onClick={() => handleUpdateStatus(2)}
-                      disabled={updating}
-                      className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {updating ? "Updating..." : "Reject"}
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatus(0)}
-                      disabled={updating}
-                      className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {updating ? "Updating..." : "Set Pending"}
-                    </button>
-                    <button
                       onClick={() => handleUpdateStatus(1)}
                       disabled={updating}
                       className="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      {updating ? "Updating..." : "Approve"}
+                      {updating ? "Saving..." : "Save Reply"}
                     </button>
                   </div>
                 </div>
